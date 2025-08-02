@@ -547,20 +547,87 @@ const GardenCanvas = forwardRef<
                 strokeWidth={2 / stage.scale}
               />
               {poly.id === selectedId &&
-                sideMeasurements.map((measurement, index) => (
-                  <Text
-                    key={`measurement_${index}`}
-                    x={measurement.midX}
-                    y={measurement.midY}
-                    rotation={measurement.angle}
-                    offsetX={0}
-                    offsetY={LABEL_OFFSET / stage.scale}
-                    text={formatMeasurement(measurement.length * poly.scaleX)}
-                    fontSize={getFontSize(stage.scale)}
-                    fill="black"
-                    align="center"
-                  />
-                ))}
+                sideMeasurements.map((measurement, index) => {
+                  const fontSize = getFontSize(stage.scale);
+                  const text = formatMeasurement(
+                    measurement.length * poly.scaleX
+                  );
+
+                  // Get the two points defining the side
+                  const x1 = poly.points[index * 2];
+                  const y1 = poly.points[index * 2 + 1];
+                  const x2 = poly.points[(index * 2 + 2) % poly.points.length];
+                  const y2 = poly.points[(index * 2 + 3) % poly.points.length];
+
+                  // Calculate midpoint and angle
+                  const { midX, midY, angle } = calculateMidpointAndAngle(
+                    x1,
+                    y1,
+                    x2,
+                    y2
+                  );
+                  const angleRad = (angle * Math.PI) / 180;
+
+                  // Calculate the outward normal vector
+                  const dx = x2 - x1;
+                  const dy = y2 - y1;
+                  // Normal vector perpendicular to the side (rotated 90 degrees clockwise)
+                  let normalX = -dy;
+                  let normalY = dx;
+                  // Normalize the vector
+                  const length = Math.sqrt(
+                    normalX * normalX + normalY * normalY
+                  );
+                  if (length > 0) {
+                    normalX /= length;
+                    normalY /= length;
+                  }
+
+                  // Determine if the normal is pointing inward or outward by checking the polygon's center
+                  const polyCenterX =
+                    poly.points.reduce(
+                      (sum, val, i) => (i % 2 === 0 ? sum + val : sum),
+                      0
+                    ) /
+                    (poly.points.length / 2);
+                  const polyCenterY =
+                    poly.points.reduce(
+                      (sum, val, i) => (i % 2 === 1 ? sum + val : sum),
+                      0
+                    ) /
+                    (poly.points.length / 2);
+                  const toCenterX = polyCenterX - midX;
+                  const toCenterY = polyCenterY - midY;
+                  // Dot product to check if normal points toward center (inward)
+                  const dotProduct = normalX * toCenterX + normalY * toCenterY;
+                  // If dot product is positive, normal points inward, so flip it
+                  if (dotProduct > 0) {
+                    normalX = -normalX;
+                    normalY = -normalY;
+                  }
+
+                  // Position text outside using the normal vector
+                  const labelOffset = LABEL_OFFSET / stage.scale;
+                  const textX = midX + normalX * labelOffset;
+                  const textY = midY + normalY * labelOffset;
+
+                  return (
+                    <Text
+                      key={`measurement_${index}`}
+                      x={textX}
+                      y={textY}
+                      text={text}
+                      fontSize={fontSize}
+                      fill="black"
+                      align="center"
+                      verticalAlign="middle"
+                      rotation={angle}
+                      offsetX={text.length * (fontSize * 0.3)} // Approximate half text width
+                      offsetY={fontSize / 2}
+                      listening={false}
+                    />
+                  );
+                })}
             </Group>
           ))}
 
