@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Image as KonvaImage } from "react-konva";
 import Konva from "konva";
-import { PlacedObject } from "./GardenCanvas";
+import { PlacedObject } from "./GardenCanvas"; // Assuming type is exported from GardenCanvas
 
 interface PresetObjectProps {
   shapeProps: PlacedObject;
@@ -19,6 +19,7 @@ const PresetObject: React.FC<PresetObjectProps> = ({
   const [image, setImage] = useState<HTMLImageElement | undefined>();
 
   useEffect(() => {
+    if (!shapeProps.src) return;
     const img = new window.Image();
     img.src = shapeProps.src;
     img.crossOrigin = "Anonymous";
@@ -26,8 +27,12 @@ const PresetObject: React.FC<PresetObjectProps> = ({
   }, [shapeProps.src]);
 
   if (!image) {
-    return null;
+    return null; // Don't render anything until the image is loaded
   }
+
+  // Use a default size if not provided
+  const width = shapeProps.width || 100;
+  const height = shapeProps.height || 100;
 
   return (
     <KonvaImage
@@ -35,12 +40,13 @@ const PresetObject: React.FC<PresetObjectProps> = ({
       image={image}
       x={0}
       y={0}
-      width={shapeProps.width}
-      height={shapeProps.height}
+      width={width}
+      height={height}
       onClick={onSelect}
       onTap={onSelect}
-      offsetX={shapeProps.width ? shapeProps.width / 2 : 0}
-      offsetY={shapeProps.height ? shapeProps.height / 2 : 0}
+      // Set offset to center the image on its x/y coordinates
+      offsetX={width / 2}
+      offsetY={height / 2}
     />
   );
 };

@@ -1,30 +1,23 @@
 // components/Header.tsx
 import React from "react";
+import { Leaf } from "lucide-react"; // npm install lucide-react
 
 const Header = () => {
   return (
-    <header className="bg-white shadow-md p-4 flex justify-between items-center z-10">
-      <div className="flex items-center space-x-2">
-        {/* Placeholder for a logo */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-8 w-8 text-green-600"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-        <span className="text-xl font-bold text-gray-700">Garden Designer</span>
+    <header className="bg-white/80 backdrop-blur-md p-4 border-b border-slate-200 flex justify-between items-center z-10">
+      <div className="flex items-center space-x-3">
+        <div className="bg-green-100 p-2 rounded-lg">
+          <Leaf className="h-6 w-6 text-green-700" />
+        </div>
+        <span className="text-xl font-bold text-slate-800 tracking-tight">
+          Garden Designer
+        </span>
       </div>
-      <div className="flex items-center space-x-4">
-        <button className="text-gray-600 hover:text-green-600">Login</button>
-        <button className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
+      <div className="flex items-center space-x-2">
+        <button className="text-slate-600 hover:bg-slate-100 px-4 py-2 rounded-lg transition-colors font-medium">
+          Login
+        </button>
+        <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-all shadow-sm hover:shadow-md font-medium">
           Sign Up
         </button>
       </div>

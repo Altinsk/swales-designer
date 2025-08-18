@@ -1,0 +1,91 @@
+{
+  "tools": [
+    {
+      "id": "plot",
+      "name": "Plot Area",
+      "type": "menu",
+      "textures": [
+        {
+          "id": "grass",
+          "name": "Grass",
+          "src": "/grass.jpg"
+        },
+        {
+          "id": "paving",
+          "name": "Paving Stones",
+          "src": "/stone.png"
+        },
+        {
+          "id": "wood",
+          "name": "Wood ",
+          "src": "/wood.png"
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "id": "structures",
+      "name": "Structures",
+      "type": "category",
+      "children": [
+        {
+          "id": "house",
+          "name": "House",
+          "type": "item",
+          "src": "/house.svg"
+        },
+        {
+          "id": "shed",
+          "name": "Shed",
+          "type": "item",
+          "src": "/shed.png"
+        }
+      ]
+    },
+    {
+      "id": "plants",
+      "name": "Plants",
+      "type": "category",
+      "children": [
+        {
+          "id": "trees",
+          "name": "Trees",
+          "type": "category",
+          "children": [
+            {
+              "id": "oak",
+              "name": "Oak",
+              "type": "item",
+              "src": "/oak.png"
+            },
+            {
+              "id": "acorn",
+              "name": "Acorn",
+              "type": "item",
+              "src": "/acorn.png"
+            }
+          ]
+        },
+        {
+          "id": "plant",
+          "name": "Potted Plant",
+          "type": "item",
+          "src": "/plant.svg"
+        }
+      ]
+    }
+  ],
+  "templates": [
+    {
+      "id": "template-1",
+      "name": "Small Garden",
+      "src": "/template1.jpg"
+    },
+    {
+      "id": "template-2",
+      "name": "Big Garden",
+      "src": "/template2.jpg"
+    }
+  ]
+}
