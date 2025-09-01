@@ -1,4 +1,3 @@
-// components/GardenCanvas.tsx
 "use-client";
 
 import React, {
@@ -9,6 +8,8 @@ import React, {
   forwardRef,
   useImperativeHandle,
   memo,
+  useMemo,
+  useLayoutEffect,
 } from "react";
 import {
   Stage,
@@ -20,32 +21,40 @@ import {
   Group,
   Path,
   Rect,
+  Ellipse,
+  Arrow,
+  Label,
+  Tag,
 } from "react-konva";
 import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
 import { PresetItem, Texture } from "./Toolbar"; // Import types
 import PresetObject from "./PresetObject"; // Import the actual component
-import { VisibilityState } from "@/app/page"; // Import visibility state type
+import { ActiveTool, NoteShape, VisibilityState } from "@/app/page"; // Import visibility state type
+import { Image as KonvaImage } from "react-konva"; // Add KonvaImage import
+import useImage from "use-image";
 
 // --- Configuration ---
 const PIXELS_PER_METER = 40;
 const GRID_SIZE = PIXELS_PER_METER;
 const INITIAL_PRESET_SIZE = 100;
 const MIN_FONT_SIZE = 10;
+const MAX_FONT_SIZE = 13;
 const SNAP_THRESHOLD = 6;
 const ANGLE_SNAP_THRESHOLD = 8;
 const CLOSE_THRESHOLD = 15;
 const ANGLE_TEXT_OFFSET = 50;
+const MIN_EFFECTIVE_SCALE = 1.2;
 const GUIDE_HIDE_THRESHOLD = 20;
-const ICON_SIZE = 50;
-const ICON_SPACING = 5;
+const ICON_SIZE = 40;
+const ICON_SPACING = 8;
 
 const lockIconPath =
   "M5.25 9.30277V8C5.25 4.27208 8.27208 1.25 12 1.25C15.7279 1.25 18.75 4.27208 18.75 8V9.30277C18.9768 9.31872 19.1906 9.33948 19.3918 9.36652C20.2919 9.48754 21.0497 9.74643 21.6517 10.3483C22.2536 10.9503 22.5125 11.7081 22.6335 12.6082C22.75 13.4752 22.75 14.5775 22.75 15.9451V16.0549C22.75 17.4225 22.75 18.5248 22.6335 19.3918C22.5125 20.2919 22.2536 21.0497 21.6517 21.6516C21.0497 22.2536 20.2919 22.5125 19.3918 22.6335C18.5248 22.75 17.4225 22.75 16.0549 22.75H7.94513C6.57754 22.75 5.47522 22.75 4.60825 22.6335C3.70814 22.5125 2.95027 22.2536 2.34835 21.6516C1.74643 21.0497 1.48754 20.2919 1.36652 19.3918C1.24996 18.5248 1.24998 17.4225 1.25 16.0549V15.9451C1.24998 14.5775 1.24996 13.4752 1.36652 12.6082C1.48754 11.7081 1.74643 10.9503 2.34835 10.3483C2.95027 9.74643 3.70814 9.48754 4.60825 9.36652C4.80938 9.33948 5.02317 9.31872 5.25 9.30277ZM6.75 8C6.75 5.10051 9.10051 2.75 12 2.75C14.8995 2.75 17.25 5.10051 17.25 8V9.25344C16.8765 9.24999 16.4784 9.24999 16.0549 9.25H7.94513C7.52161 9.24999 7.12353 9.24999 6.75 9.25344V8ZM3.40901 11.409C3.68577 11.1322 4.07435 10.9518 4.80812 10.8531C5.56347 10.7516 6.56459 10.75 8 10.75H16C17.4354 10.75 18.4365 10.7516 19.1919 10.8531C19.9257 10.9518 20.3142 11.1322 20.591 11.409C20.8678 11.6858 21.0482 12.0743 21.1469 12.8081C21.2484 13.5635 21.25 14.5646 21.25 16C21.25 17.4354 21.2484 18.4365 21.1469 19.1919C21.0482 19.9257 20.8678 20.3142 20.591 20.591C20.3142 20.8678 19.9257 21.0482 19.1919 21.1469C18.4365 21.2484 17.4354 21.25 16 21.25H8C6.56459 21.25 5.56347 21.2484 4.80812 21.1469C4.07435 21.0482 3.68577 20.8678 3.40901 20.591C3.13225 20.3142 2.9518 19.9257 2.85315 19.1919C2.75159 18.4365 2.75 17.4354 2.75 16C2.75 14.5646 2.75159 13.5635 2.85315 12.8081C2.9518 12.0743 3.13225 11.6858 3.40901 11.409Z";
 const unlockIconPath =
   "M6.75 8C6.75 5.10051 9.10051 2.75 12 2.75C14.4453 2.75 16.5018 4.42242 17.0846 6.68694C17.1879 7.08808 17.5968 7.32957 17.9979 7.22633C18.3991 7.12308 18.6405 6.7142 18.5373 6.31306C17.788 3.4019 15.1463 1.25 12 1.25C8.27208 1.25 5.25 4.27208 5.25 8V9.30277C5.02317 9.31872 4.80938 9.33948 4.60825 9.36652C3.70814 9.48754 2.95027 9.74643 2.34835 10.3483C1.74643 10.9503 1.48754 11.7081 1.36652 12.6082C1.24996 13.4752 1.24998 14.5775 1.25 15.9451V16.0549C1.24998 17.4225 1.24996 18.5248 1.36652 19.3918C1.48754 20.2919 1.74643 21.0497 2.34835 21.6516C2.95027 22.2536 3.70814 22.5125 4.60825 22.6335C5.47522 22.75 6.57754 22.75 7.94513 22.75H16.0549C17.4225 22.75 18.5248 22.75 19.3918 22.6335C20.2919 22.5125 21.0497 22.2536 21.6517 21.6516C22.2536 21.0497 22.5125 20.2919 22.6335 19.3918C22.75 18.5248 22.75 17.4225 22.75 16.0549V15.9451C22.75 14.5775 22.75 13.4752 22.6335 12.6082C22.5125 11.7081 22.2536 10.9503 21.6517 10.3483C21.0497 9.74643 20.2919 9.48754 19.3918 9.36652C18.5248 9.24996 17.4225 9.24998 16.0549 9.25H7.94513C7.52161 9.24999 7.12353 9.24999 6.75 9.25344V8ZM3.40901 11.409C3.68577 11.1322 4.07435 10.9518 4.80812 10.8531C5.56347 10.7516 6.56459 10.75 8 10.75H16C17.4354 10.75 18.4365 10.7516 19.1919 10.8531C19.9257 10.9518 20.3142 11.1322 20.591 11.409C20.8678 11.6858 21.0482 12.0743 21.1469 12.8081C21.2484 13.5635 21.25 14.5646 21.25 16C21.25 17.4354 21.2484 18.4365 21.1469 19.1919C21.0482 19.9257 20.8678 20.3142 20.591 20.591C20.3142 20.8678 19.9257 21.0482 19.1919 21.1469C18.4365 21.2484 17.4354 21.25 16 21.25H8C6.56459 21.25 5.56347 21.2484 4.80812 21.1469C4.07435 21.0482 3.68577 20.8678 3.40901 20.591C3.13225 20.3142 2.9518 19.9257 2.85315 19.1919C2.75159 18.4365 2.75 17.4354 2.75 16C2.75 14.5646 2.75159 13.5635 2.85315 12.8081C2.9518 12.0743 3.13225 11.6858 3.40901 11.409Z";
 const settingsIconPath =
-  "M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84 c-0.24,0-0.44,0.17-0.48,0.41L9.18,5.05C8.59,5.29,8.06,5.62,7.56,5.99L5.17,5.03C4.95,4.95,4.7,5.02,4.58,5.24l-1.92,3.32 c-0.12,0.22-0.07,0.47,0.12,0.61l2.03,1.58C4.74,11.36,4.72,11.68,4.72,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.42,2.24 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.42-2.24c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z";
+  "M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84 c-0.24,0-0.44,0.17-0.48,0.41L9.18,5.05C8.59,5.29,8.06,5.62,7.56,5.99L5.17,5.03C4.95,4.95,4.7,5.02,4.58,5.24l-1.92,3.32 c-0.12,0.22-0.07,0.47,0.12,0.61l2.03,1.58C4.74,11.36,4.72,11.68,4.72,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.42,2.24 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48,0.41l0.42-2.24c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z";
 
 // --- Type Definitions ---
 type Tool = "select" | "plot";
@@ -75,7 +84,24 @@ export interface PlacedObject extends PresetItem {
   height?: number;
   locked?: boolean;
 }
-type HistoryState = { polygons: Polygon[]; placedObjects: PlacedObject[] };
+
+export interface PlanningSketch {
+  id: string;
+  src: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  pixelScale: number; // meters per pixel
+  locked: boolean;
+  zIndex: number;
+}
+type HistoryState = {
+  polygons: Polygon[];
+  placedObjects: PlacedObject[];
+  notes: NoteObject[];
+};
 type SnapDetails = {
   isSnapped: boolean;
   point: Point;
@@ -100,6 +126,23 @@ type LengthGuideInfo = {
 };
 type PlottingGuide = AngleGuideInfo | LengthGuideInfo;
 
+export type NoteColor = "gray" | "blue" | "yellow";
+export interface NoteObject {
+  id: string;
+  type: NoteShape;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  scaleX: number;
+  scaleY: number;
+  fill: NoteColor;
+  locked: boolean;
+  points?: number[]; // For arrow
+  text?: string; // For text and callout
+}
+
 // --- Helper Functions ---
 const formatMeasurement = (pixels: number) =>
   `${(pixels / PIXELS_PER_METER).toFixed(2)} m`;
@@ -114,7 +157,7 @@ const calculateAngle = (p1: Point, p2: Point, p3: Point): number => {
   return angle;
 };
 const getFontSize = (stageScale: number) =>
-  Math.max(14 / stageScale, MIN_FONT_SIZE);
+  Math.min(Math.max(14 / stageScale, MIN_FONT_SIZE), MAX_FONT_SIZE);
 const vSub = (p1: Point, p2: Point) => ({ x: p1.x - p2.x, y: p1.y - p2.y });
 const vAdd = (p1: Point, p2: Point) => ({ x: p1.x + p2.x, y: p1.y + p2.y });
 const vScale = (p: Point, s: number) => ({ x: p.x * s, y: p.y * s });
@@ -125,17 +168,69 @@ const vNormalize = (p: Point) => {
 };
 const dotProduct = (p1: Point, p2: Point) => p1.x * p2.x + p1.y * p2.y;
 
+const SketchImage = ({
+  sketch,
+  onDragStart,
+  onDragEnd,
+}: {
+  sketch: PlanningSketch;
+  onDragStart: (e: any) => void;
+  onDragEnd: (e: any) => void;
+}) => {
+  const [image] = useImage(sketch.src);
+  if (!image) return null;
+
+  const scaledWidth = image.width * sketch.pixelScale * PIXELS_PER_METER;
+  const scaledHeight = image.height * sketch.pixelScale * PIXELS_PER_METER;
+
+  return (
+    <Group
+      id={sketch.id}
+      x={sketch.x}
+      y={sketch.y}
+      rotation={sketch.rotation}
+      draggable={!sketch.locked}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onClick={(e) => {
+        // Prevent stage deselection when clicking the sketch
+        e.cancelBubble = true;
+      }}
+    >
+      {/* Black background for the image */}
+      <Rect
+        width={scaledWidth}
+        height={scaledHeight}
+        offsetX={scaledWidth / 2}
+        offsetY={scaledHeight / 2}
+        fill="black"
+      />
+      <KonvaImage
+        image={image}
+        width={scaledWidth}
+        height={scaledHeight}
+        offsetX={scaledWidth / 2}
+        offsetY={scaledHeight / 2}
+        opacity={0.5}
+      />
+    </Group>
+  );
+};
+
 // --- Main Component ---
 const GardenCanvas = forwardRef<
   any, // Using 'any' for simplicity with the extended handles
   {
-    activeTool: Tool;
+    activeTool: ActiveTool;
     selectedPreset: PresetItem | null;
     onObjectAdd: () => void;
-    setActiveTool: (tool: Tool) => void;
+    setActiveTool: (tool: ActiveTool) => void;
     plotTexture: Texture | null;
     config: any;
     visibility: VisibilityState;
+    planningSketch: PlanningSketch | null;
+    onSketchChange: (sketch: PlanningSketch | null) => void;
+    onScaleChange: (scale: number) => void;
   }
 >(
   (
@@ -147,6 +242,9 @@ const GardenCanvas = forwardRef<
       plotTexture,
       config,
       visibility,
+      planningSketch,
+      onSketchChange,
+      onScaleChange,
     },
     ref
   ) => {
@@ -155,7 +253,22 @@ const GardenCanvas = forwardRef<
     const [dimensions, setDimensions] = useState({ width: 1, height: 1 });
     const [currentPoints, setCurrentPoints] = useState<number[]>([]);
     const [mousePos, setMousePos] = useState<Point>({ x: 0, y: 0 });
+    const [notes, setNotes] = useState<NoteObject[]>([]);
     const [selectedId, selectShape] = useState<string | null>(null);
+    const [isDraggingVertex, setIsDraggingVertex] = useState(false);
+    const [colorMenu, setColorMenu] = useState<{
+      x: number;
+      y: number;
+      noteId: string;
+    } | null>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [isInteracting, setIsInteracting] = useState(false);
+    const [editingTextNode, setEditingTextNode] = useState<NoteObject | null>(
+      null
+    );
+    // ✅ FIX #1: State to manage selecting a newly added object robustly.
+    const [lastAddedId, setLastAddedId] = useState<string | null>(null);
+
     const [textures, setTextures] = useState<{
       [key: string]: HTMLImageElement;
     }>({});
@@ -175,14 +288,22 @@ const GardenCanvas = forwardRef<
     const [isClosing, setIsClosing] = useState(false);
     const [isNearVertex, setIsNearVertex] = useState(false);
     const [history, setHistory] = useState<HistoryState[]>([
-      { polygons: [], placedObjects: [] },
+      { polygons: [], placedObjects: [], notes: [] },
     ]);
     const [historyStep, setHistoryStep] = useState(0);
+
+    const [floatingLabels, setFloatingLabels] = useState<React.ReactNode>(null);
+    const [transformCounter, setTransformCounter] = useState(0);
+
+    // ✅ FIX #3: State to hold floating icon properties, managed by useLayoutEffect for correct timing.
+    const [floatingIconProps, setFloatingIconProps] = useState<any>(null);
+
     const trRef = useRef<Konva.Transformer>(null);
     const stageRef = useRef<Konva.Stage>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const textEditRef = useRef<HTMLTextAreaElement>(null);
 
-    const handleLockToggle = (id: string) => {
+    const handleLockToggle = useCallback((id: string) => {
       setPolygons((currentPolygons) =>
         currentPolygons.map((p) =>
           p.id === id ? { ...p, locked: !p.locked } : p
@@ -193,7 +314,13 @@ const GardenCanvas = forwardRef<
           o.id === id ? { ...o, locked: !o.locked } : o
         )
       );
-    };
+      setNotes((current) =>
+        current.map((n) => (n.id === id ? { ...n, locked: !n.locked } : n))
+      );
+      // Since we are changing a property that affects the UI,
+      // it's a good idea to trigger the effect manually.
+      setTransformCounter((c) => c + 1);
+    }, []);
 
     const handlePolygonPointUpdate = useCallback(
       (polygonId: string, pointIndex: number, newPoint: Point) => {
@@ -215,15 +342,13 @@ const GardenCanvas = forwardRef<
     const saveStateToHistory = useCallback(() => {
       const currentHistory = history.slice(0, historyStep + 1);
       const lastState = currentHistory[currentHistory.length - 1];
-      if (
-        JSON.stringify(lastState) !==
-        JSON.stringify({ polygons, placedObjects })
-      ) {
-        currentHistory.push({ polygons, placedObjects });
+      const currentState = { polygons, placedObjects, notes };
+      if (JSON.stringify(lastState) !== JSON.stringify(currentState)) {
+        currentHistory.push(currentState);
         setHistory(currentHistory);
         setHistoryStep(currentHistory.length - 1);
       }
-    }, [history, historyStep, polygons, placedObjects]);
+    }, [history, historyStep, polygons, placedObjects, notes]);
 
     const handleUndo = useCallback(() => {
       if (historyStep > 0) {
@@ -231,6 +356,7 @@ const GardenCanvas = forwardRef<
         const prevState = history[newStep];
         setPolygons(prevState.polygons);
         setPlacedObjects(prevState.placedObjects);
+        setNotes(prevState.notes);
         setHistoryStep(newStep);
         selectShape(null);
       }
@@ -242,6 +368,7 @@ const GardenCanvas = forwardRef<
         const nextState = history[newStep];
         setPolygons(nextState.polygons);
         setPlacedObjects(nextState.placedObjects);
+        setNotes(nextState.notes);
         setHistoryStep(newStep);
         selectShape(null);
       }
@@ -250,25 +377,20 @@ const GardenCanvas = forwardRef<
     const handleDelete = useCallback(() => {
       if (!selectedId) return;
       setPolygons((polygons) => polygons.filter((p) => p.id !== selectedId));
-      setPlacedObjects((placedObjects) =>
-        placedObjects.filter((o) => o.id !== selectedId)
-      );
+      setPlacedObjects((objects) => objects.filter((o) => o.id !== selectedId));
+      setNotes((notes) => notes.filter((n) => n.id !== selectedId));
       selectShape(null);
     }, [selectedId]);
 
-    // Preload all textures from config
     useEffect(() => {
       const allTextures = config?.tools.find((t: any) => t.id === "plot")
         ?.textures as Texture[];
       if (allTextures) {
-        const loaded: { [key: string]: HTMLImageElement } = {};
         allTextures.forEach((tex) => {
           const image = new window.Image();
           image.src = tex.src;
           image.crossOrigin = "Anonymous";
           image.onload = () => {
-            loaded[tex.id] = image;
-            // This update is a bit inefficient, but simple
             setTextures((prev) => ({ ...prev, [tex.id]: image }));
           };
         });
@@ -276,9 +398,13 @@ const GardenCanvas = forwardRef<
     }, [config]);
 
     useEffect(() => {
+      onScaleChange(stage.scale);
+    }, [stage.scale, onScaleChange]);
+
+    useEffect(() => {
       const timeoutId = setTimeout(saveStateToHistory, 500);
       return () => clearTimeout(timeoutId);
-    }, [polygons, placedObjects, saveStateToHistory]);
+    }, [polygons, placedObjects, saveStateToHistory, notes]);
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -296,12 +422,12 @@ const GardenCanvas = forwardRef<
         }
         if (
           e.key === "Escape" &&
-          activeTool === "plot" &&
+          activeTool.type === "plot" &&
           currentPoints.length > 0
         ) {
           e.preventDefault();
           setCurrentPoints([]);
-          setActiveTool("select");
+          setActiveTool({ type: "select" });
         }
       };
       window.addEventListener("keydown", handleKeyDown);
@@ -317,6 +443,13 @@ const GardenCanvas = forwardRef<
     ]);
 
     useEffect(() => {
+      if (editingTextNode && textEditRef.current) {
+        textEditRef.current.focus();
+        textEditRef.current.select();
+      }
+    }, [editingTextNode?.id]);
+
+    useEffect(() => {
       const handleResize = () => {
         if (containerRef.current) {
           setDimensions({
@@ -330,13 +463,16 @@ const GardenCanvas = forwardRef<
       return () => window.removeEventListener("resize", handleResize);
     }, []);
 
+    // ✅ FIX #1: This effect now robustly handles adding a new preset object.
     useEffect(() => {
       if (selectedPreset) {
         const stageNode = stageRef.current;
         if (!stageNode) return;
+
         const { width, height } = dimensions;
         const centerX = (width / 2 - stageNode.x()) / stageNode.scaleX();
         const centerY = (height / 2 - stageNode.y()) / stageNode.scaleY();
+
         const newObject: PlacedObject = {
           ...selectedPreset,
           id: `${selectedPreset.id}_${Date.now()}`,
@@ -347,10 +483,15 @@ const GardenCanvas = forwardRef<
           scaleY: 1,
           width: INITIAL_PRESET_SIZE,
           height: INITIAL_PRESET_SIZE,
+          locked: false, // ✅ Add this line
         };
         setPlacedObjects((prev) => [...prev, newObject]);
+
+        console.log("--- SELECTION DEBUG ---");
+        console.log("Step A: Creating new object with ID:", newObject.id);
+        // Set the ID of the object we just added.
+        setLastAddedId(newObject.id);
         onObjectAdd();
-        selectShape(newObject.id);
       }
     }, [
       selectedPreset,
@@ -361,25 +502,171 @@ const GardenCanvas = forwardRef<
       stage.scale,
     ]);
 
-    useEffect(() => {
+    // This layout effect runs AFTER the new object is rendered but BEFORE the screen updates.
+    // This is the key to reliably selecting it.
+    useLayoutEffect(() => {
+      if (lastAddedId) {
+        // Now that we know the object is on the stage, select it.
+        console.log("Step B: Selecting new object. ID:", lastAddedId);
+        selectShape(lastAddedId);
+        // Force effects that depend on transformation to update.
+        setTransformCounter((c) => c + 1);
+        // Reset the ID so this doesn't run again.
+        setLastAddedId(null);
+      }
+    }, [lastAddedId]);
+
+    useLayoutEffect(() => {
       const transformer = trRef.current;
-      const selectedNode = stageRef.current?.findOne("#" + selectedId);
+      const stage = stageRef.current;
+      if (!transformer || !stage) return;
 
-      const selectedPoly = polygons.find((p) => p.id === selectedId);
-      const selectedObj = placedObjects.find((o) => o.id === selectedId);
+      // ✅ FIX: Check both notes and items (polygons, placed objects)
+      const isNoteSelected = notes.some((n) => n.id === selectedId);
+      const isItemSelected =
+        polygons.some((p) => p.id === selectedId) ||
+        placedObjects.some((o) => o.id === selectedId);
 
+      // ✅ FIX: If the selected object's layer is invisible, hide the transformer.
       if (
-        transformer &&
-        selectedNode &&
-        !selectedPoly?.locked &&
-        !selectedObj?.locked
+        (isNoteSelected && !visibility.notes) ||
+        (isItemSelected && !visibility.items)
       ) {
+        transformer.nodes([]);
+        return;
+      }
+
+      const selectedNode = stage.findOne("#" + selectedId);
+
+      console.log("selectedNode", selectedNode);
+
+      // If a node is selected, attach the transformer
+      if (selectedNode) {
+        // Attach to the node. It might have a 0x0 size for a fraction of a second.
         transformer.nodes([selectedNode]);
-      } else if (transformer) {
+
+        // We schedule a function to run at the end of the current browser task.
+        // This gives the <PresetObject>'s internal image/SVG a chance to load.
+        const timer = setTimeout(() => {
+          // By detaching and immediately re-attaching the node, we force
+          // the Transformer to re-calculate its size and position based
+          // on the now-loaded content. This is the correct Konva pattern.
+          if (trRef.current) {
+            // Ensure ref is still valid
+            const stillSelectedNode = stage.findOne("#" + selectedId);
+            if (stillSelectedNode) {
+              trRef.current.nodes([]);
+              trRef.current.nodes([stillSelectedNode]);
+            }
+          }
+        }, 0); // A timeout of 0ms is all that's needed.
+
+        // Configure the transformer's behavior based on the object type
+        const isResizableNote = notes.some(
+          (n) => n.id === selectedId && n.type !== "arrow"
+        );
+        const isPreset = placedObjects.some((o) => o.id === selectedId);
+        transformer.keepRatio(isPreset);
+        transformer.resizeEnabled(isPreset || isResizableNote);
+
+        // Return a cleanup function to clear the timer if the selection changes
+        return () => clearTimeout(timer);
+      } else {
+        // If nothing is selected, ensure the transformer is detached
         transformer.nodes([]);
       }
-      transformer?.getLayer()?.batchDraw();
-    }, [selectedId, polygons, placedObjects]);
+      // ✅ FIX: Add all relevant dependencies
+    }, [
+      selectedId,
+      visibility.items,
+      visibility.notes,
+      notes,
+      polygons,
+      placedObjects,
+    ]);
+    const handleStageMouseDown = (e: KonvaEventObject<MouseEvent>) => {
+      if (editingTextNode) return;
+
+      if (
+        activeTool.type === "note" &&
+        activeTool.shape &&
+        activeTool.shape !== "text"
+      ) {
+        if (e.target !== e.target.getStage()) {
+          return;
+        }
+
+        const stageNode = stageRef.current;
+        if (!stageNode) return;
+        const pos = stageNode.getRelativePointerPosition();
+        if (!pos) return;
+
+        const newNote: NoteObject = {
+          id: `note_${Date.now()}`,
+          type: activeTool.shape,
+          x: pos.x,
+          y: pos.y,
+          width: 0,
+          height: 0,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+          fill: "gray",
+          locked: false,
+          points: activeTool.shape === "arrow" ? [0, 0, 0, 0] : undefined,
+          text: activeTool.shape === "callout" ? "Callout" : undefined,
+        };
+
+        setIsDrawing(true);
+        setNotes((prev) => [...prev, newNote]);
+        return;
+      }
+
+      const clickedOnEmpty = e.target === e.target.getStage();
+      if (clickedOnEmpty) {
+        selectShape(null);
+        setMenu(null);
+        setColorMenu(null);
+      }
+    };
+
+    const handleStageMouseMove = (e: KonvaEventObject<MouseEvent>) => {
+      handleMouseMove(e);
+
+      if (!isDrawing || notes.length === 0) return;
+
+      const stageNode = stageRef.current;
+      if (!stageNode) return;
+      const pos = stageNode.getRelativePointerPosition();
+      if (!pos) return;
+
+      const noteBeingDrawn = notes[notes.length - 1];
+      const newWidth = pos.x - noteBeingDrawn.x;
+      const newHeight = pos.y - noteBeingDrawn.y;
+
+      setNotes((current) =>
+        current.map((n) => {
+          if (n.id === noteBeingDrawn.id) {
+            if (n.type === "arrow") {
+              return { ...n, points: [0, 0, newWidth, newHeight] };
+            }
+            return { ...n, width: newWidth, height: newHeight };
+          }
+          return n;
+        })
+      );
+    };
+
+    const handleStageMouseUp = (e: KonvaEventObject<MouseEvent>) => {
+      if (isDrawing) {
+        setIsDrawing(false);
+        const drawnNoteId = notes[notes.length - 1]?.id;
+        setActiveTool({ type: "select" });
+        if (drawnNoteId) {
+          selectShape(drawnNoteId);
+        }
+      }
+    };
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       e.evt.preventDefault();
@@ -400,6 +687,7 @@ const GardenCanvas = forwardRef<
         x: pointer.x - mousePointTo.x * newScale,
         y: pointer.y - mousePointTo.y * newScale,
       });
+      setTransformCounter((c) => c + 1); // Trigger label update on zoom
     };
 
     const handleStageDrag = (e: KonvaEventObject<DragEvent>) => {
@@ -415,7 +703,26 @@ const GardenCanvas = forwardRef<
       });
     };
 
+    const handleInteractionStart = () => {
+      setIsInteracting(true);
+    };
+
+    const handleInteractionEnd = () => {
+      setIsInteracting(false);
+    };
+
+    const handleVertexDragStart = () => {
+      setIsInteracting(true); // A vertex drag is also an interaction
+      setIsDraggingVertex(true);
+    };
+
+    const handleVertexDragEnd = () => {
+      setIsInteracting(false);
+      setIsDraggingVertex(false);
+    };
+
     const handleObjectDragEnd = (e: KonvaEventObject<DragEvent>) => {
+      handleInteractionEnd();
       e.cancelBubble = true;
       const node = e.target;
       const id = node.id();
@@ -429,9 +736,16 @@ const GardenCanvas = forwardRef<
           o.id === id ? { ...o, x: node.x(), y: node.y() } : o
         )
       );
+      setNotes((current) =>
+        current.map((n) =>
+          n.id === id ? { ...n, x: node.x(), y: node.y() } : n
+        )
+      );
+      setTransformCounter((c) => c + 1); // Trigger label update on drag
     };
 
     const handleTransformEnd = (e: KonvaEventObject<Event>) => {
+      handleInteractionEnd();
       e.cancelBubble = true;
       const node = e.target;
       const id = node.id();
@@ -442,12 +756,22 @@ const GardenCanvas = forwardRef<
         scaleX: node.scaleX(),
         scaleY: node.scaleY(),
       };
+
+      const updateNote = (n: NoteObject) => {
+        if (n.id !== id) return n;
+        return {
+          ...n,
+          ...commonProps,
+        };
+      };
+
       setPolygons((current) =>
         current.map((p) => (p.id === id ? { ...p, ...commonProps } : p))
       );
       setPlacedObjects((current) =>
         current.map((o) => (o.id === id ? { ...o, ...commonProps } : o))
       );
+      setNotes((current) => current.map(updateNote));
     };
 
     useImperativeHandle(ref, () => ({
@@ -456,15 +780,95 @@ const GardenCanvas = forwardRef<
       undo: handleUndo,
       redo: handleRedo,
       deleteSelected: handleDelete,
-    }));
+      center: () => setStage({ scale: 1, x: 0, y: 0 }),
+      addRectangle: (widthInMeters: number, heightInMeters: number) => {
+        const stageNode = stageRef.current;
+        if (!stageNode) return;
 
-    const checkDeselect = (e: KonvaEventObject<MouseEvent | TouchEvent>) => {
-      const clickedOnEmpty = e.target === e.target.getStage();
-      if (clickedOnEmpty) {
+        const width = widthInMeters * PIXELS_PER_METER;
+        const height = heightInMeters * PIXELS_PER_METER;
+
+        const { width: viewWidth, height: viewHeight } = dimensions;
+        const centerX = (viewWidth / 2 - stageNode.x()) / stageNode.scaleX();
+        const centerY = (viewHeight / 2 - stageNode.y()) / stageNode.scaleY();
+
+        const halfW = width / 2;
+        const halfH = height / 2;
+
+        const points = [
+          -halfW,
+          -halfH,
+          halfW,
+          -halfH,
+          halfW,
+          halfH,
+          -halfW,
+          halfH,
+        ];
+
+        const newRectangle: Polygon = {
+          id: `rect_${Date.now()}`,
+          points: points,
+          x: centerX,
+          y: centerY,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+          locked: false,
+          textureId: plotTexture?.id,
+        };
+
+        setPolygons((prev) => [...prev, newRectangle]);
+        selectShape(newRectangle.id);
+      },
+      isCanvasEmpty: () =>
+        polygons.length === 0 &&
+        placedObjects.length === 0 &&
+        notes.length === 0,
+      getCanvasState: () => JSON.stringify({ polygons, placedObjects, notes }),
+      clearCanvas: () => {
+        setPolygons([]);
+        setPlacedObjects([]);
+        setNotes([]);
         selectShape(null);
-        setMenu(null); // Close menu on deselect
-      }
-    };
+      },
+      loadCanvasState: (data: HistoryState) => {
+        if (data) {
+          setPolygons(data.polygons || []);
+          setPlacedObjects(data.placedObjects || []);
+          setNotes(data.notes || []);
+          selectShape(null);
+          const newHistoryState = [
+            {
+              polygons: data.polygons || [],
+              placedObjects: data.placedObjects || [],
+              notes: data.notes || [],
+            },
+          ];
+          setHistory(newHistoryState);
+          setHistoryStep(0);
+        }
+      },
+      getStageNode: () => stageRef.current,
+      editSketch: () => {
+        if (planningSketch) {
+          selectShape(planningSketch.id);
+          onSketchChange({ ...planningSketch, locked: false });
+        }
+      },
+      deleteSketch: () => {
+        if (selectedId === planningSketch?.id) selectShape(null);
+        onSketchChange(null);
+      },
+      toggleSketchLayer: () => {
+        if (planningSketch) {
+          onSketchChange({
+            ...planningSketch,
+            zIndex: planningSketch.zIndex === 0 ? 1 : 0,
+          });
+        }
+      },
+    }));
 
     const finishPlotting = () => {
       if (currentPoints.length < 6) return;
@@ -482,24 +886,105 @@ const GardenCanvas = forwardRef<
       setPolygons((prev) => [...prev, newPolygon]);
       setCurrentPoints([]);
       selectShape(newPolygon.id);
-      setActiveTool("select");
+      setActiveTool({ type: "select" });
     };
 
     const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
-      if (e.target !== e.target.getStage()) {
-        return;
-      }
-      if (activeTool !== "plot") return;
-      if (isClosing) {
-        finishPlotting();
-        return;
-      }
-      const pos = stageRef.current?.getRelativePointerPosition();
-      if (!pos) return;
+      if (e.target !== e.target.getStage()) return;
 
-      const clickPos = snapDetails.isSnapped ? snapDetails.point : pos;
-      setCurrentPoints((prev) => [...prev, clickPos.x, clickPos.y]);
-      setIsNearVertex(true);
+      if (activeTool.type === "plot") {
+        if (isClosing) {
+          finishPlotting();
+          return;
+        }
+        const pos = stageRef.current?.getRelativePointerPosition();
+        if (!pos) return;
+        const clickPos = snapDetails.isSnapped ? snapDetails.point : pos;
+        setCurrentPoints((prev) => [...prev, clickPos.x, clickPos.y]);
+        setIsNearVertex(true);
+        return;
+      }
+
+      if (
+        activeTool.type === "note" &&
+        (activeTool.shape === "text" || activeTool.shape === "callout")
+      ) {
+        const stageNode = stageRef.current;
+        if (!stageNode) return;
+        const pos = stageNode.getRelativePointerPosition();
+        if (!pos) return;
+
+        const newNote: NoteObject = {
+          id: `note_${Date.now()}`,
+          type: activeTool.shape,
+          x: pos.x,
+          y: pos.y,
+          width: 150,
+          height: 50,
+          rotation: 0,
+          scaleX: 1,
+          scaleY: 1,
+          fill: "gray",
+          locked: false,
+          text: " ",
+        };
+        // Add the visually blank note to the canvas
+        setNotes((prev) => [...prev, newNote]);
+        setActiveTool({ type: "select" });
+        selectShape(newNote.id);
+
+        // ✅ 2. Immediately start editing, but provide the *actual* default text
+        // to the editing state. This populates the textarea correctly.
+        setEditingTextNode({
+          ...newNote,
+          text: activeTool.shape === "callout" ? "Callout" : "Text",
+        });
+      }
+    };
+
+    const handleNoteSettingsClick = useCallback(
+      (e: KonvaEventObject<MouseEvent>, noteId: string) => {
+        e.evt.preventDefault();
+        e.cancelBubble = true;
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        if (!containerRect) return;
+        const x = e.evt.clientX - containerRect.left;
+        const y = e.evt.clientY - containerRect.top;
+        setColorMenu({ x, y, noteId });
+        setMenu(null);
+      },
+      []
+    );
+
+    const handleColorChange = (noteId: string, color: NoteColor) => {
+      setNotes((current) =>
+        current.map((n) => (n.id === noteId ? { ...n, fill: color } : n))
+      );
+      setColorMenu(null);
+    };
+
+    const handleTextEdit = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newText = e.target.value;
+      setEditingTextNode((prevNode) => {
+        if (!prevNode) return null;
+        return { ...prevNode, text: newText };
+      });
+    };
+    const handleTextEditBlur = () => {
+      if (!editingTextNode) return;
+
+      setNotes((currentNotes) =>
+        currentNotes.map((n) =>
+          n.id === editingTextNode.id ? { ...n, text: editingTextNode.text } : n
+        )
+      );
+
+      const groupNode = stageRef.current?.findOne(`#${editingTextNode.id}`);
+      // ✅ UPDATED: Find the text node by its specific name
+      const textNode = groupNode?.findOne(".text_shape");
+      textNode?.show();
+      trRef.current?.show();
+      setEditingTextNode(null);
     };
 
     const handleMouseMove = (e: KonvaEventObject<MouseEvent>) => {
@@ -523,7 +1008,7 @@ const GardenCanvas = forwardRef<
       }
       setIsNearVertex(isNearAnyPoint);
 
-      if (activeTool !== "plot" || currentPoints.length === 0) {
+      if (activeTool.type !== "plot" || currentPoints.length === 0) {
         setSnapDetails({
           isSnapped: false,
           point: pos,
@@ -599,50 +1084,20 @@ const GardenCanvas = forwardRef<
       setIsClosing(isNearStart);
     };
 
-    const handleSettingsClick = (
-      e: KonvaEventObject<MouseEvent>,
-      polyId: string
-    ) => {
-      e.evt.preventDefault();
-      const containerRect = containerRef.current?.getBoundingClientRect();
-      if (!containerRect) return;
+    const handleSettingsClick = useCallback(
+      (e: KonvaEventObject<MouseEvent>, polyId: string) => {
+        e.evt.preventDefault();
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        if (!containerRect) return;
 
-      const x = e.evt.clientX - containerRect.left;
-      const y = e.evt.clientY - containerRect.top;
+        const x = e.evt.clientX - containerRect.left;
+        const y = e.evt.clientY - containerRect.top;
 
-      setMenu({ x: x - 5, y: y - 130, polyId });
-    };
+        setMenu({ x: x - 5, y: y - 130, polyId });
+      },
+      []
+    );
 
-    const copyPolygon = (
-      polyId: string,
-      direction: "horizontal" | "vertical"
-    ) => {
-      const polyToCopy = polygons.find((p) => p.id === polyId);
-      const node = stageRef.current?.findOne("#" + polyId);
-      if (!polyToCopy || !node) return;
-
-      const BoundingBox = node.getClientRect({ skipTransform: false });
-      const newX =
-        direction === "horizontal"
-          ? polyToCopy.x + BoundingBox.width
-          : polyToCopy.x;
-      const newY =
-        direction === "vertical"
-          ? polyToCopy.y + BoundingBox.height
-          : polyToCopy.y;
-
-      const newPoly: Polygon = {
-        ...polyToCopy,
-        id: `poly_${Date.now()}`,
-        x: newX,
-        y: newY,
-        locked: false,
-      };
-
-      setPolygons((p) => [...p, newPoly]);
-      selectShape(newPoly.id);
-      setMenu(null);
-    };
     const copyObject = (
       objectId: string,
       direction: "horizontal" | "vertical"
@@ -654,13 +1109,8 @@ const GardenCanvas = forwardRef<
       const objToCopy = placedObjects.find((o) => o.id === objectId);
 
       const boundingBox = node.getClientRect({ skipTransform: false });
-
-      // 1. Get the current scale from the stage
-      const currentScale = stageRef.current?.scaleX() || 1;
-
-      // 2. Calculate the true, unscaled width and height
-      const unscaledWidth = boundingBox.width / currentScale;
-      const unscaledHeight = boundingBox.height / currentScale;
+      const unscaledWidth = boundingBox.width;
+      const unscaledHeight = boundingBox.height;
 
       if (polyToCopy) {
         const newPoly: Polygon = {
@@ -668,11 +1118,11 @@ const GardenCanvas = forwardRef<
           id: `poly_${Date.now()}`,
           x:
             direction === "horizontal"
-              ? polyToCopy.x + unscaledWidth // 3. Use the unscaled width
+              ? polyToCopy.x + unscaledWidth
               : polyToCopy.x,
           y:
             direction === "vertical"
-              ? polyToCopy.y + unscaledHeight // 3. Use the unscaled height
+              ? polyToCopy.y + unscaledHeight
               : polyToCopy.y,
           locked: false,
         };
@@ -684,11 +1134,11 @@ const GardenCanvas = forwardRef<
           id: `${objToCopy.id.split("_")[0]}_${Date.now()}`,
           x:
             direction === "horizontal"
-              ? objToCopy.x + unscaledWidth // 3. Use the unscaled width
+              ? objToCopy.x + unscaledWidth
               : objToCopy.x,
           y:
             direction === "vertical"
-              ? objToCopy.y + unscaledHeight // 3. Use the unscaled height
+              ? objToCopy.y + unscaledHeight
               : objToCopy.y,
           locked: false,
         };
@@ -713,7 +1163,7 @@ const GardenCanvas = forwardRef<
           <Line
             key={`v${i}`}
             points={[i * GRID_SIZE, topLeft.y, i * GRID_SIZE, bottomRight.y]}
-            stroke="#e5e7eb"
+            stroke="#D9DADA"
             strokeWidth={1 / scale}
           />
         );
@@ -722,7 +1172,7 @@ const GardenCanvas = forwardRef<
           <Line
             key={`h${j}`}
             points={[topLeft.x, j * GRID_SIZE, bottomRight.x, j * GRID_SIZE]}
-            stroke="#e5e7eb"
+            stroke="#D9DADA"
             strokeWidth={1 / scale}
           />
         );
@@ -732,7 +1182,7 @@ const GardenCanvas = forwardRef<
     const snapColor = "#AFD069";
     const defaultColor = "#374151";
     const plottingShapes = React.useMemo(() => {
-      if (activeTool !== "plot" || currentPoints.length === 0) {
+      if (activeTool.type !== "plot" || currentPoints.length === 0) {
         return null;
       }
 
@@ -771,6 +1221,7 @@ const GardenCanvas = forwardRef<
                 : defaultColor
             }
             strokeWidth={isAngleSnapSegment ? 2.5 : 2}
+            offsetVector={{ x: 0, y: 0 }} // Plotting guides don't need an offset
           />
         );
       }
@@ -784,6 +1235,7 @@ const GardenCanvas = forwardRef<
             showLabel={true}
             dashed
             color={defaultColor}
+            offsetVector={{ x: 0, y: 0 }}
           />
         );
       }
@@ -824,25 +1276,239 @@ const GardenCanvas = forwardRef<
       isNearVertex,
     ]);
 
+    const handleSketchDragEnd = (e: KonvaEventObject<DragEvent>) => {
+      handleInteractionEnd();
+      if (!planningSketch) return;
+      onSketchChange({
+        ...planningSketch,
+        x: e.target.x(),
+        y: e.target.y(),
+      });
+    };
+
+    useLayoutEffect(() => {
+      if (!selectedId || (isInteracting && !isDraggingVertex)) {
+        setFloatingLabels(null);
+        setFloatingIconProps(null);
+        return;
+      }
+
+      // ✅ FIX: Determine the type of the selected object.
+      const isNote = notes.some((n) => n.id === selectedId);
+      const isItem =
+        polygons.some((p) => p.id === selectedId) ||
+        placedObjects.some((o) => o.id === selectedId);
+
+      // ✅ FIX: If the object's corresponding layer is hidden, hide its labels and icons.
+      if ((isNote && !visibility.notes) || (isItem && !visibility.items)) {
+        setFloatingLabels(null);
+        setFloatingIconProps(null);
+        return; // Exit early
+      }
+
+      const stageNode = stageRef.current;
+      const node = stageNode?.findOne("#" + selectedId);
+
+      if (!stageNode || !node) {
+        return;
+      }
+
+      const timerId = setTimeout(() => {
+        const currentNode = stageRef.current?.findOne("#" + selectedId);
+        if (!currentNode || (isInteracting && !isDraggingVertex)) {
+          setFloatingLabels(null);
+          setFloatingIconProps(null);
+          return;
+        }
+
+        let localPoints: Point[] = [];
+        const poly = polygons.find((p) => p.id === selectedId);
+
+        if (poly) {
+          for (let i = 0; i < poly.points.length; i += 2) {
+            localPoints.push({ x: poly.points[i], y: poly.points[i + 1] });
+          }
+        } else {
+          const localRect = currentNode.getClientRect({ skipTransform: true });
+          if (localRect.width > 0 || localRect.height > 0) {
+            localPoints = [
+              { x: localRect.x, y: localRect.y },
+              { x: localRect.x + localRect.width, y: localRect.y },
+              {
+                x: localRect.x + localRect.width,
+                y: localRect.y + localRect.height,
+              },
+              { x: localRect.x, y: localRect.y + localRect.height },
+            ];
+          }
+        }
+
+        if (localPoints.length > 0) {
+          const absoluteTransform = currentNode.getAbsoluteTransform();
+          const absolutePoints = localPoints.map((p) =>
+            absoluteTransform.point(p)
+          );
+
+          // --- FLOATING LABELS LOGIC (Unchanged) ---
+          const absoluteCentroid = absolutePoints.reduce(
+            (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
+            { x: 0, y: 0 }
+          );
+          if (absolutePoints.length > 0) {
+            absoluteCentroid.x /= absolutePoints.length;
+            absoluteCentroid.y /= absolutePoints.length;
+          }
+          const labels = (
+            <Group listening={false}>
+              {localPoints.map((p1_local, i) => {
+                const p2_local = localPoints[(i + 1) % localPoints.length];
+                const sideVector = vSub(p2_local, p1_local);
+                const scaledVector = {
+                  x: sideVector.x * currentNode.scaleX(),
+                  y: sideVector.y * currentNode.scaleY(),
+                };
+                const trueLengthInPixels = vLength(scaledVector);
+                const p1_abs = absolutePoints[i];
+                const p2_abs = absolutePoints[(i + 1) % absolutePoints.length];
+                const midPoint = {
+                  x: (p1_abs.x + p2_abs.x) / 2,
+                  y: (p1_abs.y + p2_abs.y) / 2,
+                };
+                const centroidToMid = vSub(midPoint, absoluteCentroid);
+                const edgeVec = vSub(p2_abs, p1_abs);
+                let edgeNormal = { x: -edgeVec.y, y: edgeVec.x };
+                if (dotProduct(centroidToMid, edgeNormal) < 0) {
+                  edgeNormal = vScale(edgeNormal, -1);
+                }
+                const normalizedNormal = vNormalize(edgeNormal);
+                const offsetDist = 20;
+                const effectiveScale = Math.max(
+                  stageRef.current?.scaleX() || 1,
+                  MIN_EFFECTIVE_SCALE
+                );
+                const offsetVector = vScale(
+                  normalizedNormal,
+                  offsetDist / effectiveScale
+                );
+                return (
+                  <LengthGuide
+                    key={`float-len-${selectedId}-${i}`}
+                    p1={p1_abs}
+                    p2={p2_abs}
+                    measurementInPixels={trueLengthInPixels}
+                    scale={stageRef.current?.scaleX() || 1}
+                    showLabel={true}
+                    color="black"
+                    strokeWidth={1.5}
+                    offsetVector={offsetVector}
+                  />
+                );
+              })}
+            </Group>
+          );
+          setFloatingLabels(labels);
+
+          // --- 🚀 NEW ICON POSITIONING LOGIC ---
+          let iconAnchorX = Infinity;
+          let iconAnchorY = -Infinity;
+
+          // Find the lowest, most left point of the actual transformed shape
+          absolutePoints.forEach((p) => {
+            if (p.x < iconAnchorX) iconAnchorX = p.x;
+            if (p.y > iconAnchorY) iconAnchorY = p.y;
+          });
+
+          const scale = stageRef.current?.scaleX() || 1;
+
+          const preferredMargin = -25; // The close distance you like when zoomed in.
+          const zoomedOutMargin = 25; // A safe distance to clear the text when zoomed out.
+          const scaleThreshold = 0.7; // The zoom level (e.g., 70%) where the switch happens.
+
+          // If the view is zoomed in past the threshold, use your preferred margin.
+          // If zoomed out, use the safe margin to prevent overlap.
+          const margin =
+            scale > scaleThreshold ? preferredMargin : zoomedOutMargin;
+
+          const stagePos = stageRef.current?.position() || { x: 0, y: 0 };
+
+          // Convert this precise world position to a screen position
+          const iconScreenX = iconAnchorX * scale + stagePos.x;
+          const iconScreenY = iconAnchorY * scale + stagePos.y;
+
+          const allObjects = [
+            ...polygons,
+            ...placedObjects,
+            ...notes,
+            planningSketch,
+          ].filter(Boolean);
+          const selectedObject = allObjects.find(
+            (obj) => obj!.id === selectedId
+          );
+
+          if (selectedObject) {
+            setFloatingIconProps({
+              x: iconScreenX, // Use the new accurate screen coordinate
+              y: iconScreenY - margin,
+              isLocked: selectedObject.locked,
+              onLockToggle: () => handleLockToggle(selectedId),
+              onSettingsClick: (e: KonvaEventObject<MouseEvent>) => {
+                const isNote = notes.some((n) => n.id === selectedId);
+                if (isNote) handleNoteSettingsClick(e, selectedId);
+                else handleSettingsClick(e, selectedId);
+              },
+              stageScale: scale,
+              showLock: "locked" in selectedObject,
+            });
+          }
+        } else {
+          setFloatingLabels(null);
+          setFloatingIconProps(null);
+        }
+      }, 0);
+
+      return () => clearTimeout(timerId);
+      // ✅ FIX: Add the visibility states to the dependency array.
+    }, [
+      selectedId,
+      isInteracting,
+      polygons,
+      isDraggingVertex,
+      placedObjects,
+      notes,
+      planningSketch,
+      stage.scale,
+      stage.x,
+      stage.y,
+      transformCounter,
+      handleLockToggle,
+      visibility.items, // Added
+      visibility.notes, // Added
+    ]);
+    const selectedNodeForScaling = stageRef.current?.findOne("#" + selectedId);
+    const nodeScale = selectedNodeForScaling
+      ? (selectedNodeForScaling.scaleX() + selectedNodeForScaling.scaleY()) / 2
+      : 1;
+
     return (
       <div
         ref={containerRef}
-        className={`w-full h-full bg-white overflow-hidden ${
-          activeTool == "select" ? "cursor-grab" : "cursor-crosshair"
+        className={`w-full h-full  overflow-hidden ${
+          activeTool.type == "select" ? "cursor-grab" : "cursor-crosshair"
         }`}
       >
         <Stage
           width={dimensions.width}
           height={dimensions.height}
-          onMouseDown={checkDeselect}
+          onMouseDown={handleStageMouseDown}
           onClick={handleCanvasClick}
-          onMouseMove={handleMouseMove}
+          onMouseMove={handleStageMouseMove}
+          onMouseUp={handleStageMouseUp}
           ref={stageRef}
           scaleX={stage.scale}
           scaleY={stage.scale}
           x={stage.x}
           y={stage.y}
-          draggable={activeTool === "select"}
+          draggable={activeTool.type === "select" && !isDrawing}
           onDragMove={handleStageDrag}
           onDragEnd={handleStageDrag}
           onWheel={handleWheel}
@@ -850,8 +1516,18 @@ const GardenCanvas = forwardRef<
           <Layer listening={false} visible={visibility.grid}>
             {renderGrid()}
           </Layer>
+          <Layer visible={!!planningSketch && planningSketch.zIndex === 0}>
+            {planningSketch && planningSketch.zIndex === 0 && (
+              <SketchImage
+                sketch={planningSketch}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleSketchDragEnd}
+              />
+            )}
+          </Layer>
+
           <Layer visible={visibility.items}>
-            {activeTool === "plot" && (
+            {activeTool.type === "plot" && (
               <Group>
                 {plottingShapes}
                 {currentPoints.length >= 6 && (
@@ -920,11 +1596,12 @@ const GardenCanvas = forwardRef<
                   selectShape(poly.id);
                   setMenu(null);
                 }}
+                onDragStart={handleInteractionStart}
                 onDragEnd={handleObjectDragEnd}
+                onVertexDragStart={handleVertexDragStart}
+                onVertexDragEnd={handleVertexDragEnd}
                 onTransformEnd={handleTransformEnd}
-                onLockToggle={() => handleLockToggle(poly.id)}
-                isDraggable={activeTool === "select" && !poly.locked}
-                onSettingsClick={(e) => handleSettingsClick(e, poly.id)}
+                isDraggable={activeTool.type === "select" && !poly.locked}
                 onPointUpdate={(pointIndex, newPoint) =>
                   handlePolygonPointUpdate(poly.id, pointIndex, newPoint)
                 }
@@ -932,21 +1609,8 @@ const GardenCanvas = forwardRef<
             ))}
 
             {placedObjects.map((obj) => {
-              const isSelected = selectedId === obj.id;
-              // Use the BASE dimensions, NOT multiplied by scale here
               const baseWidth = obj.width || INITIAL_PRESET_SIZE;
               const baseHeight = obj.height || INITIAL_PRESET_SIZE;
-
-              const halfW = baseWidth / 2;
-              const halfH = baseHeight / 2;
-
-              // Corner points are now based on unscaled dimensions
-              const corners = {
-                tl: { x: -halfW, y: -halfH },
-                tr: { x: halfW, y: -halfH },
-                br: { x: halfW, y: halfH },
-                bl: { x: -halfW, y: halfH },
-              };
 
               return (
                 <Group
@@ -955,11 +1619,9 @@ const GardenCanvas = forwardRef<
                   x={obj.x}
                   y={obj.y}
                   rotation={obj.rotation || 0}
-                  // CORRECT: Apply the object's scale to the group directly.
-                  // The Transformer will now correctly modify these values.
                   scaleX={obj.scaleX || 1}
                   scaleY={obj.scaleY || 1}
-                  draggable={activeTool === "select" && !obj.locked}
+                  draggable={activeTool.type === "select" && !obj.locked}
                   onClick={(e) => {
                     selectShape(obj.id);
                     setMenu(null);
@@ -970,94 +1632,105 @@ const GardenCanvas = forwardRef<
                     setMenu(null);
                     e.cancelBubble = true;
                   }}
+                  onDragStart={handleInteractionStart}
                   onDragEnd={handleObjectDragEnd}
                   onTransformEnd={handleTransformEnd}
                 >
                   <PresetObject
                     shapeProps={{
                       ...obj,
-                      // CORRECT: Pass the base, unscaled dimensions to the image
                       width: baseWidth,
                       height: baseHeight,
                     }}
                     onSelect={() => selectShape(obj.id)}
                   />
-
-                  {/* Side lengths now use the corrected component and props */}
-                  {isSelected && (
-                    <Group listening={false}>
-                      <UprightLengthText
-                        p1={corners.tl}
-                        p2={corners.tr}
-                        scale={stage.scale}
-                        parentRotation={obj.rotation || 0}
-                        objectScaleX={obj.scaleX || 1}
-                        objectScaleY={obj.scaleY || 1}
-                        offset={-20}
-                      />
-                      {/* <UprightLengthText
-                        p1={corners.tr}
-                        p2={corners.br}
-                        scale={stage.scale}
-                        parentRotation={obj.rotation || 0}
-                        objectScaleX={obj.scaleX || 1}
-                        objectScaleY={obj.scaleY || 1}
-                        offset={-20}
-                      />
-                      <UprightLengthText
-                        p1={corners.br}
-                        p2={corners.bl}
-                        scale={stage.scale}
-                        parentRotation={obj.rotation || 0}
-                        objectScaleX={obj.scaleX || 1}
-                        objectScaleY={obj.scaleY || 1}
-                        offset={-20}
-                      /> */}
-                      <UprightLengthText
-                        p1={corners.bl}
-                        p2={corners.tl}
-                        scale={stage.scale}
-                        parentRotation={obj.rotation || 0}
-                        objectScaleX={obj.scaleX || 1}
-                        objectScaleY={obj.scaleY || 1}
-                        offset={-30}
-                      />
-                    </Group>
-                  )}
-
-                  {/* External Icons */}
-                  {isSelected && (
-                    <Group
-                      x={0} // Position to the right of the object
-                      // Position above the BASE height
-                      y={0}
-                    >
-                      <ObjectIcons
-                        isLocked={!!obj.locked}
-                        onLockToggle={() => handleLockToggle(obj.id)}
-                        onSettingsClick={(e) => handleSettingsClick(e, obj.id)}
-                        stageScale={stage.scale * (obj.scaleY || 1)} // Adjust icon scale based on object scale
-                      />
-                    </Group>
-                  )}
                 </Group>
               );
             })}
-
+          </Layer>
+          <Layer>
             <Transformer
               ref={trRef}
               rotateEnabled={true}
               flipEnabled={false}
+              // ✅ FIX: Remove "/ nodeScale" from these lines
               anchorSize={10 / stage.scale}
-              borderStrokeWidth={2 / stage.scale}
-              rotateAnchorOffset={20 / stage.scale}
-              // UPDATE: Keep transformer aspect ratio for presets
+              borderStrokeWidth={2.5 / stage.scale}
+              rotateAnchorOffset={35 / stage.scale}
               keepRatio={placedObjects.some((o) => o.id === selectedId)}
+              onTransformStart={handleInteractionStart}
+              onTransformEnd={handleTransformEnd}
+              onTransform={() => setTransformCounter((c) => c + 1)}
             />
+
+            {/* FIX: This group is now ONLY for NON-INTERACTIVE floating labels */}
+            <Group
+              x={-stage.x / stage.scale}
+              y={-stage.y / stage.scale}
+              scaleX={1 / stage.scale}
+              scaleY={1 / stage.scale}
+              listening={false} // This is correct for labels
+            >
+              {floatingLabels}
+            </Group>
+
+            {/* FIX: This NEW group is ONLY for the INTERACTIVE icons */}
+            {floatingIconProps && (
+              <Group
+                // Convert screen coordinates back to world coordinates for positioning
+                x={(floatingIconProps.x - stage.x) / stage.scale}
+                y={(floatingIconProps.y - stage.y) / stage.scale}
+                // Invert the stage scale so the icons stay a constant size
+                scaleX={1 / stage.scale}
+                scaleY={1 / stage.scale}
+                listening={true} // This group MUST listen for events
+              >
+                <ObjectIcons
+                  isLocked={floatingIconProps.isLocked}
+                  onLockToggle={floatingIconProps.onLockToggle}
+                  onSettingsClick={floatingIconProps.onSettingsClick}
+                  stageScale={stage.scale}
+                  showLock={floatingIconProps.showLock}
+                />
+              </Group>
+            )}
+          </Layer>
+          <Layer visible={visibility.notes}>
+            {notes.map((note) => (
+              <NoteObjectRenderer
+                key={note.id}
+                note={note}
+                isSelected={selectedId === note.id}
+                onSelect={() => {
+                  selectShape(note.id);
+                  setMenu(null);
+                  setColorMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={activeTool.type === "select" && !note.locked}
+                stageScale={stage.scale}
+                onTextDblClick={(e) => {
+                  const node = e.target;
+                  trRef.current?.hide();
+                  node.hide();
+                  setEditingTextNode(note);
+                }}
+              />
+            ))}
+          </Layer>
+          <Layer visible={!!planningSketch && planningSketch.zIndex === 1}>
+            {planningSketch && planningSketch.zIndex === 1 && (
+              <SketchImage
+                sketch={planningSketch}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleSketchDragEnd}
+              />
+            )}
           </Layer>
         </Stage>
 
-        {/* UPDATE: Use generalized copyObject function */}
         {menu && (
           <div
             className="absolute bg-transparent flex flex-col items-start gap-2"
@@ -1097,6 +1770,44 @@ const GardenCanvas = forwardRef<
             </button>
           </div>
         )}
+
+        {colorMenu && (
+          <div
+            className="absolute bg-white rounded-lg shadow-lg p-2 flex space-x-2"
+            style={{ top: colorMenu.y, left: colorMenu.x }}
+          >
+            {(["gray", "blue", "yellow"] as NoteColor[]).map((color) => (
+              <button
+                key={color}
+                onClick={() => handleColorChange(colorMenu.noteId, color)}
+                className={`w-8 h-8 rounded-full border-2 border-white transition-transform hover:scale-110`}
+                style={{
+                  backgroundColor:
+                    color === "gray"
+                      ? "#E5E7EB"
+                      : color === "blue"
+                      ? "#BFDBFE"
+                      : "#FDE68A",
+                  borderColor:
+                    notes.find((n) => n.id === colorMenu.noteId)?.fill === color
+                      ? "#3B82F6"
+                      : "white",
+                }}
+              />
+            ))}
+          </div>
+        )}
+
+        {editingTextNode && (
+          <textarea
+            ref={textEditRef}
+            value={editingTextNode.text}
+            onChange={handleTextEdit}
+            onBlur={handleTextEditBlur}
+            style={getTextAreaStyle(editingTextNode, stageRef.current)}
+            className="absolute bg-transparent p-0 m-0 resize-none border-2 border-blue-500 rounded-md overflow-hidden focus:outline-none"
+          />
+        )}
       </div>
     );
   }
@@ -1104,7 +1815,204 @@ const GardenCanvas = forwardRef<
 GardenCanvas.displayName = "GardenCanvas";
 export default GardenCanvas;
 
-// --- 🔽 GUIDE COMPONENTS 🔽 ---
+const NOTE_COLORS: Record<NoteColor, string> = {
+  gray: "#E5E7EB",
+  blue: "#BFDBFE",
+  yellow: "#FDE68A",
+};
+const NOTE_STROKE_COLOR = "#4B5563";
+
+// Helper to calculate textarea position
+// Helper to calculate textarea position
+const getTextAreaStyle = (
+  note: NoteObject,
+  stage: Konva.Stage | null
+): React.CSSProperties => {
+  if (!stage) {
+    return { display: "none" };
+  }
+
+  // Find the group node for the note
+  const group = stage.findOne("#" + note.id);
+  if (!group) {
+    return { display: "none" };
+  }
+
+  // Find the specific text node within the group using its name
+  const textNode = group.findOne(".text_shape");
+  if (!textNode) {
+    return { display: "none" };
+  }
+
+  // THE CORE FIX:
+  // Get the absolute on-screen position of the text node.
+  // This method correctly calculates the position by accounting for the
+  // stage's pan/zoom and the parent group's position, rotation, and scale.
+  const textPosition = textNode.absolutePosition();
+
+  // Get the rotation from the parent group
+  const rotation = group.rotation();
+
+  // Calculate the final scale by combining the group's scale and the stage's scale
+  const scale = group.scaleX() * stage.scaleX();
+
+  return {
+    position: "absolute",
+    // Use the coordinates directly for CSS top and left
+    top: `${textPosition.y}px`,
+    left: `${textPosition.x}px`,
+
+    // Apply the combined scale to the dimensions and font properties
+    width: `${textNode.width() * scale}px`,
+    height: `${textNode.height() * scale}px`,
+    fontSize: `${textNode.fontSize() * scale}px`,
+    fontFamily: textNode.fontFamily(),
+
+    // Apply the group's rotation
+    transform: `rotate(${rotation}deg)`,
+    transformOrigin: "top left",
+
+    // Ensure other text properties match the Konva Text node
+    lineHeight: textNode.lineHeight(),
+    padding: `${textNode.padding() * scale}px`,
+    margin: 0,
+    background:
+      note.type === "callout" ? NOTE_COLORS[note.fill] : "transparent",
+    border: "2px solid #3B82F6",
+    borderRadius: note.type === "callout" ? "8px" : "4px",
+    color: NOTE_STROKE_COLOR,
+
+    // Standard textarea styles
+    resize: "none",
+    overflow: "hidden",
+    boxSizing: "border-box",
+  };
+};
+interface NoteObjectRendererProps {
+  note: NoteObject;
+  isSelected: boolean;
+  onSelect: () => void;
+  onDragStart: (e: KonvaEventObject<DragEvent>) => void;
+  onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
+  onTransformEnd: (e: KonvaEventObject<Event>) => void;
+  isDraggable: boolean;
+  stageScale: number;
+  onTextDblClick: (e: KonvaEventObject<MouseEvent>) => void;
+}
+const NoteObjectRenderer = memo(
+  ({
+    note,
+    isSelected,
+    stageScale,
+    onTextDblClick,
+    ...props
+  }: NoteObjectRendererProps) => {
+    const shapeRef = useRef<any>(null);
+
+    const renderShape = () => {
+      const commonProps = {
+        stroke: NOTE_STROKE_COLOR,
+        strokeWidth: 2 / stageScale,
+        fill: NOTE_COLORS[note.fill],
+      };
+
+      switch (note.type) {
+        case "rectangle":
+          return (
+            <Rect {...commonProps} width={note.width} height={note.height} />
+          );
+        case "oval":
+          return (
+            <Ellipse
+              {...commonProps}
+              width={note.width}
+              height={note.height}
+              radiusX={note.width / 2}
+              radiusY={note.height / 2}
+              offsetX={-note.width / 2}
+              offsetY={-note.height / 2}
+            />
+          );
+        case "arrow":
+          return (
+            <Arrow
+              points={note.points}
+              pointerLength={10 / stageScale}
+              pointerWidth={10 / stageScale}
+              fill={NOTE_COLORS[note.fill]}
+              stroke={"#000000"}
+              strokeWidth={5 / stageScale}
+            />
+          );
+        case "text":
+          return (
+            <Text
+              // ✅ ADDED: A name to specifically identify this node
+              name="text_shape"
+              text={note.text || "Double click to edit"}
+              fontSize={getFontSize(stageScale)}
+              width={note.width || 150}
+              height={note.height || 50}
+              padding={5}
+              verticalAlign="middle"
+              fill={NOTE_STROKE_COLOR}
+              onDblClick={onTextDblClick}
+              onDblTap={onTextDblClick}
+            />
+          );
+        case "callout":
+          return (
+            <Label>
+              <Tag
+                {...commonProps}
+                lineJoin="round"
+                pointerDirection="down"
+                pointerWidth={15}
+                pointerHeight={10}
+                cornerRadius={8}
+              />
+              <Text
+                // ✅ ADDED: A name to specifically identify this node
+                name="text_shape"
+                text={note.text || "Double click to edit"}
+                fontSize={getFontSize(stageScale)}
+                padding={12}
+                fill={NOTE_STROKE_COLOR}
+                width={note.width || 150}
+                height={note.height || 50}
+                verticalAlign="middle"
+                onDblClick={onTextDblClick}
+                onDblTap={onTextDblClick}
+              />
+            </Label>
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <Group
+        id={note.id}
+        ref={shapeRef}
+        x={note.x}
+        y={note.y}
+        rotation={note.rotation}
+        scaleX={note.scaleX}
+        scaleY={note.scaleY}
+        draggable={props.isDraggable}
+        onClick={props.onSelect}
+        onTap={props.onSelect}
+        onDragStart={props.onDragStart}
+        onDragEnd={props.onDragEnd}
+        onTransformEnd={props.onTransformEnd}
+      >
+        {renderShape()}
+      </Group>
+    );
+  }
+);
+NoteObjectRenderer.displayName = "NoteObjectRenderer";
 
 const AngleGuide = memo(
   ({
@@ -1141,48 +2049,57 @@ const AngleGuide = memo(
   }
 );
 AngleGuide.displayName = "AngleGuide";
-
 interface LengthGuideProps {
   p1: Point;
   p2: Point;
+  measurementInPixels?: number;
   scale: number;
   showLabel: boolean;
   dashed?: boolean;
   color?: string;
   strokeWidth?: number;
-  offset?: number;
+  offsetVector: Point;
 }
 
 const LengthGuide = memo(
   ({
     p1,
     p2,
+    measurementInPixels,
     scale,
     showLabel,
     dashed,
     color = "#374151",
     strokeWidth = 2.5,
-    offset = 0,
+    offsetVector,
   }: LengthGuideProps) => {
-    const text = formatMeasurement(calculateDistance(p1, p2));
+    const trueLength = measurementInPixels ?? calculateDistance(p1, p2);
+    const text = formatMeasurement(trueLength);
+
     const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
     const vec = vSub(p2, p1);
     const groupRotation = (Math.atan2(vec.y, vec.x) * 180) / Math.PI;
 
+    const finalCenterPosition = vAdd(midPoint, offsetVector);
+
     const fontSize = getFontSize(scale);
     const estimatedTextWidth = text.length * fontSize * 0.55;
-    const padding = 18 / scale;
+    const effectiveScale = Math.max(scale, MIN_EFFECTIVE_SCALE);
+    const padding = 18 / effectiveScale;
     const gapSize = showLabel ? estimatedTextWidth + padding : 0;
-    const totalLength = calculateDistance(p1, p2);
+    const totalLengthOnScreen = calculateDistance(p1, p2);
 
-    if (totalLength < gapSize) {
+    const textRotation =
+      groupRotation > 90 || groupRotation < -90
+        ? groupRotation + 180
+        : groupRotation;
+
+    if (totalLengthOnScreen < gapSize) {
       if (!showLabel) return null;
-      // For very short lines, just show the text, already centered
-      const textRotation = 0;
       return (
         <Text
-          x={midPoint.x}
-          y={midPoint.y}
+          x={finalCenterPosition.x}
+          y={finalCenterPosition.y}
           text={text}
           fontSize={fontSize}
           fill={color}
@@ -1190,12 +2107,13 @@ const LengthGuide = memo(
           offsetX={estimatedTextWidth / 2}
           offsetY={fontSize / 2}
           rotation={textRotation}
+          listening={false}
         />
       );
     }
 
-    const lineStart = -totalLength / 2;
-    const lineEnd = totalLength / 2;
+    const lineStart = -totalLengthOnScreen / 2;
+    const lineEnd = totalLengthOnScreen / 2;
     const gapStart = -gapSize / 2;
     const gapEnd = gapSize / 2;
 
@@ -1206,45 +2124,48 @@ const LengthGuide = memo(
       dash: dashed ? [6 / scale, 6 / scale] : undefined,
     };
 
-    const textRotation = -groupRotation;
-
     return (
-      <Group x={midPoint.x} y={midPoint.y} rotation={groupRotation}>
-        <Group y={offset / scale}>
+      <Group listening={false}>
+        <Group
+          x={finalCenterPosition.x}
+          y={finalCenterPosition.y}
+          rotation={groupRotation}
+        >
           <Line points={[lineStart, 0, gapStart, 0]} {...lineProps} />
-          {showLabel && (
-            <Text
-              text={text}
-              fontSize={fontSize}
-              fill={color}
-              fontStyle="bold"
-              offsetX={estimatedTextWidth / 2}
-              offsetY={fontSize / 2}
-              y={0}
-              rotation={textRotation}
-            />
-          )}
           <Line points={[gapEnd, 0, lineEnd, 0]} {...lineProps} />
         </Group>
+        {showLabel && (
+          <Text
+            text={text}
+            fontSize={fontSize}
+            fill={color}
+            fontStyle="bold"
+            x={finalCenterPosition.x}
+            y={finalCenterPosition.y}
+            offsetX={estimatedTextWidth / 2}
+            offsetY={fontSize / 2}
+            rotation={textRotation}
+          />
+        )}
       </Group>
     );
   }
 );
 LengthGuide.displayName = "LengthGuide";
 
-// --- 🔽 UPDATED COMPONENT FOR FINAL POLYGONS 🔽 ---
 interface FinalPolygonProps {
   poly: Polygon;
   stageScale: number;
   grassPattern?: HTMLImageElement;
   isSelected: boolean;
   onSelect: () => void;
+  onDragStart: (e: KonvaEventObject<DragEvent>) => void;
   onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
   onTransformEnd: (e: KonvaEventObject<Event>) => void;
-  onLockToggle: () => void;
   isDraggable: boolean;
-  onSettingsClick: (e: KonvaEventObject<MouseEvent>) => void;
   onPointUpdate: (pointIndex: number, newPoint: Point) => void;
+  onVertexDragStart: () => void;
+  onVertexDragEnd: () => void;
 }
 
 const FinalPolygon = memo(
@@ -1254,10 +2175,10 @@ const FinalPolygon = memo(
     grassPattern,
     isSelected,
     onSelect,
-    onLockToggle,
     isDraggable,
-    onSettingsClick,
     onPointUpdate,
+    onVertexDragStart,
+    onVertexDragEnd,
     ...props
   }: FinalPolygonProps) => {
     const groupRef = useRef<Konva.Group>(null);
@@ -1265,15 +2186,6 @@ const FinalPolygon = memo(
     const vertices: Point[] = [];
     for (let i = 0; i < poly.points.length; i += 2) {
       vertices.push({ x: poly.points[i], y: poly.points[i + 1] });
-    }
-
-    const centroid = vertices.reduce(
-      (acc, v) => ({ x: acc.x + v.x, y: acc.y + v.y }),
-      { x: 0, y: 0 }
-    );
-    if (vertices.length > 0) {
-      centroid.x /= vertices.length;
-      centroid.y /= vertices.length;
     }
 
     const handlePointDragMove = (
@@ -1295,17 +2207,9 @@ const FinalPolygon = memo(
     };
 
     const handlePointDragEnd = (e: KonvaEventObject<DragEvent>) => {
+      onVertexDragEnd();
       e.cancelBubble = true;
     };
-
-    // const lockIconPath =
-    //   "M5.25 9.30277V8C5.25 4.27208 8.27208 1.25 12 1.25C15.7279 1.25 18.75 4.27208 18.75 8V9.30277C18.9768 9.31872 19.1906 9.33948 19.3918 9.36652C20.2919 9.48754 21.0497 9.74643 21.6517 10.3483C22.2536 10.9503 22.5125 11.7081 22.6335 12.6082C22.75 13.4752 22.75 14.5775 22.75 15.9451V16.0549C22.75 17.4225 22.75 18.5248 22.6335 19.3918C22.5125 20.2919 22.2536 21.0497 21.6517 21.6516C21.0497 22.2536 20.2919 22.5125 19.3918 22.6335C18.5248 22.75 17.4225 22.75 16.0549 22.75H7.94513C6.57754 22.75 5.47522 22.75 4.60825 22.6335C3.70814 22.5125 2.95027 22.2536 2.34835 21.6516C1.74643 21.0497 1.48754 20.2919 1.36652 19.3918C1.24996 18.5248 1.24998 17.4225 1.25 16.0549V15.9451C1.24998 14.5775 1.24996 13.4752 1.36652 12.6082C1.48754 11.7081 1.74643 10.9503 2.34835 10.3483C2.95027 9.74643 3.70814 9.48754 4.60825 9.36652C4.80938 9.33948 5.02317 9.31872 5.25 9.30277ZM6.75 8C6.75 5.10051 9.10051 2.75 12 2.75C14.8995 2.75 17.25 5.10051 17.25 8V9.25344C16.8765 9.24999 16.4784 9.24999 16.0549 9.25H7.94513C7.52161 9.24999 7.12353 9.24999 6.75 9.25344V8ZM3.40901 11.409C3.68577 11.1322 4.07435 10.9518 4.80812 10.8531C5.56347 10.7516 6.56459 10.75 8 10.75H16C17.4354 10.75 18.4365 10.7516 19.1919 10.8531C19.9257 10.9518 20.3142 11.1322 20.591 11.409C20.8678 11.6858 21.0482 12.0743 21.1469 12.8081C21.2484 13.5635 21.25 14.5646 21.25 16C21.25 17.4354 21.2484 18.4365 21.1469 19.1919C21.0482 19.9257 20.8678 20.3142 20.591 20.591C20.3142 20.8678 19.9257 21.0482 19.1919 21.1469C18.4365 21.2484 17.4354 21.25 16 21.25H8C6.56459 21.25 5.56347 21.2484 4.80812 21.1469C4.07435 21.0482 3.68577 20.8678 3.40901 20.591C3.13225 20.3142 2.9518 19.9257 2.85315 19.1919C2.75159 18.4365 2.75 17.4354 2.75 16C2.75 14.5646 2.75159 13.5635 2.85315 12.8081C2.9518 12.0743 3.13225 11.6858 3.40901 11.409Z";
-    // const unlockIconPath =
-    //   "M6.75 8C6.75 5.10051 9.10051 2.75 12 2.75C14.4453 2.75 16.5018 4.42242 17.0846 6.68694C17.1879 7.08808 17.5968 7.32957 17.9979 7.22633C18.3991 7.12308 18.6405 6.7142 18.5373 6.31306C17.788 3.4019 15.1463 1.25 12 1.25C8.27208 1.25 5.25 4.27208 5.25 8V9.30277C5.02317 9.31872 4.80938 9.33948 4.60825 9.36652C3.70814 9.48754 2.95027 9.74643 2.34835 10.3483C1.74643 10.9503 1.48754 11.7081 1.36652 12.6082C1.24996 13.4752 1.24998 14.5775 1.25 15.9451V16.0549C1.24998 17.4225 1.24996 18.5248 1.36652 19.3918C1.48754 20.2919 1.74643 21.0497 2.34835 21.6516C2.95027 22.2536 3.70814 22.5125 4.60825 22.6335C5.47522 22.75 6.57754 22.75 7.94513 22.75H16.0549C17.4225 22.75 18.5248 22.75 19.3918 22.6335C20.2919 22.5125 21.0497 22.2536 21.6517 21.6516C22.2536 21.0497 22.5125 20.2919 22.6335 19.3918C22.75 18.5248 22.75 17.4225 22.75 16.0549V15.9451C22.75 14.5775 22.75 13.4752 22.6335 12.6082C22.5125 11.7081 22.2536 10.9503 21.6517 10.3483C21.0497 9.74643 20.2919 9.48754 19.3918 9.36652C18.5248 9.24996 17.4225 9.24998 16.0549 9.25H7.94513C7.52161 9.24999 7.12353 9.24999 6.75 9.25344V8ZM3.40901 11.409C3.68577 11.1322 4.07435 10.9518 4.80812 10.8531C5.56347 10.7516 6.56459 10.75 8 10.75H16C17.4354 10.75 18.4365 10.7516 19.1919 10.8531C19.9257 10.9518 20.3142 11.1322 20.591 11.409C20.8678 11.6858 21.0482 12.0743 21.1469 12.8081C21.2484 13.5635 21.25 14.5646 21.25 16C21.25 17.4354 21.2484 18.4365 21.1469 19.1919C21.0482 19.9257 20.8678 20.3142 20.591 20.591C20.3142 20.8678 19.9257 21.0482 19.1919 21.1469C18.4365 21.2484 17.4354 21.25 16 21.25H8C6.56459 21.25 5.56347 21.2484 4.80812 21.1469C4.07435 21.0482 3.68577 20.8678 3.40901 20.591C3.13225 20.3142 2.9518 19.9257 2.85315 19.1919C2.75159 18.4365 2.75 17.4354 2.75 16C2.75 14.5646 2.75159 13.5635 2.85315 12.8081C2.9518 12.0743 3.13225 11.6858 3.40901 11.409Z";
-    // const settingsIconPath =
-    //   "M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41h-3.84 c-0.24,0-0.44,0.17-0.48,0.41L9.18,5.05C8.59,5.29,8.06,5.62,7.56,5.99L5.17,5.03C4.95,4.95,4.7,5.02,4.58,5.24l-1.92,3.32 c-0.12,0.22-0.07,0.47,0.12,0.61l2.03,1.58C4.74,11.36,4.72,11.68,4.72,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.42,2.24 c0.04,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.48-0.41l0.42-2.24c0.59-0.24,1.12-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0.01,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z";
-
-    const iconSize = 45;
 
     return (
       <Group
@@ -1330,103 +2234,6 @@ const FinalPolygon = memo(
           closed
         />
         {isSelected &&
-          vertices.map((p1, i) => {
-            const p2 = vertices[(i + 1) % vertices.length];
-            const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-            const centroidToMid = vSub(midPoint, centroid);
-            const edgeVec = vSub(p2, p1);
-            const localYNormal = { x: -edgeVec.y, y: edgeVec.x };
-            const dot = dotProduct(localYNormal, centroidToMid);
-            const offsetSign = Math.sign(dot) || 1;
-            const desiredOffset = 20;
-
-            return (
-              <LengthGuide
-                key={`side-${i}`}
-                p1={p1}
-                p2={p2}
-                scale={stageScale}
-                showLabel={true}
-                color="black"
-                strokeWidth={1.5}
-                offset={offsetSign * desiredOffset}
-              />
-            );
-          })}
-        {isSelected && (
-          <Group
-            x={centroid.x - (iconSize + 10) / 2 / stageScale}
-            y={centroid.y}
-            scaleX={1 / stageScale}
-            scaleY={1 / stageScale}
-            onClick={(e) => {
-              e.cancelBubble = true;
-              onLockToggle();
-            }}
-            onTap={(e) => {
-              e.cancelBubble = true;
-              onLockToggle();
-            }}
-          >
-            <Rect
-              width={iconSize}
-              height={iconSize}
-              offsetX={iconSize / 2}
-              offsetY={iconSize / 2}
-              fill={poly.locked ? "#F05822" : "#ffffffff"}
-              cornerRadius={2}
-              opacity={0.9}
-              shadowColor="black"
-              shadowBlur={10}
-              shadowOpacity={0.3}
-            />
-            <Path
-              data={poly.locked ? lockIconPath : unlockIconPath}
-              fill={poly.locked ? "white" : "black"}
-              fillRule="evenodd"
-              scale={{ x: 1.3, y: 1.3 }}
-              offsetX={12}
-              offsetY={12}
-            />
-          </Group>
-        )}
-        {isSelected && !poly.locked && (
-          <Group
-            x={centroid.x + (iconSize + 10) / 2 / stageScale}
-            y={centroid.y}
-            scaleX={1 / stageScale}
-            scaleY={1 / stageScale}
-            onClick={(e) => {
-              e.cancelBubble = true;
-              onSettingsClick(e);
-            }}
-            onTap={(e) => {
-              e.cancelBubble = true;
-              onSettingsClick(e);
-            }}
-          >
-            <Rect
-              width={iconSize}
-              height={iconSize}
-              offsetX={iconSize / 2}
-              offsetY={iconSize / 2}
-              fill={"#ffffff"}
-              cornerRadius={2}
-              opacity={0.9}
-              shadowColor="black"
-              shadowBlur={10}
-              shadowOpacity={0.3}
-            />
-            <Path
-              data={settingsIconPath}
-              fill={"black"}
-              scale={{ x: 1.3, y: 1.3 }}
-              offsetX={12}
-              offsetY={12}
-            />
-          </Group>
-        )}
-        {isSelected &&
           !poly.locked &&
           vertices.map((vertex, index) => (
             <Circle
@@ -1437,6 +2244,7 @@ const FinalPolygon = memo(
               fill="#007AFF"
               stroke="white"
               strokeWidth={2 / stageScale}
+              onDragStart={onVertexDragStart}
               draggable
               onDragMove={(e) => handlePointDragMove(e, index)}
               onDragEnd={handlePointDragEnd}
@@ -1448,70 +2256,12 @@ const FinalPolygon = memo(
 );
 FinalPolygon.displayName = "FinalPolygon";
 
-interface UprightLengthTextProps {
-  p1: Point;
-  p2: Point;
-  scale: number; // This is the stage's scale for font size
-  offset?: number;
-  parentRotation: number;
-  objectScaleX: number; // The object's own scaleX
-  objectScaleY: number; // The object's own scaleY
-}
-
-const UprightLengthText = memo(
-  ({
-    p1,
-    p2,
-    scale,
-    offset = 0,
-    parentRotation,
-    objectScaleX,
-    objectScaleY,
-  }: UprightLengthTextProps) => {
-    // Calculate distance based on unscaled points
-    const baseDist = calculateDistance(p1, p2);
-
-    // Determine if the edge is primarily horizontal or vertical
-    const isHorizontal = Math.abs(p1.y - p2.y) < 1;
-
-    // Apply the object's own scale to get the final visual distance
-    const finalDist = isHorizontal
-      ? baseDist * objectScaleX
-      : baseDist * objectScaleY;
-    const text = formatMeasurement(finalDist);
-
-    const midPoint = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
-    const vec = vSub(p2, p1);
-
-    // Normal vector to the edge for offsetting the text
-    const normal = vNormalize({ x: -vec.y, y: vec.x });
-    const textPos = vAdd(midPoint, vScale(normal, offset / scale));
-    const fontSize = getFontSize(scale);
-
-    return (
-      <Text
-        x={textPos.x}
-        y={textPos.y}
-        text={text}
-        fontSize={fontSize}
-        padding={10}
-        fill="black"
-        fontStyle="bold"
-        offsetX={(text.length * fontSize * 0.55) / 2}
-        offsetY={fontSize / 2}
-        rotation={-parentRotation} // Counter-rotate to stay upright
-        listening={false}
-      />
-    );
-  }
-);
-UprightLengthText.displayName = "UprightLengthText";
-
 interface ObjectIconsProps {
   isLocked: boolean;
-  onLockToggle: (e: KonvaEventObject<MouseEvent>) => void;
+  onLockToggle: (e?: KonvaEventObject<MouseEvent>) => void;
   onSettingsClick: (e: KonvaEventObject<MouseEvent>) => void;
   stageScale: number;
+  showLock?: boolean;
 }
 const ObjectIcons = memo(
   ({
@@ -1519,69 +2269,71 @@ const ObjectIcons = memo(
     onLockToggle,
     onSettingsClick,
     stageScale,
+    showLock = true,
   }: ObjectIconsProps) => {
-    const iconScale = 1 / stageScale;
-    const scaledSize = ICON_SIZE * iconScale;
-    const scaledSpacing = ICON_SPACING * iconScale;
+    const scaledSize = ICON_SIZE;
+    const scaledSpacing = ICON_SPACING;
 
     const handleEvent = (
       e: KonvaEventObject<MouseEvent>,
       callback: Function
     ) => {
-      e.cancelBubble = true;
+      e.cancelBubble = true; // This is crucial to stop the event from reaching the stage
       callback(e);
     };
 
     return (
       <Group>
-        {/* Lock Icon */}
-        <Group
-          x={-(scaledSize + scaledSpacing) / 2}
-          onClick={(e) => handleEvent(e, onLockToggle)}
-          onTap={(e) => handleEvent(e, onLockToggle)}
-        >
-          <Rect
-            width={scaledSize}
-            height={scaledSize}
-            fill={isLocked ? "#F05822" : "#ffffff"}
-            cornerRadius={4 * iconScale}
-            shadowColor="black"
-            shadowBlur={10 * iconScale}
-            shadowOpacity={0.2}
-            shadowOffset={{ x: 0, y: 2 * iconScale }}
-          />
-          <Path
-            data={isLocked ? lockIconPath : unlockIconPath}
-            fill={isLocked ? "white" : "black"}
-            scale={{ x: 1.3 * iconScale, y: 1.3 * iconScale }}
-            fillRule="evenodd"
-            offsetX={12}
-            offsetY={12}
-            x={scaledSize / 2}
-            y={scaledSize / 2}
-          />
-        </Group>
-        {/* Settings Icon (only if not locked) */}
+        {showLock && (
+          <Group
+            x={0}
+            onClick={(e) => handleEvent(e, onLockToggle)}
+            onTap={(e) => handleEvent(e, onLockToggle)}
+            listening={true} // ✅ Add this to make the icon clickable
+          >
+            <Rect
+              width={scaledSize}
+              height={scaledSize}
+              fill={isLocked ? "#F05822" : "#ffffff"}
+              cornerRadius={4}
+              shadowColor="black"
+              shadowBlur={10}
+              shadowOpacity={0.2}
+              shadowOffset={{ x: 0, y: 2 }}
+            />
+            <Path
+              data={isLocked ? lockIconPath : unlockIconPath}
+              fill={isLocked ? "white" : "black"}
+              scale={{ x: 1.1, y: 1.1 }}
+              fillRule="evenodd"
+              offsetX={12}
+              offsetY={12}
+              x={scaledSize / 2}
+              y={scaledSize / 2}
+            />
+          </Group>
+        )}
         {!isLocked && (
           <Group
-            x={(scaledSize + scaledSpacing) / 2}
+            x={showLock ? scaledSize + scaledSpacing : 0}
             onClick={(e) => handleEvent(e, onSettingsClick)}
             onTap={(e) => handleEvent(e, onSettingsClick)}
+            listening={true} // ✅ And add this here too
           >
             <Rect
               width={scaledSize}
               height={scaledSize}
               fill="#ffffff"
-              cornerRadius={4 * iconScale}
+              cornerRadius={4}
               shadowColor="black"
-              shadowBlur={10 * iconScale}
+              shadowBlur={10}
               shadowOpacity={0.2}
-              shadowOffset={{ x: 0, y: 2 * iconScale }}
+              shadowOffset={{ x: 0, y: 2 }}
             />
             <Path
               data={settingsIconPath}
               fill="black"
-              scale={{ x: 1.3 * iconScale, y: 1.3 * iconScale }}
+              scale={{ x: 1.1, y: 1.1 }}
               offsetX={12}
               offsetY={12}
               x={scaledSize / 2}

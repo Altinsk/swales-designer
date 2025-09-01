@@ -2,6 +2,24 @@
 import React from "react";
 import { VisibilityState, VisibilityToggle } from "@/app/page";
 
+// --- New Icon for centering the canvas ---
+const CenterIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607zM10.5 7.5v6m3-3h-6"
+    />
+  </svg>
+);
+
 // --- Icons for the buttons ---
 
 const GridIcon = ({ className }: { className?: string }) => (
@@ -71,12 +89,14 @@ const NotesIcon = ({ className }: { className?: string }) => (
 interface RightToolbarProps {
   visibility: VisibilityState;
   onVisibilityChange: (key: VisibilityToggle) => void;
+  onCenterCanvas: () => void; // New prop for the center action
   className?: string;
 }
 
 const RightToolbar: React.FC<RightToolbarProps> = ({
   visibility,
   onVisibilityChange,
+  onCenterCanvas, // Destructure the new prop
   className,
 }) => {
   const buttons: {
@@ -94,6 +114,17 @@ const RightToolbar: React.FC<RightToolbarProps> = ({
     <div
       className={`bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col items-center space-y-2 z-10 ${className}`}
     >
+      {/* New Center Canvas Button */}
+      <button
+        onClick={onCenterCanvas}
+        title="Center Canvas"
+        className="w-20 h-16 flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 bg-gray-200 text-gray-600 hover:bg-gray-300"
+      >
+        <CenterIcon className="h-6 w-6 mb-1" />
+        <span className="text-center leading-tight">Center Canvas</span>
+      </button>
+
+      {/* Existing Visibility Toggle Buttons */}
       {buttons.map(({ key, label, icon: Icon }) => (
         <button
           key={key}

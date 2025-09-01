@@ -5,7 +5,7 @@ import React from "react";
 interface CanvasControlsProps {
   onZoomIn: () => void;
   onZoomOut: () => void;
-  scaleIndicatorPixels: number; // e.g., 40 pixels for 1 meter
+  scaleIndicatorPixels: number; // e.g., 40 pixels for 1 meter at 1x zoom
 }
 
 const CanvasControls: React.FC<CanvasControlsProps> = ({
@@ -13,14 +13,18 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
   onZoomOut,
   scaleIndicatorPixels,
 }) => {
+  // We'll create an array to easily map over for the labels
+  const meters = [1, 2, 3, 4, 5];
+
   return (
     <div
-      style={{ bottom: "15%" }}
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 bg-white/80 backdrop-blur-sm p-2 rounded-lg shadow-lg"
+      style={{ bottom: "5%" }}
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 "
     >
+      {/* Zoom Out Button */}
       <button
         onClick={onZoomOut}
-        className="p-2 rounded-md hover:bg-gray-200 transition-colors"
+        className="p-2  hover:bg-gray-200 transition-colors  backdrop-blur-sm p-3 rounded-full shadow-lg bg-white/80"
         title="Zoom Out"
       >
         <svg
@@ -39,22 +43,30 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
         </svg>
       </button>
 
-      <div className="flex flex-col items-center">
-        <div className="flex border border-gray-400">
-          {[...Array(5)].map((_, i) => (
+      {/* ✨ UPDATED SCALE INDICATOR */}
+      <div className="flex items-start ">
+        {meters.map((meter, i) => (
+          <div
+            key={meter}
+            className="flex flex-col-reverse items-center"
+            style={{ width: `${scaleIndicatorPixels}px` }}
+          >
             <div
-              key={i}
-              className={`h-3 ${i % 2 === 0 ? "bg-black" : "bg-white"}`}
-              style={{ width: `${scaleIndicatorPixels}px` }}
+              className={`h-[5px] ${i % 2 === 0 ? "bg-black" : "bg-white"}`}
+              style={{ width: "100%" }}
             ></div>
-          ))}
-        </div>
-        <span className="text-xs font-semibold text-gray-600 mt-1">5 m</span>
+
+            <span className="text-[14px] font-semibold text-gray-600 -mt-0.5">
+              {meter}m
+            </span>
+          </div>
+        ))}
       </div>
 
+      {/* Zoom In Button */}
       <button
         onClick={onZoomIn}
-        className="p-2 rounded-md hover:bg-gray-200 transition-colors"
+        className="p-2 hover:bg-gray-200 transition-colors  backdrop-blur-sm p-3 rounded-full shadow-lg bg-white/80"
         title="Zoom In"
       >
         <svg

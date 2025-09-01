@@ -1,0 +1,58 @@
+{
+  "polygons": [
+    {
+      "id": "poly_1756224311830",
+      "points": [
+        504, 83.39296546598852, 504, 455.3946933277596, 1236, 455.3946933277596
+      ],
+      "x": 0,
+      "y": 0,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "locked": true,
+      "textureId": "grass"
+    }
+  ],
+  "placedObjects": [
+    {
+      "id": "house_1756224321089",
+      "name": "House",
+      "type": "item",
+      "src": "/house.png",
+      "x": 635,
+      "y": 282.4993590190204,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "plant_1756224325452",
+      "name": "Potted Plant",
+      "type": "item",
+      "src": "/plant.svg",
+      "x": 831,
+      "y": 359.49971666782784,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "plant_1756224328303",
+      "name": "Potted Plant",
+      "type": "item",
+      "src": "/plant.svg",
+      "x": 973.8508532426976,
+      "y": 391.72617578397444,
+      "rotation": 0,
+      "scaleX": 0.7954728613845425,
+      "scaleY": 0.7954728613845427,
+      "width": 100,
+      "height": 100
+    }
+  ]
+}

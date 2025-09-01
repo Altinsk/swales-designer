@@ -1,8 +1,8 @@
-// app/page.tsx
-
+// app/share/[uuid]/page.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react"; // No change here
+import { useState, useRef, useEffect } from "react";
+import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import axios from "axios";
 
@@ -18,7 +18,6 @@ import Notification from "@/components/Notification";
 // --- Onboarding Step Imports ---
 import EnterSizeStep from "@/components/onboarding/EnterSizeStep";
 import SelectShapeStep from "@/components/onboarding/SelectShapeStep";
-import WelcomeStep from "@/components/onboarding/WelcomeStep";
 import NewDrawingWarningStep from "@/components/onboarding/NewDrawingWarningStep";
 import UploadPlanStep from "@/components/onboarding/UploadPlanStep";
 import AlignMeasureStep from "@/components/onboarding/AlignMeasureStep";
@@ -30,7 +29,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
 
-// --- Type Definitions ---
+// --- Type Definitions (Copied from page.tsx) ---
 interface AppConfig {
   tools: any[];
   objects: any[];
@@ -73,16 +72,19 @@ export interface VisibilityState {
   notes: boolean;
 }
 
-// Dynamically import the canvas to prevent SSR issues
 const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
   ssr: false,
 });
 
-export default function Home() {
-  const { user, token } = useAuth(); // Auth state
+export default function SharePage() {
+  const params = useParams();
+  const uuid = params.uuid as string;
+
+  const { user, token } = useAuth();
   const canvasRef = useRef<CanvasHandles>(null);
 
   // --- State Management ---
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTool, setActiveTool] = useState<ActiveTool>({ type: "select" });
   const [selectedPreset, setSelectedPreset] = useState<PresetItem | null>(null);
   const [plotTexture, setPlotTexture] = useState<Texture | null>(null);
@@ -96,12 +98,9 @@ export default function Home() {
     name: string;
   } | null>(null);
 
-  // New state for PDF processing
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfPageImages, setPdfPageImages] = useState<string[]>([]);
-
   const [shareUrl, setShareUrl] = useState<string | null>(null);
-  const [isCreatingShareLink, setIsCreatingShareLink] = useState(false);
 
   const [visibility, setVisibility] = useState<VisibilityState>({
     grid: true,
@@ -111,21 +110,19 @@ export default function Home() {
   });
 
   const [activeModal, setActiveModal] = useState<
-    | "welcome"
     | "selectShape"
     | "enterSize"
     | "newDrawingWarning"
     | "uploadPlan"
     | "alignMeasure"
     | "selectTemplate"
-    | "selectPdfPage" // Add new modal type
+    | "selectPdfPage"
     | "login"
-    | "signup"
     | "share"
+    | "signup"
     | null
-  >("welcome");
+  >(null); // Start with no modal on share page
 
-  // --- API URL ---
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -141,44 +138,51 @@ export default function Home() {
       });
   }, []);
 
-  // ✅ ADDED: This effect injects the necessary CSS styles for printing.
+  // Effect to load the shared project data
+  // Effect to load the shared project data
   useEffect(() => {
-    const style = document.createElement("style");
-    style.innerHTML = `
-      @media print {
-        /* Hide everything on the page by default */
-        body > *, #__next > * {
-          visibility: hidden;
-        }
-        /* Make the print container and its contents visible */
-        #print-container, #print-container * {
-          visibility: visible;
-        }
-        /* Position the container to fill the page */
-        #print-container {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        #print-image {
-          max-width: 100%;
-          max-height: 100vh;
-          object-fit: contain;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+    // This effect will run when config is loaded. At that point, GardenCanvas
+    // will be mounted in the same render cycle, making the ref available.
+    setNotification("Loading shared garden...");
+    setTimeout(() => {
+      console.log("Effect triggered with:", {
+        uuid,
+        config,
+        canvasRef: canvasRef,
+      });
 
-  // --- Handlers ---
+      if (uuid && config && canvasRef) {
+        console.log("All dependencies ready:", {
+          uuid,
+          config,
+          canvasRef: canvasRef.current,
+        });
+
+        const loadSharedProject = async () => {
+          try {
+            const res = await axios.get(`${API_URL}/shares/${uuid}`);
+            const project = res.data.data;
+            if (project && project.ProjectData) {
+              const projectData = JSON.parse(project.ProjectData);
+              canvasRef.current?.loadCanvasState(projectData);
+              setNotification(
+                `Viewing shared garden. Any changes you make here won't affect the original.`
+              );
+            }
+          } catch (err) {
+            console.error("Failed to load shared project:", err);
+            setNotification(
+              "Error: Could not load this shared garden. It may have been deleted."
+            );
+          }
+        };
+
+        loadSharedProject();
+      }
+    }, 500);
+  }, [uuid, config]); // The dependencies are correct
+
+  // All handlers are the same as page.tsx, so we copy them over
   const handleCloseModal = () => {
     if (isProcessingPdf) return;
     setActiveModal(null);
@@ -197,7 +201,6 @@ export default function Home() {
     setActiveTool({ type: "select" });
     setSelectedPreset(preset);
   };
-
   const handleNewDrawingClick = () => {
     const isEmpty = canvasRef.current?.isCanvasEmpty() ?? true;
     if (isEmpty) {
@@ -206,81 +209,6 @@ export default function Home() {
       setActiveModal("newDrawingWarning");
     }
   };
-
-  // ✅ ADDED: The new print handler function.
-  const handlePrint = () => {
-    const stage = canvasRef.current?.getStageNode();
-    if (!stage) {
-      setNotification("Canvas is not ready to print.");
-      return;
-    }
-
-    // Generate a high-resolution image of the canvas content.
-    // pixelRatio: 2 gives a crisper image suitable for printing.
-    const dataURL = stage.toDataURL({ pixelRatio: 2 });
-
-    // Find or create a temporary container for our print image.
-    let printContainer = document.getElementById("print-container");
-    if (printContainer) {
-      printContainer.innerHTML = ""; // Clear it if it exists
-    } else {
-      printContainer = document.createElement("div");
-      printContainer.id = "print-container";
-      document.body.appendChild(printContainer);
-    }
-
-    // Create an image element and set its source to our canvas data.
-    const img = new Image();
-    img.id = "print-image";
-    img.src = dataURL;
-    printContainer.appendChild(img);
-
-    // Once the image is loaded into the DOM, we can call window.print().
-    img.onload = () => {
-      // Define a function to clean up the temporary elements.
-      const cleanup = () => {
-        if (printContainer) {
-          document.body.removeChild(printContainer);
-        }
-        // Remove the event listener to avoid memory leaks.
-        window.removeEventListener("afterprint", cleanup);
-      };
-
-      // Add a one-time event listener to run the cleanup after printing.
-      window.addEventListener("afterprint", cleanup);
-
-      // Trigger the browser's print dialog.
-      window.print();
-    };
-  };
-
-  const handleShare = async () => {
-    if (!canvasRef.current) return;
-    setIsCreatingShareLink(true);
-    setNotification("Creating share link...");
-    try {
-      const canvasState = canvasRef.current.getCanvasState();
-      const res = await axios.post(`${API_URL}/shares`, {
-        projectData: canvasState,
-      });
-      if (res.data.success) {
-        const url = `${window.location.origin}/share/${res.data.data.uuid}`;
-        setShareUrl(url);
-        setActiveModal("share");
-        setNotification(null);
-      }
-    } catch (err) {
-      setNotification("Error: Could not create share link.");
-    } finally {
-      setIsCreatingShareLink(false);
-    }
-  };
-
-  const closeShareModal = () => {
-    setShareUrl(null);
-    setActiveModal(null);
-  };
-
   const handleLoadTemplate = (templateJsonPath: string) => {
     fetch(templateJsonPath)
       .then((res) => res.json())
@@ -293,7 +221,6 @@ export default function Home() {
       })
       .catch((err) => console.error("Failed to load template:", err));
   };
-
   const handleFileUpload = async (file: File) => {
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
@@ -326,12 +253,10 @@ export default function Home() {
       }
     }
   };
-
   const handlePdfPageSelect = (imageUrl: string) => {
     setUploadedImage(imageUrl);
     setActiveModal("alignMeasure");
   };
-
   const handleSaveAs = async () => {
     const projectName = prompt("Please enter a name for your garden:");
     if (projectName && canvasRef.current && token) {
@@ -347,34 +272,26 @@ export default function Home() {
             id: res.data.data.ProjectId,
             name: res.data.data.Name,
           });
-          setNotification("Garden saved successfully!");
+          setNotification("Garden saved successfully to your account!");
         }
       } catch (err) {
         setNotification("Error: Could not save garden.");
       }
+    } else if (!token) {
+      setNotification("Please log in to save your work.");
+      setActiveModal("login");
     }
   };
-
   const handleSave = async () => {
-    if (!canvasRef.current || !token) return;
-    const canvasState = canvasRef.current.getCanvasState();
-
-    if (currentProject) {
-      try {
-        await axios.put(
-          `${API_URL}/projects/${currentProject.id}`,
-          { name: currentProject.name, projectData: canvasState },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setNotification("Garden updated!");
-      } catch (err) {
-        setNotification("Error: Could not update garden.");
-      }
-    } else {
-      handleSaveAs();
+    if (!token) {
+      setNotification("Please log in to save your work.");
+      setActiveModal("login");
+      return;
     }
+    // On a shared page, "Save" should act like "Save As"
+    // because the user doesn't own this project.
+    handleSaveAs();
   };
-
   const handleLoadProject = async (projectId: number) => {
     if (!token) return;
     try {
@@ -391,6 +308,31 @@ export default function Home() {
     } catch (err) {
       setNotification("Error: Could not load garden.");
     }
+  };
+  const handleShare = async () => {
+    if (!canvasRef.current) return;
+
+    setNotification("Creating share link...");
+    try {
+      const canvasState = canvasRef.current.getCanvasState();
+      const res = await axios.post(`${API_URL}/shares`, {
+        projectData: canvasState,
+      });
+      if (res.data.success) {
+        const url = `${window.location.origin}/share/${res.data.data.uuid}`;
+        setShareUrl(url);
+        setActiveModal("share"); // Open the share modal
+        setNotification(null); // Clear loading notification
+      }
+    } catch (err) {
+      setNotification("Error: Could not create share link.");
+    } finally {
+    }
+  };
+
+  const closeShareModal = () => {
+    setShareUrl(null);
+    setActiveModal(null);
   };
 
   const handleObjectAdded = () => setSelectedPreset(null);
@@ -442,8 +384,7 @@ export default function Home() {
           onDelete={handleDelete}
           onNewDrawing={handleNewDrawingClick}
           onLoadTemplate={handleLoadTemplate}
-          onPrint={handlePrint} // ✅ UPDATED: Pass the new print handler.
-          onShare={handleShare}
+          onPrint={() => window.print()}
           templates={config.templates}
           className="absolute top-24 left-1/2 -translate-x-1/2 z-30 w-fit "
           onUploadPlan={() => setActiveModal("uploadPlan")}
@@ -455,6 +396,7 @@ export default function Home() {
           onSave={handleSave}
           onSaveAs={handleSaveAs}
           onLoadProject={handleLoadProject}
+          onShare={handleShare}
         />
         <Toolbar
           activeTool={activeTool}
@@ -479,7 +421,46 @@ export default function Home() {
           onZoomOut={handleZoomOut}
           scaleIndicatorPixels={40 * canvasScale}
         />
-        {/* --- Modals (No changes below this line) --- */}
+        {/* --- Modals --- */}
+        {activeModal === "share" && shareUrl && (
+          <Modal
+            isOpen={true}
+            onClose={closeShareModal}
+            title="Share Your Garden Plan"
+          >
+            <div className="p-4">
+              <p className="text-gray-600 mb-3">
+                Anyone with this link can view and edit a copy of your garden.
+              </p>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="text"
+                  value={shareUrl}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  onFocus={(e) => e.target.select()}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(shareUrl);
+                    setNotification("Link copied to clipboard!");
+                  }}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                >
+                  Copy
+                </button>
+              </div>
+              <div className="mt-4 text-right">
+                <button
+                  onClick={closeShareModal}
+                  className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
         {activeModal === "login" && (
           <Modal
             isOpen={true}
@@ -502,15 +483,6 @@ export default function Home() {
               onClose={handleCloseModal}
               onSwitchToLogin={() => setActiveModal("login")}
             />
-          </Modal>
-        )}
-        {activeModal === "welcome" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="myGarden Planner quick guide"
-          >
-            <WelcomeStep onPositionLawn={handlePositionLawn} />
           </Modal>
         )}
         {activeModal === "selectShape" && (
@@ -548,14 +520,7 @@ export default function Home() {
           >
             <NewDrawingWarningStep
               onDiscard={handlePositionLawn}
-              onSave={() => {
-                if (!token) {
-                  setActiveModal("login");
-                  return;
-                }
-                handleSave();
-                handlePositionLawn();
-              }}
+              onSave={handleSave}
             />
           </Modal>
         )}
@@ -650,46 +615,6 @@ export default function Home() {
               onSelect={handlePdfPageSelect}
               onClose={handleCloseModal}
             />
-          </Modal>
-        )}
-
-        {activeModal === "share" && shareUrl && (
-          <Modal
-            isOpen={true}
-            onClose={closeShareModal}
-            title="Share Your Garden Plan"
-          >
-            <div className="p-4">
-              <p className="text-gray-600 mb-3">
-                Anyone with this link can view and edit a copy of your garden.
-              </p>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={shareUrl}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  onFocus={(e) => e.target.select()}
-                />
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(shareUrl);
-                    setNotification("Link copied to clipboard!");
-                  }}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
-                >
-                  Copy
-                </button>
-              </div>
-              <div className="mt-4 text-right">
-                <button
-                  onClick={closeShareModal}
-                  className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
           </Modal>
         )}
       </div>

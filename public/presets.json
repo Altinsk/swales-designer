@@ -8,7 +8,7 @@
         {
           "id": "grass",
           "name": "Grass",
-          "src": "/grass.jpg"
+          "src": "/light_grass.png"
         },
         {
           "id": "paving",
@@ -33,7 +33,7 @@
           "id": "house",
           "name": "House",
           "type": "item",
-          "src": "/house.svg"
+          "src": "/house.png"
         },
         {
           "id": "shed",
@@ -80,12 +80,14 @@
     {
       "id": "template-1",
       "name": "Small Garden",
-      "src": "/template1.jpg"
+      "src": "/template1.jpg",
+      "json": "/template1.json"
     },
     {
       "id": "template-2",
       "name": "Big Garden",
-      "src": "/template2.jpg"
+      "src": "/template2.jpg",
+      "json": "/template2.json"
     }
   ]
 }

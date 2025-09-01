@@ -1,0 +1,18 @@
+{
+  "polygons": [],
+  "placedObjects": [
+    {
+      "id": "house_1756218906770",
+      "name": "House",
+      "type": "item",
+      "src": "/house.png",
+      "x": 900,
+      "y": 420.5,
+      "rotation": 0,
+      "scaleX": 1,
+      "scaleY": 1,
+      "width": 100,
+      "height": 100
+    }
+  ]
+}

@@ -1,7 +1,8 @@
 // components/Toolbar.tsx
 import React, { useState } from "react";
+import { ActiveTool, NoteShape } from "@/app/page"; // Import updated types
 
-export type Tool = "select" | "plot";
+export type Tool = "select" | "plot"; // This can be kept for original tool types
 
 export interface Texture {
   id: string;
@@ -33,16 +34,48 @@ export interface PresetCategory {
 export type Preset = PresetItem | PresetCategory;
 
 interface ToolbarProps {
-  activeTool: Tool;
-  setActiveTool: (tool: Tool) => void;
+  activeTool: ActiveTool; // Use the new ActiveTool interface
+  setActiveTool: (tool: ActiveTool) => void; // Update setter type
   onSelectPreset: (preset: PresetItem) => void;
   onSelectTexture: (texture: Texture) => void;
+  onSelectNoteTool: (shape: NoteShape) => void; // New handler for notes
   config: {
     tools: PlotToolConfig[];
     objects: Preset[];
   };
   className?: string;
 }
+
+// Data URI for SVG icons to avoid extra files
+const icons = {
+  text: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z'%3E%3C/path%3E%3Cpath d='M12 18V6'%3E%3C/path%3E%3Cpath d='M8 6h8'%3E%3C/path%3E%3Cpath d='M8 12h8'%3E%3C/path%3E%3Cpath d='M8 18h8'%3E%3C/path%3E%3C/svg%3E",
+  rectangle:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3C/svg%3E",
+  oval: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='12' rx='10' ry='6'%3E%3C/ellipse%3E%3C/svg%3E",
+  callout:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'%3E%3C/path%3E%3C/svg%3E",
+  arrow:
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'%3E%3C/line%3E%3Cpolyline points='12 5 19 12 12 19'%3E%3C/polyline%3E%3C/svg%3E",
+};
+
+// Hardcoded definition for the "Notes" menu
+const noteTools: PresetCategory = {
+  id: "notes-category",
+  name: "Notes",
+  type: "category",
+  children: [
+    { id: "note-text", name: "Text", type: "item", src: icons.text },
+    {
+      id: "note-rectangle",
+      name: "Rectangle",
+      type: "item",
+      src: icons.rectangle,
+    },
+    { id: "note-oval", name: "Oval", type: "item", src: icons.oval },
+    { id: "note-callout", name: "Callout", type: "item", src: icons.callout },
+    { id: "note-arrow", name: "Arrow", type: "item", src: icons.arrow },
+  ],
+};
 
 // A recursive component to render object categories and items with STATE-BASED HOVER
 const ObjectMenuItem: React.FC<{
@@ -120,10 +153,19 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setActiveTool,
   onSelectPreset,
   onSelectTexture,
+  onSelectNoteTool,
   config,
   className,
 }) => {
   const plotToolConfig = config.tools.find((t) => t.id === "plot");
+
+  const handleSelectNote = (item: PresetItem) => {
+    // Extract the shape from the item's ID (e.g., 'note-rectangle' -> 'rectangle')
+    const shape = item.id.split("-")[1] as NoteShape;
+    if (shape) {
+      onSelectNoteTool(shape);
+    }
+  };
 
   return (
     <div
@@ -135,9 +177,9 @@ const Toolbar: React.FC<ToolbarProps> = ({
           Tools
         </h3>
         <button
-          onClick={() => setActiveTool("select")}
+          onClick={() => setActiveTool({ type: "select" })} // Update to new state structure
           className={`w-full flex items-center p-2 rounded-lg text-left transition-all duration-200 ${
-            activeTool === "select"
+            activeTool.type === "select" // Check type property
               ? "bg-green-600 text-white shadow"
               : "hover:bg-gray-100 text-gray-700"
           }`}
@@ -162,7 +204,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <div className="relative group">
             <div
               className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all duration-200 cursor-pointer ${
-                activeTool === "plot"
+                activeTool.type === "plot" // Check type property
                   ? "bg-green-600 text-white shadow"
                   : "hover:bg-gray-100 text-gray-700"
               }`}
@@ -235,6 +277,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
             onSelectPreset={onSelectPreset}
           />
         ))}
+      </div>
+
+      {/* Notes Section - NEW */}
+      <div className="space-y-1 pt-2 border-t border-gray-200">
+        <h3 className="font-semibold text-gray-500 text-xs uppercase tracking-wider px-2">
+          Notes
+        </h3>
+        {/* We reuse the ObjectMenuItem component for a consistent UI */}
+        <ObjectMenuItem item={noteTools} onSelectPreset={handleSelectNote} />
       </div>
     </div>
   );
