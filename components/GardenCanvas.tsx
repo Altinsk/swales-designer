@@ -141,6 +141,9 @@ export interface NoteObject {
   locked: boolean;
   points?: number[]; // For arrow
   text?: string; // For text and callout
+  pointerDirection?: "up" | "down";
+  offsetX?: number;
+  offsetY?: number;
 }
 
 // --- Helper Functions ---
@@ -256,6 +259,10 @@ const GardenCanvas = forwardRef<
     const [notes, setNotes] = useState<NoteObject[]>([]);
     const [selectedId, selectShape] = useState<string | null>(null);
     const [isDraggingVertex, setIsDraggingVertex] = useState(false);
+    const [originalZIndex, setOriginalZIndex] = useState<number | null>(null);
+    const [originalLayer, setOriginalLayer] = useState<Konva.Layer | null>(
+      null
+    );
     const [colorMenu, setColorMenu] = useState<{
       x: number;
       y: number;
@@ -302,6 +309,7 @@ const GardenCanvas = forwardRef<
     const stageRef = useRef<Konva.Stage>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const textEditRef = useRef<HTMLTextAreaElement>(null);
+    const originalLayerRef = useRef<Konva.Layer | null>(null);
 
     const handleLockToggle = useCallback((id: string) => {
       setPolygons((currentPolygons) =>
@@ -416,7 +424,11 @@ const GardenCanvas = forwardRef<
           e.preventDefault();
           handleRedo();
         }
-        if ((e.key === "Delete" || e.key === "Backspace") && selectedId) {
+        if (
+          (e.key === "Delete" || e.key === "Backspace") &&
+          selectedId &&
+          !editingTextNode
+        ) {
           e.preventDefault();
           handleDelete();
         }
@@ -440,6 +452,7 @@ const GardenCanvas = forwardRef<
       activeTool,
       currentPoints.length,
       setActiveTool,
+      editingTextNode,
     ]);
 
     useEffect(() => {
@@ -615,6 +628,9 @@ const GardenCanvas = forwardRef<
           locked: false,
           points: activeTool.shape === "arrow" ? [0, 0, 0, 0] : undefined,
           text: activeTool.shape === "callout" ? "Callout" : undefined,
+          pointerDirection: activeTool.shape === "callout" ? "down" : undefined,
+          offsetX: 0,
+          offsetY: 0,
         };
 
         setIsDrawing(true);
@@ -624,14 +640,13 @@ const GardenCanvas = forwardRef<
 
       const clickedOnEmpty = e.target === e.target.getStage();
       if (clickedOnEmpty) {
-        selectShape(null);
+        handleSelect(null);
         setMenu(null);
         setColorMenu(null);
       }
     };
-
     const handleStageMouseMove = (e: KonvaEventObject<MouseEvent>) => {
-      handleMouseMove(e);
+      handleMouseMove(e); // Keep this for plotting guides
 
       if (!isDrawing || notes.length === 0) return;
 
@@ -641,16 +656,68 @@ const GardenCanvas = forwardRef<
       if (!pos) return;
 
       const noteBeingDrawn = notes[notes.length - 1];
-      const newWidth = pos.x - noteBeingDrawn.x;
-      const newHeight = pos.y - noteBeingDrawn.y;
+      // The start position is the note's actual x/y, which we will NOT change.
+      const startX = noteBeingDrawn.x;
+      const startY = noteBeingDrawn.y;
 
       setNotes((current) =>
         current.map((n) => {
           if (n.id === noteBeingDrawn.id) {
             if (n.type === "arrow") {
-              return { ...n, points: [0, 0, newWidth, newHeight] };
+              const relativeWidth = pos.x - startX;
+              const relativeHeight = pos.y - startY;
+              return { ...n, points: [0, 0, relativeWidth, relativeHeight] };
             }
-            return { ...n, width: newWidth, height: newHeight };
+
+            // ✅ --- THIS IS THE NEW, CORRECT LOGIC FOR CALLOUTS ---
+            if (n.type === "callout") {
+              const newWidth = Math.abs(pos.x - startX);
+              const totalHeight = Math.abs(pos.y - startY);
+              const newHeight = Math.max(
+                0,
+                totalHeight - CALLOUT_POINTER_HEIGHT
+              );
+
+              let newOffsetX = 0;
+              let newOffsetY = 0;
+              let newPointerDirection: "up" | "down" = "down";
+
+              // Handle horizontal flipping via offsetX
+              if (pos.x < startX) {
+                newOffsetX = newWidth;
+              }
+
+              // Handle vertical flipping via offsetY and pointer direction
+              if (pos.y < startY) {
+                newPointerDirection = "up";
+                newOffsetY = totalHeight;
+              }
+
+              return {
+                ...n,
+                // Note: x and y are NOT changed. They remain the anchor point.
+                width: newWidth,
+                height: newHeight,
+                offsetX: newOffsetX,
+                offsetY: newOffsetY,
+                pointerDirection: newPointerDirection,
+              };
+            }
+
+            // Logic for Rectangle and Oval
+            else {
+              const newX = Math.min(pos.x, startX);
+              const newY = Math.min(pos.y, startY);
+              const newWidth = Math.abs(pos.x - startX);
+              const newHeight = Math.abs(pos.y - startY);
+              return {
+                ...n,
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight,
+              };
+            }
           }
           return n;
         })
@@ -775,12 +842,145 @@ const GardenCanvas = forwardRef<
     };
 
     useImperativeHandle(ref, () => ({
-      zoomIn: () => setStage((s) => ({ ...s, scale: s.scale * 1.2 })),
-      zoomOut: () => setStage((s) => ({ ...s, scale: s.scale / 1.2 })),
+      zoomIn: () => {
+        const stageNode = stageRef.current;
+        if (!stageNode) return;
+
+        const oldScale = stageNode.scaleX();
+        const newScale = oldScale * 1.2;
+
+        // Get the center of the viewport
+        const center = {
+          x: dimensions.width / 2,
+          y: dimensions.height / 2,
+        };
+
+        // Calculate the point on the canvas that is currently under the center of the viewport
+        const mousePointTo = {
+          x: (center.x - stageNode.x()) / oldScale,
+          y: (center.y - stageNode.y()) / oldScale,
+        };
+
+        // Set the new stage state with the calculated position
+        setStage({
+          scale: newScale,
+          x: center.x - mousePointTo.x * newScale,
+          y: center.y - mousePointTo.y * newScale,
+        });
+      },
+      zoomOut: () => {
+        const stageNode = stageRef.current;
+        if (!stageNode) return;
+
+        const oldScale = stageNode.scaleX();
+        const newScale = oldScale / 1.2;
+
+        // Get the center of the viewport
+        const center = {
+          x: dimensions.width / 2,
+          y: dimensions.height / 2,
+        };
+
+        // Calculate the point on the canvas that is currently under the center of the viewport
+        const mousePointTo = {
+          x: (center.x - stageNode.x()) / oldScale,
+          y: (center.y - stageNode.y()) / oldScale,
+        };
+
+        // Set the new stage state with the calculated position
+        setStage({
+          scale: newScale,
+          x: center.x - mousePointTo.x * newScale,
+          y: center.y - mousePointTo.y * newScale,
+        });
+      },
       undo: handleUndo,
       redo: handleRedo,
       deleteSelected: handleDelete,
-      center: () => setStage({ scale: 1, x: 0, y: 0 }),
+      center: () => {
+        const stageNode = stageRef.current;
+        const container = containerRef.current;
+        if (!stageNode || !container) return;
+
+        const allObjects = [
+          ...polygons,
+          ...placedObjects,
+          ...notes,
+          ...(planningSketch ? [planningSketch] : []),
+        ];
+
+        if (allObjects.length === 0) {
+          // If no objects, reset to default and exit
+          setStage({ scale: 1, x: 0, y: 0 });
+          return;
+        }
+
+        // Calculate the bounding box of all objects
+        let minX = Infinity;
+        let maxX = -Infinity;
+        let minY = Infinity;
+        let maxY = -Infinity;
+
+        allObjects.forEach((obj) => {
+          const node = stageNode.findOne(`#${obj.id}`);
+          if (!node) return;
+
+          // Use getClientRect with relativeTo to get stable coordinates
+          const clientRect = node.getClientRect({ relativeTo: stageNode });
+          minX = Math.min(minX, clientRect.x);
+          maxX = Math.max(maxX, clientRect.x + clientRect.width);
+          minY = Math.min(minY, clientRect.y);
+          maxY = Math.max(maxY, clientRect.y + clientRect.height);
+        });
+
+        // Handle case where bounding box is invalid (e.g., zero-sized objects)
+        if (
+          !isFinite(minX) ||
+          !isFinite(maxX) ||
+          !isFinite(minY) ||
+          !isFinite(maxY)
+        ) {
+          setStage({ scale: 1, x: 0, y: 0 });
+          return;
+        }
+
+        // Calculate the center and size of the bounding box
+        const boundsWidth = maxX - minX;
+        const boundsHeight = maxY - minY;
+        const centerX = minX + boundsWidth / 2;
+        const centerY = minY + boundsHeight / 2;
+
+        // Get viewport dimensions
+        const viewWidth = container.clientWidth;
+        const viewHeight = container.clientHeight;
+
+        // Calculate scale to fit objects within 80% of the viewport
+        const padding = 0.8; // Use 80% of viewport to leave some margin
+        const scaleX = boundsWidth > 0 ? viewWidth / boundsWidth : 1;
+        const scaleY = boundsHeight > 0 ? viewHeight / boundsHeight : 1;
+        const newScale = Math.min(scaleX, scaleY) * padding;
+
+        // Round the scale to avoid floating-point drift (e.g., to 3 decimal places)
+        const finalScale =
+          Math.round(Math.min(Math.max(newScale, 0.5), 2) * 1000) / 1000;
+
+        // Calculate stage position to center the bounding box
+        const newX = Math.round(viewWidth / 2 - centerX * finalScale);
+        const newY = Math.round(viewHeight / 2 - centerY * finalScale);
+
+        // Only update if the values have changed significantly to prevent jitter
+        if (
+          Math.abs(stage.scale - finalScale) > 0.001 ||
+          Math.abs(stage.x - newX) > 1 ||
+          Math.abs(stage.y - newY) > 1
+        ) {
+          setStage({
+            scale: finalScale,
+            x: newX,
+            y: newY,
+          });
+        }
+      },
       addRectangle: (widthInMeters: number, heightInMeters: number) => {
         const stageNode = stageRef.current;
         if (!stageNode) return;
@@ -905,10 +1105,7 @@ const GardenCanvas = forwardRef<
         return;
       }
 
-      if (
-        activeTool.type === "note" &&
-        (activeTool.shape === "text" || activeTool.shape === "callout")
-      ) {
+      if (activeTool.type === "note" && activeTool.shape === "text") {
         const stageNode = stageRef.current;
         if (!stageNode) return;
         const pos = stageNode.getRelativePointerPosition();
@@ -937,7 +1134,7 @@ const GardenCanvas = forwardRef<
         // to the editing state. This populates the textarea correctly.
         setEditingTextNode({
           ...newNote,
-          text: activeTool.shape === "callout" ? "Callout" : "Text",
+          text: "Text",
         });
       }
     };
@@ -952,6 +1149,30 @@ const GardenCanvas = forwardRef<
         const y = e.evt.clientY - containerRect.top;
         setColorMenu({ x, y, noteId });
         setMenu(null);
+      },
+      []
+    );
+
+    const handlePolygonAddPoint = useCallback(
+      (polygonId: string, segmentIndex: number, newPoint: Point) => {
+        setPolygons((currentPolygons) =>
+          currentPolygons.map((p) => {
+            if (p.id === polygonId) {
+              const newPoints = [...p.points];
+              // Insert the new point's coordinates at the correct position in the flat array
+              newPoints.splice(
+                (segmentIndex + 1) * 2,
+                0,
+                newPoint.x,
+                newPoint.y
+              );
+              return { ...p, points: newPoints };
+            }
+            return p;
+          })
+        );
+        // Force the floating labels to re-render with the new point
+        setTransformCounter((c) => c + 1);
       },
       []
     );
@@ -1083,6 +1304,85 @@ const GardenCanvas = forwardRef<
       setSnapDetails({ isSnapped, point: snapPoint, isLineSnap, isAngleSnap });
       setIsClosing(isNearStart);
     };
+
+    const handleSelect = useCallback(
+      (id: string | null) => {
+        if (id) {
+          // Determine which array the object is in and update only that one.
+          if (polygons.some((p) => p.id === id)) {
+            setPolygons((current) => {
+              const item = current.find((p) => p.id === id)!;
+              return [...current.filter((p) => p.id !== id), item];
+            });
+          } else if (placedObjects.some((o) => o.id === id)) {
+            setPlacedObjects((current) => {
+              const item = current.find((o) => o.id === id)!;
+              return [...current.filter((o) => o.id !== id), item];
+            });
+          } else if (notes.some((n) => n.id === id)) {
+            setNotes((current) => {
+              const item = current.find((n) => n.id === id)!;
+              return [...current.filter((n) => n.id !== id), item];
+            });
+          }
+        }
+
+        // When deselecting (id is null), we do nothing to the arrays' order.
+        // This is the key to preserving the stacking order.
+        selectShape(id);
+      },
+      [polygons, placedObjects, notes, setPolygons, setPlacedObjects, setNotes]
+    );
+
+    const prevSelectedIdRef = useRef<string | null>(null);
+
+    useLayoutEffect(() => {
+      const stage = stageRef.current;
+      if (!stage) return;
+
+      const prevId = prevSelectedIdRef.current;
+      const newId = selectedId;
+
+      // --- Step 1: Handle the PREVIOUSLY selected node ---
+      // If an object was deselected, move it back to where it came from.
+      if (prevId && prevId !== newId) {
+        const prevNode = stage.findOne("#" + prevId);
+        // Use the layer stored in our ref
+        if (prevNode && originalLayerRef.current) {
+          prevNode.opacity(1); // Restore full opacity
+          prevNode.moveTo(originalLayerRef.current); // Move back!
+
+          // Redraw the layers involved to show the change
+          originalLayerRef.current.batchDraw();
+          stage.findOne("Layer[name=top-layer]")?.batchDraw();
+
+          originalLayerRef.current = null; // Clear the ref
+        }
+      }
+
+      // --- Step 2: Handle the NEWLY selected node ---
+      // If a new object was selected, move it to the top.
+      if (newId) {
+        const newNode = stage.findOne("#" + newId);
+        if (newNode) {
+          const topLayer = stage.findOne<Konva.Layer>("Layer[name=top-layer]");
+          if (topLayer) {
+            // Store its original layer in our ref BEFORE moving it
+            originalLayerRef.current = newNode.getLayer() as Konva.Layer;
+
+            newNode.opacity(0.95);
+            newNode.moveTo(topLayer); // Move to the top layer!
+
+            // Redraw the layers involved
+            topLayer.batchDraw();
+            originalLayerRef.current?.batchDraw();
+          }
+        }
+      }
+
+      // --- Step 3: Update the ref for the next time the effect runs ---
+      prevSelectedIdRef.current = newId;
+    }, [selectedId]); // This effect runs only when the selectedId changes
 
     const handleSettingsClick = useCallback(
       (e: KonvaEventObject<MouseEvent>, polyId: string) => {
@@ -1593,7 +1893,7 @@ const GardenCanvas = forwardRef<
                 grassPattern={textures[poly.textureId || ""]}
                 isSelected={selectedId === poly.id}
                 onSelect={() => {
-                  selectShape(poly.id);
+                  handleSelect(poly.id);
                   setMenu(null);
                 }}
                 onDragStart={handleInteractionStart}
@@ -1604,6 +1904,9 @@ const GardenCanvas = forwardRef<
                 isDraggable={activeTool.type === "select" && !poly.locked}
                 onPointUpdate={(pointIndex, newPoint) =>
                   handlePolygonPointUpdate(poly.id, pointIndex, newPoint)
+                }
+                onAddPoint={(segmentIndex, newPoint) =>
+                  handlePolygonAddPoint(poly.id, segmentIndex, newPoint)
                 }
               />
             ))}
@@ -1623,12 +1926,12 @@ const GardenCanvas = forwardRef<
                   scaleY={obj.scaleY || 1}
                   draggable={activeTool.type === "select" && !obj.locked}
                   onClick={(e) => {
-                    selectShape(obj.id);
+                    handleSelect(obj.id);
                     setMenu(null);
                     e.cancelBubble = true;
                   }}
                   onTap={(e) => {
-                    selectShape(obj.id);
+                    handleSelect(obj.id);
                     setMenu(null);
                     e.cancelBubble = true;
                   }}
@@ -1702,7 +2005,7 @@ const GardenCanvas = forwardRef<
                 note={note}
                 isSelected={selectedId === note.id}
                 onSelect={() => {
-                  selectShape(note.id);
+                  handleSelect(note.id);
                   setMenu(null);
                   setColorMenu(null);
                 }}
@@ -1729,6 +2032,7 @@ const GardenCanvas = forwardRef<
               />
             )}
           </Layer>
+          <Layer name="top-layer" />
         </Stage>
 
         {menu && (
@@ -1821,6 +2125,7 @@ const NOTE_COLORS: Record<NoteColor, string> = {
   yellow: "#FDE68A",
 };
 const NOTE_STROKE_COLOR = "#4B5563";
+const CALLOUT_POINTER_HEIGHT = 10;
 
 // Helper to calculate textarea position
 // Helper to calculate textarea position
@@ -1947,7 +2252,6 @@ const NoteObjectRenderer = memo(
         case "text":
           return (
             <Text
-              // ✅ ADDED: A name to specifically identify this node
               name="text_shape"
               text={note.text || "Double click to edit"}
               fontSize={getFontSize(stageScale)}
@@ -1960,32 +2264,63 @@ const NoteObjectRenderer = memo(
               onDblTap={onTextDblClick}
             />
           );
-        case "callout":
+
+        // --- THIS IS THE NEW, MANUALLY RENDERED CALLOUT ---
+        case "callout": {
+          const pointerWidth = 15;
+          const pointerHeight = CALLOUT_POINTER_HEIGHT;
+          const cornerRadius = 8;
+
+          let pointerPath = "";
+          if (note.pointerDirection === "down") {
+            // Pointer at the bottom-middle
+            const startX = note.width / 2 - pointerWidth / 2;
+            const startY = note.height;
+            pointerPath = `M${startX},${startY} L${
+              startX + pointerWidth
+            },${startY} L${note.width / 2},${startY + pointerHeight} Z`;
+          } else {
+            // 'up'
+            // Pointer at the top-middle
+            const startX = note.width / 2 - pointerWidth / 2;
+            const startY = 0;
+            pointerPath = `M${startX},${startY} L${
+              startX + pointerWidth
+            },${startY} L${note.width / 2},${startY - pointerHeight} Z`;
+          }
+
           return (
-            <Label>
-              <Tag
+            <Group>
+              {/* The main body */}
+              <Rect
                 {...commonProps}
-                lineJoin="round"
-                pointerDirection="down"
-                pointerWidth={15}
-                pointerHeight={10}
-                cornerRadius={8}
+                width={note.width}
+                height={note.height}
+                cornerRadius={cornerRadius}
               />
+              {/* The pointer, drawn with a Path */}
+              <Path
+                data={pointerPath}
+                fill={commonProps.fill}
+                stroke={commonProps.stroke}
+                strokeWidth={commonProps.strokeWidth}
+              />
+              {/* The text, positioned inside the body */}
               <Text
-                // ✅ ADDED: A name to specifically identify this node
                 name="text_shape"
                 text={note.text || "Double click to edit"}
                 fontSize={getFontSize(stageScale)}
                 padding={12}
                 fill={NOTE_STROKE_COLOR}
-                width={note.width || 150}
-                height={note.height || 50}
+                width={note.width}
+                height={note.height}
                 verticalAlign="middle"
                 onDblClick={onTextDblClick}
                 onDblTap={onTextDblClick}
               />
-            </Label>
+            </Group>
           );
+        }
         default:
           return null;
       }
@@ -2000,6 +2335,8 @@ const NoteObjectRenderer = memo(
         rotation={note.rotation}
         scaleX={note.scaleX}
         scaleY={note.scaleY}
+        offsetX={note.offsetX || 0}
+        offsetY={note.offsetY || 0}
         draggable={props.isDraggable}
         onClick={props.onSelect}
         onTap={props.onSelect}
@@ -2166,6 +2503,7 @@ interface FinalPolygonProps {
   onPointUpdate: (pointIndex: number, newPoint: Point) => void;
   onVertexDragStart: () => void;
   onVertexDragEnd: () => void;
+  onAddPoint: (segmentIndex: number, newPoint: Point) => void;
 }
 
 const FinalPolygon = memo(
@@ -2179,6 +2517,7 @@ const FinalPolygon = memo(
     onPointUpdate,
     onVertexDragStart,
     onVertexDragEnd,
+    onAddPoint,
     ...props
   }: FinalPolygonProps) => {
     const groupRef = useRef<Konva.Group>(null);
@@ -2211,6 +2550,76 @@ const FinalPolygon = memo(
       e.cancelBubble = true;
     };
 
+    // This now runs on CLICK, not mousedown, to separate clicks from drags.
+    const handleEdgeClick = (e: KonvaEventObject<MouseEvent>) => {
+      // Only add points if the polygon is selected and not locked.
+      if (!isSelected || poly.locked) {
+        return;
+      }
+
+      // Stop the event from bubbling to the group or stage.
+      e.cancelBubble = true;
+
+      const group = groupRef.current;
+      const stage = e.target.getStage();
+      if (!group || !stage) return;
+
+      const pointerPos = stage.getPointerPosition();
+      if (!pointerPos) return;
+
+      const localPos = group
+        .getAbsoluteTransform()
+        .copy()
+        .invert()
+        .point(pointerPos);
+
+      let closestSegmentIndex = -1;
+      let minDistance = Infinity;
+
+      for (let i = 0; i < vertices.length; i++) {
+        const p1 = vertices[i];
+        const p2 = vertices[(i + 1) % vertices.length];
+
+        const l2 = Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2);
+        if (l2 === 0) continue;
+
+        let t =
+          ((localPos.x - p1.x) * (p2.x - p1.x) +
+            (localPos.y - p1.y) * (p2.y - p1.y)) /
+          l2;
+        t = Math.max(0, Math.min(1, t));
+
+        const projection = {
+          x: p1.x + t * (p2.x - p1.x),
+          y: p1.y + t * (p2.y - p1.y),
+        };
+        const dist = calculateDistance(localPos, projection);
+
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestSegmentIndex = i;
+        }
+      }
+
+      if (closestSegmentIndex !== -1) {
+        onAddPoint(closestSegmentIndex, localPos);
+      }
+    };
+
+    // New handlers to change the cursor on hover
+    const handleMouseEnter = (e: KonvaEventObject<MouseEvent>) => {
+      if (isSelected && !poly.locked) {
+        const stage = e.target.getStage();
+        if (stage) stage.container().style.cursor = "crosshair";
+      }
+    };
+
+    const handleMouseLeave = (e: KonvaEventObject<MouseEvent>) => {
+      const stage = e.target.getStage();
+      // Reset the cursor; the main component's style will take over.
+      if (stage) stage.container().style.cursor = "";
+    };
+
     return (
       <Group
         id={poly.id}
@@ -2232,6 +2641,12 @@ const FinalPolygon = memo(
           stroke="black"
           strokeWidth={3 / stageScale}
           closed
+          hitStrokeWidth={15 / stageScale}
+          // Use onClick for adding points and hover events for the cursor
+          onClick={handleEdgeClick}
+          onTap={handleEdgeClick}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         />
         {isSelected &&
           !poly.locked &&
