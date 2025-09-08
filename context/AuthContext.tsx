@@ -53,10 +53,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = (newToken: string) => {
     try {
-      const decoded: { email: string } = jwtDecode(newToken);
+      const decoded = jwtDecode(newToken);
       localStorage.setItem("token", newToken); // For client-side persistence
       setToken(newToken);
-      setUser({ email: decoded.email });
+      setUser({ email: decoded.email, firstName: decoded.firstName });
     } catch (e) {
       console.error("Failed to decode token on login", e);
     }
