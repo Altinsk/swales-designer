@@ -330,6 +330,23 @@ export default function SharePage() {
     }
   };
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // To trigger the browser's native alert, you must prevent the default action
+      // and set a return value (for legacy browser support).
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    // Add the event listener when the component mounts
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Remove the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
   const closeShareModal = () => {
     setShareUrl(null);
     setActiveModal(null);

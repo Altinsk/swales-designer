@@ -14,6 +14,8 @@ import Header from "@/components/Header";
 import RightToolbar from "@/components/RightToolbar";
 import Modal from "@/components/Modal";
 import Notification from "@/components/Notification";
+// ✅ ADDED: Import for the new Save As modal component
+import SaveProjectStep from "@/components/onboarding/SaveProjectStep";
 
 // --- Onboarding Step Imports ---
 import EnterSizeStep from "@/components/onboarding/EnterSizeStep";
@@ -30,7 +32,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
 
-// --- Type Definitions ---
+// --- Type Definitions (no changes) ---
 interface AppConfig {
   tools: any[];
   objects: any[];
@@ -73,13 +75,12 @@ export interface VisibilityState {
   notes: boolean;
 }
 
-// Dynamically import the canvas to prevent SSR issues
 const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
   ssr: false,
 });
 
 export default function Home() {
-  const { user, token } = useAuth(); // Auth state
+  const { user, token } = useAuth();
   const canvasRef = useRef<CanvasHandles>(null);
 
   // --- State Management ---
@@ -95,14 +96,11 @@ export default function Home() {
     id: number;
     name: string;
   } | null>(null);
-
-  // New state for PDF processing
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfPageImages, setPdfPageImages] = useState<string[]>([]);
-
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [isCreatingShareLink, setIsCreatingShareLink] = useState(false);
-
+  const postSaveCallback = useRef<(() => void) | null>(null);
   const [visibility, setVisibility] = useState<VisibilityState>({
     grid: true,
     sketch: false,
@@ -118,18 +116,18 @@ export default function Home() {
     | "uploadPlan"
     | "alignMeasure"
     | "selectTemplate"
-    | "selectPdfPage" // Add new modal type
+    | "selectPdfPage"
     | "login"
     | "signup"
     | "share"
+    | "saveAs" // ✅ ADDED: New modal type for saving
     | null
   >("welcome");
 
-  // --- API URL ---
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  // --- Effects ---
+  // --- Effects (no changes) ---
   useEffect(() => {
     fetch("/presets.json")
       .then((res) => res.json())
@@ -141,35 +139,14 @@ export default function Home() {
       });
   }, []);
 
-  // ✅ ADDED: This effect injects the necessary CSS styles for printing.
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
       @media print {
-        /* Hide everything on the page by default */
-        body > *, #__next > * {
-          visibility: hidden;
-        }
-        /* Make the print container and its contents visible */
-        #print-container, #print-container * {
-          visibility: visible;
-        }
-        /* Position the container to fill the page */
-        #print-container {
-          position: absolute;
-          left: 0;
-          top: 0;
-          width: 100%;
-          height: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-        }
-        #print-image {
-          max-width: 100%;
-          max-height: 100vh;
-          object-fit: contain;
-        }
+        body > *, #__next > * { visibility: hidden; }
+        #print-container, #print-container * { visibility: visible; }
+        #print-container { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        #print-image { max-width: 100%; max-height: 100vh; object-fit: contain; }
       }
     `;
     document.head.appendChild(style);
@@ -183,6 +160,7 @@ export default function Home() {
     if (isProcessingPdf) return;
     setActiveModal(null);
   };
+  // ... other handlers (no changes) ...
   const handlePositionLawn = () => {
     canvasRef.current?.clearCanvas();
     setCurrentProject(null);
@@ -206,54 +184,36 @@ export default function Home() {
       setActiveModal("newDrawingWarning");
     }
   };
-
-  // ✅ ADDED: The new print handler function.
   const handlePrint = () => {
     const stage = canvasRef.current?.getStageNode();
     if (!stage) {
       setNotification("Canvas is not ready to print.");
       return;
     }
-
-    // Generate a high-resolution image of the canvas content.
-    // pixelRatio: 2 gives a crisper image suitable for printing.
     const dataURL = stage.toDataURL({ pixelRatio: 2 });
-
-    // Find or create a temporary container for our print image.
     let printContainer = document.getElementById("print-container");
     if (printContainer) {
-      printContainer.innerHTML = ""; // Clear it if it exists
+      printContainer.innerHTML = "";
     } else {
       printContainer = document.createElement("div");
       printContainer.id = "print-container";
       document.body.appendChild(printContainer);
     }
-
-    // Create an image element and set its source to our canvas data.
     const img = new Image();
     img.id = "print-image";
     img.src = dataURL;
     printContainer.appendChild(img);
-
-    // Once the image is loaded into the DOM, we can call window.print().
     img.onload = () => {
-      // Define a function to clean up the temporary elements.
       const cleanup = () => {
         if (printContainer) {
           document.body.removeChild(printContainer);
         }
-        // Remove the event listener to avoid memory leaks.
         window.removeEventListener("afterprint", cleanup);
       };
-
-      // Add a one-time event listener to run the cleanup after printing.
       window.addEventListener("afterprint", cleanup);
-
-      // Trigger the browser's print dialog.
       window.print();
     };
   };
-
   const handleShare = async () => {
     if (!canvasRef.current) return;
     setIsCreatingShareLink(true);
@@ -275,12 +235,10 @@ export default function Home() {
       setIsCreatingShareLink(false);
     }
   };
-
   const closeShareModal = () => {
     setShareUrl(null);
     setActiveModal(null);
   };
-
   const handleLoadTemplate = (templateJsonPath: string) => {
     fetch(templateJsonPath)
       .then((res) => res.json())
@@ -293,7 +251,6 @@ export default function Home() {
       })
       .catch((err) => console.error("Failed to load template:", err));
   };
-
   const handleFileUpload = async (file: File) => {
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
@@ -326,56 +283,121 @@ export default function Home() {
       }
     }
   };
-
   const handlePdfPageSelect = (imageUrl: string) => {
     setUploadedImage(imageUrl);
     setActiveModal("alignMeasure");
   };
 
-  const handleSaveAs = async () => {
-    const projectName = prompt("Please enter a name for your garden:");
-    if (projectName && canvasRef.current && token) {
-      const canvasState = canvasRef.current.getCanvasState();
-      try {
-        const res = await axios.post(
-          `${API_URL}/projects`,
-          { name: projectName, projectData: canvasState },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        if (res.data.success) {
-          setCurrentProject({
-            id: res.data.data.ProjectId,
-            name: res.data.data.Name,
-          });
-          setNotification("Garden saved successfully!");
+  // ✅ ADDED: Helper to get canvas data (JSON state and thumbnail image)
+  const getCanvasData = () => {
+    if (!canvasRef.current) return null;
+    const stage = canvasRef.current.getStageNode();
+    if (!stage) return null;
+
+    const canvasState = canvasRef.current.getCanvasState();
+    const thumbnail = stage.toDataURL({
+      pixelRatio: 0.2, // Lower resolution for a small thumbnail
+      mimeType: "image/jpeg",
+      quality: 0.6,
+    });
+
+    return { canvasState, thumbnail };
+  };
+
+  // ✅ MODIFIED: handleSaveAs now opens the modal
+  const handleSaveAs = () => {
+    setActiveModal("saveAs");
+  };
+
+  // ✅ ADDED: This new function is called by the SaveProjectStep modal
+  const executeSaveAs = async (projectName: string) => {
+    if (!token) {
+      setNotification("You must be logged in to save.");
+      return;
+    }
+    const canvasData = getCanvasData();
+    if (!canvasData) return;
+
+    try {
+      const res = await axios.post(
+        `${API_URL}/projects`,
+        {
+          name: projectName,
+          projectData: canvasData.canvasState,
+          thumbnail: canvasData.thumbnail,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (res.data.success) {
+        setCurrentProject({
+          id: res.data.data.ProjectId,
+          name: res.data.data.Name,
+        });
+        setNotification("Garden saved successfully!");
+        handleCloseModal(); // Close the "Save As" modal
+        if (postSaveCallback.current) {
+          postSaveCallback.current();
+          postSaveCallback.current = null;
         }
-      } catch (err) {
-        setNotification("Error: Could not save garden.");
+      }
+    } catch (err) {
+      setNotification("Error: Could not save garden.");
+      if (postSaveCallback.current) {
+        postSaveCallback.current();
+        postSaveCallback.current = null;
       }
     }
   };
 
-  const handleSave = async () => {
-    if (!canvasRef.current || !token) return;
-    const canvasState = canvasRef.current.getCanvasState();
+  // ✅ MODIFIED: handleSave now also sends a thumbnail
+  const handleSave = async (options?: { onSuccess?: () => void }) => {
+    const canvasData = getCanvasData();
+    const { onSuccess } = options || {};
+    if (!canvasData || !token) return;
 
     if (currentProject) {
+      // Existing project: Update it
       try {
         await axios.put(
           `${API_URL}/projects/${currentProject.id}`,
-          { name: currentProject.name, projectData: canvasState },
+          {
+            name: currentProject.name,
+            projectData: canvasData.canvasState,
+            thumbnail: canvasData.thumbnail,
+          },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setNotification("Garden updated!");
+        if (onSuccess) onSuccess();
       } catch (err) {
         setNotification("Error: Could not update garden.");
       }
     } else {
+      // New project: Open the "Save As" modal
+      postSaveCallback.current = onSuccess || null;
       handleSaveAs();
     }
   };
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      // To trigger the browser's native alert, you must prevent the default action
+      // and set a return value (for legacy browser support).
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    // Add the event listener when the component mounts
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Remove the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
+
   const handleLoadProject = async (projectId: number) => {
+    // ... no changes here ...
     if (!token) return;
     try {
       const res = await axios.get(`${API_URL}/projects/${projectId}`, {
@@ -393,6 +415,7 @@ export default function Home() {
     }
   };
 
+  // ... other handlers (no changes) ...
   const handleObjectAdded = () => setSelectedPreset(null);
   const handleVisibilityChange = (key: VisibilityToggle) =>
     setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -442,7 +465,7 @@ export default function Home() {
           onDelete={handleDelete}
           onNewDrawing={handleNewDrawingClick}
           onLoadTemplate={handleLoadTemplate}
-          onPrint={handlePrint} // ✅ UPDATED: Pass the new print handler.
+          onPrint={handlePrint}
           onShare={handleShare}
           templates={config.templates}
           className="absolute top-24 left-1/2 -translate-x-1/2 z-30 w-fit "
@@ -479,17 +502,33 @@ export default function Home() {
           onZoomOut={handleZoomOut}
           scaleIndicatorPixels={40 * canvasScale}
         />
-        {/* --- Modals (No changes below this line) --- */}
+
+        {/* --- Modals --- */}
+        {/* ... other modals are unchanged ... */}
+
+        {/* ✅ ADDED: The new Save As modal */}
+        {activeModal === "saveAs" && (
+          <Modal
+            isOpen={true}
+            onClose={handleCloseModal}
+            title="Save Your Garden"
+          >
+            <SaveProjectStep onSave={executeSaveAs} />
+          </Modal>
+        )}
+
+        {/* ... all other modals ... */}
         {activeModal === "login" && (
           <Modal
             isOpen={true}
             onClose={handleCloseModal}
             title="Login to Your Account"
           >
+            {" "}
             <LoginModal
               onClose={handleCloseModal}
               onSwitchToSignup={() => setActiveModal("signup")}
-            />
+            />{" "}
           </Modal>
         )}
         {activeModal === "signup" && (
@@ -498,10 +537,11 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Create an Account"
           >
+            {" "}
             <SignupModal
               onClose={handleCloseModal}
               onSwitchToLogin={() => setActiveModal("login")}
-            />
+            />{" "}
           </Modal>
         )}
         {activeModal === "welcome" && (
@@ -510,7 +550,8 @@ export default function Home() {
             onClose={handleCloseModal}
             title="myGarden Planner quick guide"
           >
-            <WelcomeStep onPositionLawn={handlePositionLawn} />
+            {" "}
+            <WelcomeStep onPositionLawn={handlePositionLawn} />{" "}
           </Modal>
         )}
         {activeModal === "selectShape" && (
@@ -519,6 +560,7 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Select plot shape"
           >
+            {" "}
             <SelectShapeStep
               onSelectRectangle={handleSelectRectangle}
               onStartFreeDraw={() => {
@@ -528,7 +570,7 @@ export default function Home() {
               }}
               onUploadPlan={() => setActiveModal("uploadPlan")}
               onShowTemplates={() => setActiveModal("selectTemplate")}
-            />
+            />{" "}
           </Modal>
         )}
         {activeModal === "enterSize" && (
@@ -537,7 +579,8 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Enter plot size"
           >
-            <EnterSizeStep onPositionPlot={handlePositionPlot} />
+            {" "}
+            <EnterSizeStep onPositionPlot={handlePositionPlot} />{" "}
           </Modal>
         )}
         {activeModal === "newDrawingWarning" && (
@@ -546,6 +589,7 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Start a new plan?"
           >
+            {" "}
             <NewDrawingWarningStep
               onDiscard={handlePositionLawn}
               onSave={() => {
@@ -553,10 +597,10 @@ export default function Home() {
                   setActiveModal("login");
                   return;
                 }
-                handleSave();
-                handlePositionLawn();
+
+                handleSave({ onSuccess: handlePositionLawn });
               }}
-            />
+            />{" "}
           </Modal>
         )}
         {activeModal === "uploadPlan" && (
@@ -565,14 +609,17 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Upload existing plan"
           >
+            {" "}
             {isProcessingPdf ? (
               <div className="flex flex-col items-center justify-center p-8">
+                {" "}
                 <svg
                   className="animate-spin -ml-1 mr-3 h-10 w-10 text-green-600"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
                 >
+                  {" "}
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -580,25 +627,26 @@ export default function Home() {
                     r="10"
                     stroke="currentColor"
                     strokeWidth="4"
-                  ></circle>
+                  ></circle>{" "}
                   <path
                     className="opacity-75"
                     fill="currentColor"
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                <p className="mt-4 text-gray-600">Processing PDF...</p>
+                  ></path>{" "}
+                </svg>{" "}
+                <p className="mt-4 text-gray-600">Processing PDF...</p>{" "}
               </div>
             ) : (
               <UploadPlanStep
                 onFileUpload={handleFileUpload}
                 onClose={handleCloseModal}
               />
-            )}
+            )}{" "}
           </Modal>
         )}
         {activeModal === "alignMeasure" && uploadedImage && (
           <Modal isOpen={true} onClose={handleCloseModal} title="Align measure">
+            {" "}
             <AlignMeasureStep
               imageSrc={uploadedImage}
               onAddSketch={(data) => {
@@ -624,7 +672,7 @@ export default function Home() {
                 handleCloseModal();
               }}
               onClose={handleCloseModal}
-            />
+            />{" "}
           </Modal>
         )}
         {activeModal === "selectTemplate" && config?.templates && (
@@ -633,10 +681,11 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Select a garden template"
           >
+            {" "}
             <SelectTemplateStep
               templates={config.templates}
               onSelectTemplate={handleLoadTemplate}
-            />
+            />{" "}
           </Modal>
         )}
         {activeModal === "selectPdfPage" && (
@@ -645,32 +694,36 @@ export default function Home() {
             onClose={handleCloseModal}
             title="Select a Page from your PDF"
           >
+            {" "}
             <SelectPdfPageStep
               imageUrls={pdfPageImages}
               onSelect={handlePdfPageSelect}
               onClose={handleCloseModal}
-            />
+            />{" "}
           </Modal>
         )}
-
         {activeModal === "share" && shareUrl && (
           <Modal
             isOpen={true}
             onClose={closeShareModal}
             title="Share Your Garden Plan"
           >
+            {" "}
             <div className="p-4">
+              {" "}
               <p className="text-gray-600 mb-3">
-                Anyone with this link can view and edit a copy of your garden.
-              </p>
+                {" "}
+                Anyone with this link can view and edit a copy of your garden.{" "}
+              </p>{" "}
               <div className="flex items-center space-x-2">
+                {" "}
                 <input
                   type="text"
                   value={shareUrl}
                   readOnly
                   className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
                   onFocus={(e) => e.target.select()}
-                />
+                />{" "}
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(shareUrl);
@@ -678,18 +731,21 @@ export default function Home() {
                   }}
                   className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
                 >
-                  Copy
-                </button>
-              </div>
+                  {" "}
+                  Copy{" "}
+                </button>{" "}
+              </div>{" "}
               <div className="mt-4 text-right">
+                {" "}
                 <button
                   onClick={closeShareModal}
                   className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                 >
-                  Close
-                </button>
-              </div>
-            </div>
+                  {" "}
+                  Close{" "}
+                </button>{" "}
+              </div>{" "}
+            </div>{" "}
           </Modal>
         )}
       </div>

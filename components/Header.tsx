@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
             <button className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 transition-colors">
               <UserCircle className="h-6 w-6 text-slate-600" />
               <span className="font-medium text-slate-700 hidden sm:block">
-                {user.email}
+                Hello, {user.firstName}
               </span>
             </button>
             {/* Dropdown Menu */}

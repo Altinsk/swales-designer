@@ -310,6 +310,7 @@ const GardenCanvas = forwardRef<
     const containerRef = useRef<HTMLDivElement>(null);
     const textEditRef = useRef<HTMLTextAreaElement>(null);
     const originalLayerRef = useRef<Konva.Layer | null>(null);
+    const prevSelectedIdRef = useRef<string | null>(null);
 
     const handleLockToggle = useCallback((id: string) => {
       setPolygons((currentPolygons) =>
@@ -1014,7 +1015,7 @@ const GardenCanvas = forwardRef<
           rotation: 0,
           scaleX: 1,
           scaleY: 1,
-          locked: false,
+          locked: plotTexture?.id === "grass",
           textureId: plotTexture?.id,
         };
 
@@ -1071,6 +1072,8 @@ const GardenCanvas = forwardRef<
     }));
 
     const finishPlotting = () => {
+      console.log(plotTexture?.id);
+
       if (currentPoints.length < 6) return;
       const newPolygon: Polygon = {
         id: `poly_${Date.now()}`,
@@ -1080,7 +1083,7 @@ const GardenCanvas = forwardRef<
         rotation: 0,
         scaleX: 1,
         scaleY: 1,
-        locked: false,
+        locked: plotTexture?.id == "grass" ? true : false,
         textureId: plotTexture?.id,
       };
       setPolygons((prev) => [...prev, newPolygon]);
@@ -1305,85 +1308,6 @@ const GardenCanvas = forwardRef<
       setIsClosing(isNearStart);
     };
 
-    const handleSelect = useCallback(
-      (id: string | null) => {
-        if (id) {
-          // Determine which array the object is in and update only that one.
-          if (polygons.some((p) => p.id === id)) {
-            setPolygons((current) => {
-              const item = current.find((p) => p.id === id)!;
-              return [...current.filter((p) => p.id !== id), item];
-            });
-          } else if (placedObjects.some((o) => o.id === id)) {
-            setPlacedObjects((current) => {
-              const item = current.find((o) => o.id === id)!;
-              return [...current.filter((o) => o.id !== id), item];
-            });
-          } else if (notes.some((n) => n.id === id)) {
-            setNotes((current) => {
-              const item = current.find((n) => n.id === id)!;
-              return [...current.filter((n) => n.id !== id), item];
-            });
-          }
-        }
-
-        // When deselecting (id is null), we do nothing to the arrays' order.
-        // This is the key to preserving the stacking order.
-        selectShape(id);
-      },
-      [polygons, placedObjects, notes, setPolygons, setPlacedObjects, setNotes]
-    );
-
-    const prevSelectedIdRef = useRef<string | null>(null);
-
-    useLayoutEffect(() => {
-      const stage = stageRef.current;
-      if (!stage) return;
-
-      const prevId = prevSelectedIdRef.current;
-      const newId = selectedId;
-
-      // --- Step 1: Handle the PREVIOUSLY selected node ---
-      // If an object was deselected, move it back to where it came from.
-      if (prevId && prevId !== newId) {
-        const prevNode = stage.findOne("#" + prevId);
-        // Use the layer stored in our ref
-        if (prevNode && originalLayerRef.current) {
-          prevNode.opacity(1); // Restore full opacity
-          prevNode.moveTo(originalLayerRef.current); // Move back!
-
-          // Redraw the layers involved to show the change
-          originalLayerRef.current.batchDraw();
-          stage.findOne("Layer[name=top-layer]")?.batchDraw();
-
-          originalLayerRef.current = null; // Clear the ref
-        }
-      }
-
-      // --- Step 2: Handle the NEWLY selected node ---
-      // If a new object was selected, move it to the top.
-      if (newId) {
-        const newNode = stage.findOne("#" + newId);
-        if (newNode) {
-          const topLayer = stage.findOne<Konva.Layer>("Layer[name=top-layer]");
-          if (topLayer) {
-            // Store its original layer in our ref BEFORE moving it
-            originalLayerRef.current = newNode.getLayer() as Konva.Layer;
-
-            newNode.opacity(0.95);
-            newNode.moveTo(topLayer); // Move to the top layer!
-
-            // Redraw the layers involved
-            topLayer.batchDraw();
-            originalLayerRef.current?.batchDraw();
-          }
-        }
-      }
-
-      // --- Step 3: Update the ref for the next time the effect runs ---
-      prevSelectedIdRef.current = newId;
-    }, [selectedId]); // This effect runs only when the selectedId changes
-
     const handleSettingsClick = useCallback(
       (e: KonvaEventObject<MouseEvent>, polyId: string) => {
         e.evt.preventDefault();
@@ -1576,6 +1500,37 @@ const GardenCanvas = forwardRef<
       isNearVertex,
     ]);
 
+    const { polygonsToRender, selectedPolygon } = useMemo(() => {
+      const selected = polygons.find((p) => p.id === selectedId);
+      return {
+        polygonsToRender: polygons.filter((p) => p.id !== selectedId),
+        selectedPolygon: selected,
+      };
+    }, [polygons, selectedId]);
+
+    const { objectsToRender, selectedObject } = useMemo(() => {
+      const selected = placedObjects.find((o) => o.id === selectedId);
+      return {
+        objectsToRender: placedObjects.filter((o) => o.id !== selectedId),
+        selectedObject: selected,
+      };
+    }, [placedObjects, selectedId]);
+
+    const { notesToRender, selectedNote } = useMemo(() => {
+      const selected = notes.find((n) => n.id === selectedId);
+      return {
+        notesToRender: notes.filter((n) => n.id !== selectedId),
+        selectedNote: selected,
+      };
+    }, [notes, selectedId]);
+
+    const handleSelect = useCallback(
+      (id: string | null) => {
+        // We only need to set the ID. The useLayoutEffect will handle the rest.
+        selectShape(id);
+      },
+      [] // Dependencies are no longer needed
+    );
     const handleSketchDragEnd = (e: KonvaEventObject<DragEvent>) => {
       handleInteractionEnd();
       if (!planningSketch) return;
@@ -1826,6 +1781,7 @@ const GardenCanvas = forwardRef<
             )}
           </Layer>
 
+          {/* ✅ UPDATED ITEMS LAYER */}
           <Layer visible={visibility.items}>
             {activeTool.type === "plot" && (
               <Group>
@@ -1885,13 +1841,14 @@ const GardenCanvas = forwardRef<
               </Group>
             )}
 
-            {polygons.map((poly) => (
+            {/* 1. Render all polygons that are NOT selected */}
+            {polygonsToRender.map((poly) => (
               <FinalPolygon
                 key={poly.id}
                 poly={poly}
                 stageScale={stage.scale}
                 grassPattern={textures[poly.textureId || ""]}
-                isSelected={selectedId === poly.id}
+                isSelected={false}
                 onSelect={() => {
                   handleSelect(poly.id);
                   setMenu(null);
@@ -1911,10 +1868,10 @@ const GardenCanvas = forwardRef<
               />
             ))}
 
-            {placedObjects.map((obj) => {
+            {/* 2. Render all placed objects that are NOT selected */}
+            {objectsToRender.map((obj) => {
               const baseWidth = obj.width || INITIAL_PRESET_SIZE;
               const baseHeight = obj.height || INITIAL_PRESET_SIZE;
-
               return (
                 <Group
                   key={obj.id}
@@ -1950,13 +1907,89 @@ const GardenCanvas = forwardRef<
                 </Group>
               );
             })}
+
+            {/* 3. Render the SELECTED polygon ON TOP */}
+            {selectedPolygon && (
+              <FinalPolygon
+                key={selectedPolygon.id}
+                poly={selectedPolygon}
+                stageScale={stage.scale}
+                grassPattern={textures[selectedPolygon.textureId || ""]}
+                isSelected={true}
+                onSelect={() => {
+                  handleSelect(selectedPolygon.id);
+                  setMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onVertexDragStart={handleVertexDragStart}
+                onVertexDragEnd={handleVertexDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={
+                  activeTool.type === "select" && !selectedPolygon.locked
+                }
+                onPointUpdate={(pointIndex, newPoint) =>
+                  handlePolygonPointUpdate(
+                    selectedPolygon.id,
+                    pointIndex,
+                    newPoint
+                  )
+                }
+                onAddPoint={(segmentIndex, newPoint) =>
+                  handlePolygonAddPoint(
+                    selectedPolygon.id,
+                    segmentIndex,
+                    newPoint
+                  )
+                }
+              />
+            )}
+
+            {/* 4. Render the SELECTED placed object ON TOP */}
+            {selectedObject && (
+              <Group
+                key={selectedObject.id}
+                id={selectedObject.id}
+                x={selectedObject.x}
+                y={selectedObject.y}
+                rotation={selectedObject.rotation || 0}
+                scaleX={selectedObject.scaleX || 1}
+                scaleY={selectedObject.scaleY || 1}
+                draggable={
+                  activeTool.type === "select" && !selectedObject.locked
+                }
+                onClick={(e) => {
+                  handleSelect(selectedObject.id);
+                  setMenu(null);
+                  e.cancelBubble = true;
+                }}
+                onTap={(e) => {
+                  handleSelect(selectedObject.id);
+                  setMenu(null);
+                  e.cancelBubble = true;
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onTransformEnd={handleTransformEnd}
+              >
+                <PresetObject
+                  shapeProps={{
+                    ...selectedObject,
+                    width: selectedObject.width || INITIAL_PRESET_SIZE,
+                    height: selectedObject.height || INITIAL_PRESET_SIZE,
+                  }}
+                  onSelect={() => selectShape(selectedObject.id)}
+                />
+              </Group>
+            )}
           </Layer>
+
+          {/* This layer remains the same */}
           <Layer>
             <Transformer
               ref={trRef}
               rotateEnabled={true}
               flipEnabled={false}
-              // ✅ FIX: Remove "/ nodeScale" from these lines
               anchorSize={10 / stage.scale}
               borderStrokeWidth={2.5 / stage.scale}
               rotateAnchorOffset={35 / stage.scale}
@@ -1966,27 +1999,23 @@ const GardenCanvas = forwardRef<
               onTransform={() => setTransformCounter((c) => c + 1)}
             />
 
-            {/* FIX: This group is now ONLY for NON-INTERACTIVE floating labels */}
             <Group
               x={-stage.x / stage.scale}
               y={-stage.y / stage.scale}
               scaleX={1 / stage.scale}
               scaleY={1 / stage.scale}
-              listening={false} // This is correct for labels
+              listening={false}
             >
               {floatingLabels}
             </Group>
 
-            {/* FIX: This NEW group is ONLY for the INTERACTIVE icons */}
             {floatingIconProps && (
               <Group
-                // Convert screen coordinates back to world coordinates for positioning
                 x={(floatingIconProps.x - stage.x) / stage.scale}
                 y={(floatingIconProps.y - stage.y) / stage.scale}
-                // Invert the stage scale so the icons stay a constant size
                 scaleX={1 / stage.scale}
                 scaleY={1 / stage.scale}
-                listening={true} // This group MUST listen for events
+                listening={true}
               >
                 <ObjectIcons
                   isLocked={floatingIconProps.isLocked}
@@ -1998,12 +2027,15 @@ const GardenCanvas = forwardRef<
               </Group>
             )}
           </Layer>
+
+          {/* ✅ UPDATED NOTES LAYER */}
           <Layer visible={visibility.notes}>
-            {notes.map((note) => (
+            {/* 1. Render non-selected notes */}
+            {notesToRender.map((note) => (
               <NoteObjectRenderer
                 key={note.id}
                 note={note}
-                isSelected={selectedId === note.id}
+                isSelected={false}
                 onSelect={() => {
                   handleSelect(note.id);
                   setMenu(null);
@@ -2022,7 +2054,35 @@ const GardenCanvas = forwardRef<
                 }}
               />
             ))}
+
+            {/* 2. Render the selected note ON TOP */}
+            {selectedNote && (
+              <NoteObjectRenderer
+                key={selectedNote.id}
+                note={selectedNote}
+                isSelected={true}
+                onSelect={() => {
+                  handleSelect(selectedNote.id);
+                  setMenu(null);
+                  setColorMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={
+                  activeTool.type === "select" && !selectedNote.locked
+                }
+                stageScale={stage.scale}
+                onTextDblClick={(e) => {
+                  const node = e.target;
+                  trRef.current?.hide();
+                  node.hide();
+                  setEditingTextNode(selectedNote);
+                }}
+              />
+            )}
           </Layer>
+
           <Layer visible={!!planningSketch && planningSketch.zIndex === 1}>
             {planningSketch && planningSketch.zIndex === 1 && (
               <SketchImage
@@ -2032,9 +2092,8 @@ const GardenCanvas = forwardRef<
               />
             )}
           </Layer>
-          <Layer name="top-layer" />
+          {/* ⛔️ The empty "top-layer" has been removed */}
         </Stage>
-
         {menu && (
           <div
             className="absolute bg-transparent flex flex-col items-start gap-2"

@@ -11,6 +11,7 @@ import { jwtDecode } from "jwt-decode";
 
 interface User {
   email: string;
+  firstName?: string;
 }
 
 interface AuthContextType {
@@ -32,9 +33,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       try {
-        const decoded: { email: string; exp: number } = jwtDecode(storedToken);
+        const decoded: { email: string; exp: number; firstName: string } =
+          jwtDecode(storedToken);
         if (decoded.exp * 1000 > Date.now()) {
-          setUser({ email: decoded.email });
+          console.log(decoded);
+
+          setUser({ email: decoded.email, firstName: decoded.firstName });
           setToken(storedToken);
         } else {
           localStorage.removeItem("token");
