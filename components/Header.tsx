@@ -21,12 +21,7 @@ const Header: React.FC<HeaderProps> = ({ onLoginClick, onSignupClick }) => {
       }
     >
       <div className="flex items-center space-x-3">
-        <div className="bg-green-100 p-2 rounded-lg">
-          <Leaf className="h-6 w-6 text-green-700" />
-        </div>
-        <span className="text-xl font-bold text-slate-800 tracking-tight">
-          Garden Designer
-        </span>
+        <img width={100} height={100} src="/logo.jpg" alt="" />
       </div>
 
       {/* Conditionally render buttons or user menu */}

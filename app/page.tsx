@@ -125,7 +125,7 @@ export default function Home() {
   >("welcome");
 
   const API_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
   // --- Effects (no changes) ---
   useEffect(() => {
@@ -468,7 +468,7 @@ export default function Home() {
           onPrint={handlePrint}
           onShare={handleShare}
           templates={config.templates}
-          className="absolute top-24 left-1/2 -translate-x-1/2 z-30 w-fit "
+          className="absolute top-30 left-1/2 -translate-x-1/2 z-30 w-fit "
           onUploadPlan={() => setActiveModal("uploadPlan")}
           onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
           onToggleSketchLock={() => canvasRef.current?.toggleSketchLock()}
@@ -489,13 +489,13 @@ export default function Home() {
           }}
           onSelectNoteTool={(shape) => setActiveTool({ type: "note", shape })}
           config={config}
-          className="absolute top-40 left-4 z-30"
+          className="absolute top-50 left-4 z-30"
         />
         <RightToolbar
           visibility={visibility}
           onCenterCanvas={() => canvasRef.current?.center()}
           onVisibilityChange={handleVisibilityChange}
-          className="absolute top-40 right-4 z-30"
+          className="absolute top-50 right-4 z-30"
         />
         <CanvasControls
           onZoomIn={handleZoomIn}

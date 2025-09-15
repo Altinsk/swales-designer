@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Garden Designer",
   description: "Garden Designer - Plan and visualize your garden layout",
+  icons: {
+    icon: "/favicon.ico", // Path to your favicon file
+  },
 };
 
 export default function RootLayout({

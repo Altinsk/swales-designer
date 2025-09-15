@@ -1913,6 +1913,7 @@ const GardenCanvas = forwardRef<
               <FinalPolygon
                 key={selectedPolygon.id}
                 poly={selectedPolygon}
+                opacity={0.7}
                 stageScale={stage.scale}
                 grassPattern={textures[selectedPolygon.textureId || ""]}
                 isSelected={true}
@@ -1950,6 +1951,7 @@ const GardenCanvas = forwardRef<
               <Group
                 key={selectedObject.id}
                 id={selectedObject.id}
+                opacity={0.7}
                 x={selectedObject.x}
                 y={selectedObject.y}
                 rotation={selectedObject.rotation || 0}
@@ -2577,6 +2579,7 @@ const FinalPolygon = memo(
     onVertexDragStart,
     onVertexDragEnd,
     onAddPoint,
+    opacity = 1,
     ...props
   }: FinalPolygonProps) => {
     const groupRef = useRef<Konva.Group>(null);
@@ -2685,6 +2688,7 @@ const FinalPolygon = memo(
         ref={groupRef}
         x={poly.x}
         y={poly.y}
+        opacity={opacity}
         rotation={poly.rotation}
         scaleX={poly.scaleX}
         scaleY={poly.scaleY}
