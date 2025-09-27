@@ -18,7 +18,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
       className="fixed inset-0   z-50 flex justify-center items-center p-4"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl p-6 relative animate-fade-in-up">
+      <div
+        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl p-6 relative animate-fade-in-up"
+        style={{ maxHeight: "90%", overflow: "auto" }}
+      >
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors"
