@@ -2,9 +2,20 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react"; // No change here
+import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import axios from "axios";
+import {
+  Brush,
+  Layers,
+  MousePointer2,
+  MoreHorizontal,
+  Plus,
+  TreePine,
+  X,
+  Edit, // <-- ADD THIS
+  Trash2,
+} from "lucide-react";
 
 // --- Component Imports ---
 import TopBar from "@/components/TopBar";
@@ -14,7 +25,6 @@ import Header from "@/components/Header";
 import RightToolbar from "@/components/RightToolbar";
 import Modal from "@/components/Modal";
 import Notification from "@/components/Notification";
-// ✅ ADDED: Import for the new Save As modal component
 import SaveProjectStep from "@/components/onboarding/SaveProjectStep";
 
 // --- Onboarding Step Imports ---
@@ -75,6 +85,9 @@ export interface VisibilityState {
   notes: boolean;
 }
 
+// ✨ NEW: Type for the active mobile panel
+type MobilePanel = "tools" | "objects" | "layers" | "actions" | null;
+
 const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
   ssr: false,
 });
@@ -107,6 +120,8 @@ export default function Home() {
     items: true,
     notes: true,
   });
+  // ✨ NEW: State to manage which mobile panel is open
+  const [activeMobilePanel, setActiveMobilePanel] = useState<MobilePanel>(null);
 
   const [activeModal, setActiveModal] = useState<
     | "welcome"
@@ -120,7 +135,7 @@ export default function Home() {
     | "login"
     | "signup"
     | "share"
-    | "saveAs" // ✅ ADDED: New modal type for saving
+    | "saveAs"
     | null
   >("welcome");
 
@@ -160,7 +175,6 @@ export default function Home() {
     if (isProcessingPdf) return;
     setActiveModal(null);
   };
-  // ... other handlers (no changes) ...
   const handlePositionLawn = () => {
     canvasRef.current?.clearCanvas();
     setCurrentProject(null);
@@ -174,8 +188,8 @@ export default function Home() {
   const handleSelectPreset = (preset: PresetItem) => {
     setActiveTool({ type: "select" });
     setSelectedPreset(preset);
+    setActiveMobilePanel(null); // Close panel on selection
   };
-
   const handleNewDrawingClick = () => {
     const isEmpty = canvasRef.current?.isCanvasEmpty() ?? true;
     if (isEmpty) {
@@ -183,6 +197,7 @@ export default function Home() {
     } else {
       setActiveModal("newDrawingWarning");
     }
+    setActiveMobilePanel(null);
   };
   const handlePrint = () => {
     const stage = canvasRef.current?.getStageNode();
@@ -213,6 +228,7 @@ export default function Home() {
       window.addEventListener("afterprint", cleanup);
       window.print();
     };
+    setActiveMobilePanel(null);
   };
   const handleShare = async () => {
     if (!canvasRef.current) return;
@@ -233,6 +249,7 @@ export default function Home() {
       setNotification("Error: Could not create share link.");
     } finally {
       setIsCreatingShareLink(false);
+      setActiveMobilePanel(null);
     }
   };
   const closeShareModal = () => {
@@ -250,6 +267,7 @@ export default function Home() {
         }
       })
       .catch((err) => console.error("Failed to load template:", err));
+    setActiveMobilePanel(null);
   };
   const handleFileUpload = async (file: File) => {
     if (file.type.startsWith("image/")) {
@@ -282,34 +300,28 @@ export default function Home() {
         setNotification(null);
       }
     }
+    setActiveMobilePanel(null);
   };
   const handlePdfPageSelect = (imageUrl: string) => {
     setUploadedImage(imageUrl);
     setActiveModal("alignMeasure");
   };
-
-  // ✅ ADDED: Helper to get canvas data (JSON state and thumbnail image)
   const getCanvasData = () => {
     if (!canvasRef.current) return null;
     const stage = canvasRef.current.getStageNode();
     if (!stage) return null;
-
     const canvasState = canvasRef.current.getCanvasState();
     const thumbnail = stage.toDataURL({
-      pixelRatio: 0.2, // Lower resolution for a small thumbnail
+      pixelRatio: 0.2,
       mimeType: "image/jpeg",
       quality: 0.6,
     });
-
     return { canvasState, thumbnail };
   };
-
-  // ✅ MODIFIED: handleSaveAs now opens the modal
   const handleSaveAs = () => {
     setActiveModal("saveAs");
+    setActiveMobilePanel(null);
   };
-
-  // ✅ ADDED: This new function is called by the SaveProjectStep modal
   const executeSaveAs = async (projectName: string) => {
     if (!token) {
       setNotification("You must be logged in to save.");
@@ -317,7 +329,6 @@ export default function Home() {
     }
     const canvasData = getCanvasData();
     if (!canvasData) return;
-
     try {
       const res = await axios.post(
         `${API_URL}/projects`,
@@ -334,7 +345,7 @@ export default function Home() {
           name: res.data.data.Name,
         });
         setNotification("Garden saved successfully!");
-        handleCloseModal(); // Close the "Save As" modal
+        handleCloseModal();
         if (postSaveCallback.current) {
           postSaveCallback.current();
           postSaveCallback.current = null;
@@ -348,15 +359,11 @@ export default function Home() {
       }
     }
   };
-
-  // ✅ MODIFIED: handleSave now also sends a thumbnail
   const handleSave = async (options?: { onSuccess?: () => void }) => {
     const canvasData = getCanvasData();
     const { onSuccess } = options || {};
     if (!canvasData || !token) return;
-
     if (currentProject) {
-      // Existing project: Update it
       try {
         await axios.put(
           `${API_URL}/projects/${currentProject.id}`,
@@ -373,31 +380,22 @@ export default function Home() {
         setNotification("Error: Could not update garden.");
       }
     } else {
-      // New project: Open the "Save As" modal
       postSaveCallback.current = onSuccess || null;
       handleSaveAs();
     }
+    setActiveMobilePanel(null);
   };
-
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      // To trigger the browser's native alert, you must prevent the default action
-      // and set a return value (for legacy browser support).
       event.preventDefault();
       event.returnValue = "";
     };
-
-    // Add the event listener when the component mounts
     window.addEventListener("beforeunload", handleBeforeUnload);
-
-    // Remove the event listener when the component unmounts
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
-
   const handleLoadProject = async (projectId: number) => {
-    // ... no changes here ...
     if (!token) return;
     try {
       const res = await axios.get(`${API_URL}/projects/${projectId}`, {
@@ -413,17 +411,30 @@ export default function Home() {
     } catch (err) {
       setNotification("Error: Could not load garden.");
     }
+    setActiveMobilePanel(null);
   };
-
-  // ... other handlers (no changes) ...
   const handleObjectAdded = () => setSelectedPreset(null);
   const handleVisibilityChange = (key: VisibilityToggle) =>
     setVisibility((prev) => ({ ...prev, [key]: !prev[key] }));
   const handleZoomIn = () => canvasRef.current?.zoomIn();
   const handleZoomOut = () => canvasRef.current?.zoomOut();
-  const handleUndo = () => canvasRef.current?.undo();
-  const handleRedo = () => canvasRef.current?.redo();
-  const handleDelete = () => canvasRef.current?.deleteSelected();
+  const handleUndo = () => {
+    canvasRef.current?.undo();
+    setActiveMobilePanel(null);
+  };
+  const handleRedo = () => {
+    canvasRef.current?.redo();
+    setActiveMobilePanel(null);
+  };
+  const handleDelete = () => {
+    canvasRef.current?.deleteSelected();
+    setActiveMobilePanel(null);
+  };
+
+  // ✨ NEW: Handler to toggle mobile panels
+  const toggleMobilePanel = (panel: MobilePanel) => {
+    setActiveMobilePanel((current) => (current === panel ? null : panel));
+  };
 
   if (!config) {
     return (
@@ -435,320 +446,542 @@ export default function Home() {
 
   return (
     <>
-      <Header
-        onLoginClick={() => setActiveModal("login")}
-        onSignupClick={() => setActiveModal("signup")}
-      />
-      <div className="h-screen w-screen bg-gray-200 font-sans relative overflow-hidden ">
-        {notification && (
-          <Notification
-            message={notification}
-            onDismiss={() => setNotification(null)}
+      {/* ✅ MODIFIED: Changed to a flexbox column layout */}
+      <div className="h-screen w-screen bg-gray-200 font-sans flex flex-col overflow-hidden">
+        <Header
+          onLoginClick={() => setActiveModal("login")}
+          onSignupClick={() => setActiveModal("signup")}
+        />
+
+        {/* ✅ MODIFIED: Main content area that grows to fill space */}
+        <main className="flex-grow relative">
+          {notification && (
+            <Notification
+              message={notification}
+              onDismiss={() => setNotification(null)}
+            />
+          )}
+
+          <GardenCanvas
+            ref={canvasRef}
+            activeTool={activeTool}
+            selectedPreset={selectedPreset}
+            onObjectAdd={handleObjectAdded}
+            setActiveTool={setActiveTool}
+            plotTexture={plotTexture}
+            config={config}
+            planningSketch={planningSketch}
+            onSketchChange={setPlanningSketch}
+            visibility={visibility}
+            onScaleChange={setCanvasScale}
           />
-        )}
-        <GardenCanvas
-          ref={canvasRef}
-          activeTool={activeTool}
-          selectedPreset={selectedPreset}
-          onObjectAdd={handleObjectAdded}
-          setActiveTool={setActiveTool}
-          plotTexture={plotTexture}
-          config={config}
-          planningSketch={planningSketch}
-          onSketchChange={setPlanningSketch}
-          visibility={visibility}
-          onScaleChange={setCanvasScale}
-        />
-        <TopBar
-          onUndo={handleUndo}
-          onRedo={handleRedo}
-          onDelete={handleDelete}
-          onNewDrawing={handleNewDrawingClick}
-          onLoadTemplate={handleLoadTemplate}
-          onPrint={handlePrint}
-          onShare={handleShare}
-          templates={config.templates}
-          className="absolute top-30 left-1/2 -translate-x-1/2 z-30 w-fit "
-          onUploadPlan={() => setActiveModal("uploadPlan")}
-          onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
-          onToggleSketchLock={() => canvasRef.current?.toggleSketchLock()}
-          onDeleteSketch={() => canvasRef.current?.deleteSketch()}
-          onEditSketch={() => canvasRef.current?.editSketch()}
-          isSketchVisible={!!planningSketch}
-          onSave={handleSave}
-          onSaveAs={handleSaveAs}
-          onLoadProject={handleLoadProject}
-        />
-        <Toolbar
-          activeTool={activeTool}
-          setActiveTool={setActiveTool}
-          onSelectPreset={handleSelectPreset}
-          onSelectTexture={(texture) => {
-            setPlotTexture(texture);
-            setActiveTool({ type: "plot" });
-          }}
-          onSelectNoteTool={(shape) => setActiveTool({ type: "note", shape })}
-          config={config}
-          className="absolute top-50 left-4 z-30"
-        />
-        <RightToolbar
-          visibility={visibility}
-          onCenterCanvas={() => canvasRef.current?.center()}
-          onVisibilityChange={handleVisibilityChange}
-          className="absolute top-50 right-4 z-30"
-        />
-        <CanvasControls
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          scaleIndicatorPixels={40 * canvasScale}
-        />
 
-        {/* --- Modals --- */}
-        {/* ... other modals are unchanged ... */}
+          {/* --- Desktop Toolbars --- */}
+          <TopBar
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onDelete={handleDelete}
+            onNewDrawing={handleNewDrawingClick}
+            onLoadTemplate={handleLoadTemplate}
+            onPrint={handlePrint}
+            onShare={handleShare}
+            templates={config.templates}
+            // ✅ MODIFIED: Responsive visibility and positioning
+            className="hidden lg:flex absolute top-34 left-1/2 -translate-x-1/2 z-30 w-fit"
+            onUploadPlan={() => setActiveModal("uploadPlan")}
+            onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
+            onToggleSketchLock={() => canvasRef.current?.toggleSketchLock()}
+            onDeleteSketch={() => canvasRef.current?.deleteSketch()}
+            onEditSketch={() => canvasRef.current?.editSketch()}
+            isSketchVisible={!!planningSketch}
+            onSave={() => handleSave()}
+            onSaveAs={handleSaveAs}
+            onLoadProject={handleLoadProject}
+          />
 
-        {/* ✅ ADDED: The new Save As modal */}
-        {activeModal === "saveAs" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Save Your Garden"
-          >
-            <SaveProjectStep onSave={executeSaveAs} />
-          </Modal>
-        )}
+          <Toolbar
+            activeTool={activeTool}
+            setActiveTool={setActiveTool}
+            onSelectPreset={handleSelectPreset}
+            onSelectTexture={(texture) => {
+              setPlotTexture(texture);
+              setActiveTool({ type: "plot" });
+              setActiveMobilePanel(null);
+            }}
+            onSelectNoteTool={(shape) => {
+              setActiveTool({ type: "note", shape });
+              setActiveMobilePanel(null);
+            }}
+            config={config}
+            // ✅ MODIFIED: Responsive visibility and positioning
+            className="hidden lg:flex absolute top-44 left-4 z-30"
+          />
 
-        {/* ... all other modals ... */}
-        {activeModal === "login" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Login to Your Account"
-          >
-            {" "}
-            <LoginModal
-              onClose={handleCloseModal}
-              onSwitchToSignup={() => setActiveModal("signup")}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "signup" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Create an Account"
-          >
-            {" "}
-            <SignupModal
-              onClose={handleCloseModal}
-              onSwitchToLogin={() => setActiveModal("login")}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "welcome" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="myGarden Planner quick guide"
-          >
-            {" "}
-            <WelcomeStep onPositionLawn={handlePositionLawn} />{" "}
-          </Modal>
-        )}
-        {activeModal === "selectShape" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Select plot shape"
-          >
-            {" "}
-            <SelectShapeStep
-              onSelectRectangle={handleSelectRectangle}
-              onStartFreeDraw={() => {
-                handleCloseModal();
-                setActiveTool({ type: "plot" });
-                setNotification("Please position your first corner.");
-              }}
-              onUploadPlan={() => setActiveModal("uploadPlan")}
-              onShowTemplates={() => setActiveModal("selectTemplate")}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "enterSize" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Enter plot size"
-          >
-            {" "}
-            <EnterSizeStep onPositionPlot={handlePositionPlot} />{" "}
-          </Modal>
-        )}
-        {activeModal === "newDrawingWarning" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Start a new plan?"
-          >
-            {" "}
-            <NewDrawingWarningStep
-              onDiscard={handlePositionLawn}
-              onSave={() => {
-                if (!token) {
-                  setActiveModal("login");
-                  return;
-                }
+          <RightToolbar
+            visibility={visibility}
+            onCenterCanvas={() => canvasRef.current?.center()}
+            onVisibilityChange={handleVisibilityChange}
+            // ✅ MODIFIED: Responsive visibility and positioning
+            className="hidden lg:flex absolute top-44 right-4 z-30"
+          />
 
-                handleSave({ onSuccess: handlePositionLawn });
-              }}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "uploadPlan" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Upload existing plan"
-          >
-            {" "}
-            {isProcessingPdf ? (
-              <div className="flex flex-col items-center justify-center p-8">
-                {" "}
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-10 w-10 text-green-600"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  {" "}
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>{" "}
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>{" "}
-                </svg>{" "}
-                <p className="mt-4 text-gray-600">Processing PDF...</p>{" "}
+          <CanvasControls
+            onZoomIn={handleZoomIn}
+            onZoomOut={handleZoomOut}
+            scaleIndicatorPixels={40 * canvasScale}
+          />
+
+          {/* --- Mobile UI --- */}
+          <div className="lg:hidden">
+            {/* ✨ NEW: Mobile Panel Overlay */}
+            {activeMobilePanel && (
+              <div
+                className="absolute inset-0 bg-black/30 z-40"
+                onClick={() => setActiveMobilePanel(null)}
+              ></div>
+            )}
+
+            {/* ✨ NEW: Panel for Tools & Notes */}
+            {activeMobilePanel === "tools" && (
+              <div className="absolute bottom-24 left-4 z-50">
+                <Toolbar
+                  activeTool={activeTool}
+                  setActiveTool={setActiveTool}
+                  onSelectPreset={handleSelectPreset}
+                  onSelectTexture={(texture) => {
+                    setPlotTexture(texture);
+                    setActiveTool({ type: "plot" });
+                    setActiveMobilePanel(null);
+                  }}
+                  onSelectNoteTool={(shape) => {
+                    setActiveTool({ type: "note", shape });
+                    setActiveMobilePanel(null);
+                  }}
+                  config={config}
+                  className="w-64" // Give it a fixed width in panel mode
+                />
               </div>
-            ) : (
-              <UploadPlanStep
-                onFileUpload={handleFileUpload}
-                onClose={handleCloseModal}
-              />
-            )}{" "}
-          </Modal>
-        )}
-        {activeModal === "alignMeasure" && uploadedImage && (
-          <Modal isOpen={true} onClose={handleCloseModal} title="Align measure">
-            {" "}
-            <AlignMeasureStep
-              imageSrc={uploadedImage}
-              onAddSketch={(data) => {
-                const stageNode = canvasRef.current?.getStageNode();
-                if (!stageNode) return;
-                const { width: viewWidth, height: viewHeight } =
-                  stageNode.size();
-                const stagePos = stageNode.position();
-                const stageScale = stageNode.scaleX();
-                const centerX = (viewWidth / 2 - stagePos.x) / stageScale;
-                const centerY = (viewHeight / 2 - stagePos.y) / stageScale;
-                const newSketch = {
-                  id: `sketch_${Date.now()}`,
-                  src: data.src,
-                  x: centerX,
-                  y: centerY,
-                  rotation: data.rotation,
-                  pixelScale: data.pixelScale,
-                  locked: true,
-                  zIndex: 0,
-                };
-                setPlanningSketch(newSketch);
-                handleCloseModal();
-              }}
-              onClose={handleCloseModal}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "selectTemplate" && config?.templates && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Select a garden template"
-          >
-            {" "}
-            <SelectTemplateStep
-              templates={config.templates}
-              onSelectTemplate={handleLoadTemplate}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "selectPdfPage" && (
-          <Modal
-            isOpen={true}
-            onClose={handleCloseModal}
-            title="Select a Page from your PDF"
-          >
-            {" "}
-            <SelectPdfPageStep
-              imageUrls={pdfPageImages}
-              onSelect={handlePdfPageSelect}
-              onClose={handleCloseModal}
-            />{" "}
-          </Modal>
-        )}
-        {activeModal === "share" && shareUrl && (
-          <Modal
-            isOpen={true}
-            onClose={closeShareModal}
-            title="Share Your Garden Plan"
-          >
-            {" "}
-            <div className="p-4">
-              {" "}
-              <p className="text-gray-600 mb-3">
-                {" "}
-                Anyone with this link can view and edit a copy of your garden.{" "}
-              </p>{" "}
-              <div className="flex items-center space-x-2">
-                {" "}
-                <input
-                  type="text"
-                  value={shareUrl}
-                  readOnly
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
-                  onFocus={(e) => e.target.select()}
-                />{" "}
+            )}
+
+            {/* ✨ NEW: Panel for Layers/Visibility */}
+            {activeMobilePanel === "layers" && (
+              <div className="absolute bottom-24 right-4 z-50">
+                <RightToolbar
+                  visibility={visibility}
+                  onCenterCanvas={() => canvasRef.current?.center()}
+                  onVisibilityChange={handleVisibilityChange}
+                />
+              </div>
+            )}
+
+            {activeMobilePanel === "actions" && (
+              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50">
+                {/* --- User-specific actions --- */}
+                <button
+                  onClick={() => handleSave()}
+                  disabled={!token}
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!token ? "Login to save" : "Save Project"}
+                >
+                  Save Project
+                </button>
+                <button
+                  onClick={handleShare}
+                  disabled={!token}
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={!token ? "Login to share" : "Share"}
+                >
+                  Share
+                </button>
+
+                <div className="border-t border-gray-200 mx-2 !my-2"></div>
+
+                {/* --- Planning Sketch Section --- */}
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(shareUrl);
-                    setNotification("Link copied to clipboard!");
+                    setActiveModal("uploadPlan");
+                    setActiveMobilePanel(null);
                   }}
-                  className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Upload Planning Sketch"
                 >
-                  {" "}
-                  Copy{" "}
-                </button>{" "}
-              </div>{" "}
-              <div className="mt-4 text-right">
-                {" "}
+                  {planningSketch
+                    ? "Change Planning Sketch"
+                    : "Upload Planning Sketch"}
+                </button>
+
+                {/* Conditionally render sketch controls */}
+                {planningSketch && (
+                  <div className="pl-4 ml-3 border-l-2 border-gray-200 flex flex-col space-y-1">
+                    <button
+                      onClick={() => {
+                        canvasRef.current?.editSketch();
+                        setActiveMobilePanel(null);
+                      }}
+                      className="flex items-center w-full text-left p-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100"
+                      title="Edit Sketch Position"
+                    >
+                      <Edit className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span>Edit Position</span>
+                    </button>
+                    {/* <button
+                      onClick={() => {
+                        canvasRef.current?.toggleSketchLayer();
+                        setActiveMobilePanel(null);
+                      }}
+                      className="flex items-center w-full text-left p-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100"
+                      title="Bring to Front / Send to Back"
+                    >
+                      <Layers className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span>Toggle Layer</span>
+                    </button> */}
+                    <button
+                      onClick={() => {
+                        canvasRef.current?.deleteSketch();
+                        setActiveMobilePanel(null);
+                      }}
+                      className="flex items-center w-full text-left p-2 text-sm text-red-500 rounded-lg hover:bg-red-50"
+                      title="Delete Sketch"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2 flex-shrink-0" />
+                      <span>Delete Sketch</span>
+                    </button>
+                  </div>
+                )}
+
+                <div className="border-t border-gray-200 mx-2 !my-2"></div>
+
+                {/* --- Other Actions --- */}
                 <button
-                  onClick={closeShareModal}
-                  className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                  onClick={() => {
+                    setActiveModal("selectTemplate");
+                    setActiveMobilePanel(null);
+                  }}
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Load a Template"
                 >
-                  {" "}
-                  Close{" "}
-                </button>{" "}
-              </div>{" "}
-            </div>{" "}
-          </Modal>
-        )}
+                  Use a Template
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Print Page"
+                >
+                  Print Page
+                </button>
+
+                <div className="border-t border-gray-200 mx-2 !my-2"></div>
+
+                {/* --- History and Delete --- */}
+                <button
+                  onClick={handleUndo}
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Undo"
+                >
+                  Undo
+                </button>
+                <button
+                  onClick={handleRedo}
+                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  title="Redo"
+                >
+                  Redo
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="w-full text-left p-3 text-red-500 rounded-lg hover:bg-red-50"
+                  title="Delete Selected"
+                >
+                  Delete Selected
+                </button>
+              </div>
+            )}
+            {/* ✨ NEW: Main Mobile Toolbar */}
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-white/80 backdrop-blur-md shadow-2xl rounded-full p-2">
+              <button
+                onClick={() => toggleMobilePanel("tools")}
+                className={`p-4 rounded-full transition-colors ${
+                  activeMobilePanel === "tools"
+                    ? "bg-green-600 text-white"
+                    : "hover:bg-gray-200"
+                }`}
+              >
+                <Brush className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => toggleMobilePanel("layers")}
+                className={`p-4 rounded-full transition-colors ${
+                  activeMobilePanel === "layers"
+                    ? "bg-green-600 text-white"
+                    : "hover:bg-gray-200"
+                }`}
+              >
+                <Layers className="w-6 h-6" />
+              </button>
+              <button
+                onClick={handleNewDrawingClick}
+                className="p-6 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transform hover:scale-105 transition-transform"
+              >
+                <Plus className="w-8 h-8" />
+              </button>
+              <button
+                onClick={() => toggleMobilePanel("actions")}
+                className={`p-4 rounded-full transition-colors ${
+                  activeMobilePanel === "actions"
+                    ? "bg-green-600 text-white"
+                    : "hover:bg-gray-200"
+                }`}
+              >
+                <MoreHorizontal className="w-6 h-6" />
+              </button>
+              <button
+                onClick={() => setActiveModal("login")} // Or open a dedicated project load modal
+                className="p-4 rounded-full hover:bg-gray-200"
+              >
+                {/* Simplified version, could open a "My Gardens" modal */}
+                <TreePine className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        </main>
       </div>
+
+      {/* --- Modals (No changes needed here) --- */}
+      {activeModal === "saveAs" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Save Your Garden"
+        >
+          <SaveProjectStep onSave={executeSaveAs} />
+        </Modal>
+      )}
+      {/* ... all other modals ... */}
+      {activeModal === "login" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Login to Your Account"
+        >
+          {" "}
+          <LoginModal
+            onClose={handleCloseModal}
+            onSwitchToSignup={() => setActiveModal("signup")}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "signup" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Create an Account"
+        >
+          {" "}
+          <SignupModal
+            onClose={handleCloseModal}
+            onSwitchToLogin={() => setActiveModal("login")}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "welcome" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Swales permaculture design planner quick guide"
+        >
+          {" "}
+          <WelcomeStep onPositionLawn={handlePositionLawn} />{" "}
+        </Modal>
+      )}
+      {activeModal === "selectShape" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Select plot shape"
+        >
+          {" "}
+          <SelectShapeStep
+            onSelectRectangle={handleSelectRectangle}
+            onStartFreeDraw={() => {
+              handleCloseModal();
+              setActiveTool({ type: "plot" });
+              setNotification("Please position your first corner.");
+            }}
+            onUploadPlan={() => setActiveModal("uploadPlan")}
+            onShowTemplates={() => setActiveModal("selectTemplate")}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "enterSize" && (
+        <Modal isOpen={true} onClose={handleCloseModal} title="Enter plot size">
+          {" "}
+          <EnterSizeStep onPositionPlot={handlePositionPlot} />{" "}
+        </Modal>
+      )}
+      {activeModal === "newDrawingWarning" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Start a new plan?"
+        >
+          {" "}
+          <NewDrawingWarningStep
+            onDiscard={handlePositionLawn}
+            onSave={() => {
+              if (!token) {
+                setActiveModal("login");
+                return;
+              }
+
+              handleSave({ onSuccess: handlePositionLawn });
+            }}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "uploadPlan" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Upload existing plan"
+        >
+          {" "}
+          {isProcessingPdf ? (
+            <div className="flex flex-col items-center justify-center p-8">
+              {" "}
+              <svg
+                className="animate-spin -ml-1 mr-3 h-10 w-10 text-green-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                {" "}
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>{" "}
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>{" "}
+              </svg>{" "}
+              <p className="mt-4 text-gray-600">Processing PDF...</p>{" "}
+            </div>
+          ) : (
+            <UploadPlanStep
+              onFileUpload={handleFileUpload}
+              onClose={handleCloseModal}
+            />
+          )}{" "}
+        </Modal>
+      )}
+      {activeModal === "alignMeasure" && uploadedImage && (
+        <Modal isOpen={true} onClose={handleCloseModal} title="Align measure">
+          {" "}
+          <AlignMeasureStep
+            imageSrc={uploadedImage}
+            onAddSketch={(data) => {
+              const stageNode = canvasRef.current?.getStageNode();
+              if (!stageNode) return;
+              const { width: viewWidth, height: viewHeight } = stageNode.size();
+              const stagePos = stageNode.position();
+              const stageScale = stageNode.scaleX();
+              const centerX = (viewWidth / 2 - stagePos.x) / stageScale;
+              const centerY = (viewHeight / 2 - stagePos.y) / stageScale;
+              const newSketch = {
+                id: `sketch_${Date.now()}`,
+                src: data.src,
+                x: centerX,
+                y: centerY,
+                rotation: data.rotation,
+                pixelScale: data.pixelScale,
+                locked: true,
+                zIndex: 0,
+              };
+              setPlanningSketch(newSketch);
+              handleCloseModal();
+            }}
+            onClose={handleCloseModal}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "selectTemplate" && config?.templates && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Select a garden template"
+        >
+          {" "}
+          <SelectTemplateStep
+            templates={config.templates}
+            onSelectTemplate={handleLoadTemplate}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "selectPdfPage" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Select a Page from your PDF"
+        >
+          {" "}
+          <SelectPdfPageStep
+            imageUrls={pdfPageImages}
+            onSelect={handlePdfPageSelect}
+            onClose={handleCloseModal}
+          />{" "}
+        </Modal>
+      )}
+      {activeModal === "share" && shareUrl && (
+        <Modal
+          isOpen={true}
+          onClose={closeShareModal}
+          title="Share Your Garden Plan"
+        >
+          {" "}
+          <div className="p-4">
+            {" "}
+            <p className="text-gray-600 mb-3">
+              {" "}
+              Anyone with this link can view and edit a copy of your garden.{" "}
+            </p>{" "}
+            <div className="flex items-center space-x-2">
+              {" "}
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                onFocus={(e) => e.target.select()}
+              />{" "}
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(shareUrl);
+                  setNotification("Link copied to clipboard!");
+                }}
+                className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
+              >
+                {" "}
+                Copy{" "}
+              </button>{" "}
+            </div>{" "}
+            <div className="mt-4 text-right">
+              {" "}
+              <button
+                onClick={closeShareModal}
+                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                {" "}
+                Close{" "}
+              </button>{" "}
+            </div>{" "}
+          </div>{" "}
+        </Modal>
+      )}
     </>
   );
 }

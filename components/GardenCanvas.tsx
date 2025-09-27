@@ -530,14 +530,6 @@ const GardenCanvas = forwardRef<
       }
     }, [lastAddedId]);
 
-    useEffect(() => {
-      // This effect cleans up any leftover points if the user switches tools
-      // in the middle of plotting without finishing or canceling.
-      if (activeTool.type !== "plot" && currentPoints.length > 0) {
-        setCurrentPoints([]);
-      }
-    }, [activeTool.type, currentPoints.length]);
-
     useLayoutEffect(() => {
       const transformer = trRef.current;
       const stage = stageRef.current;
@@ -1101,7 +1093,8 @@ const GardenCanvas = forwardRef<
     };
 
     const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
-      // 🚀 PRIORITY LOGIC: If plot tool is active, handle it here and stop.
+      if (e.target !== e.target.getStage()) return;
+
       if (activeTool.type === "plot") {
         if (isClosing) {
           finishPlotting();
@@ -1112,13 +1105,9 @@ const GardenCanvas = forwardRef<
         const clickPos = snapDetails.isSnapped ? snapDetails.point : pos;
         setCurrentPoints((prev) => [...prev, clickPos.x, clickPos.y]);
         setIsNearVertex(true);
-        return; // Exit after handling the plot click.
+        return;
       }
 
-      // If we're not plotting, only proceed for clicks on the empty stage.
-      if (e.target !== e.target.getStage()) return;
-
-      // --- Original logic for other tools remains unchanged ---
       if (activeTool.type === "note" && activeTool.shape === "text") {
         const stageNode = stageRef.current;
         if (!stageNode) return;
@@ -1139,10 +1128,13 @@ const GardenCanvas = forwardRef<
           locked: false,
           text: " ",
         };
+        // Add the visually blank note to the canvas
         setNotes((prev) => [...prev, newNote]);
         setActiveTool({ type: "select" });
         selectShape(newNote.id);
 
+        // ✅ 2. Immediately start editing, but provide the *actual* default text
+        // to the editing state. This populates the textarea correctly.
         setEditingTextNode({
           ...newNote,
           text: "Text",
@@ -1758,14 +1750,18 @@ const GardenCanvas = forwardRef<
         className={`w-full h-full  overflow-hidden ${
           activeTool.type == "select" ? "cursor-grab" : "cursor-crosshair"
         }`}
+        style={{ touchAction: "none" }}
       >
         <Stage
           width={dimensions.width}
           height={dimensions.height}
           onMouseDown={handleStageMouseDown}
+          onTouchStart={handleStageMouseDown}
           onClick={handleCanvasClick}
           onMouseMove={handleStageMouseMove}
+          onTouchMove={handleStageMouseMove}
           onMouseUp={handleStageMouseUp}
+          onTouchEnd={handleStageMouseUp}
           ref={stageRef}
           scaleX={stage.scale}
           scaleY={stage.scale}
@@ -1791,173 +1787,6 @@ const GardenCanvas = forwardRef<
 
           {/* ✅ UPDATED ITEMS LAYER */}
           <Layer visible={visibility.items}>
-            {/* 1. Render all polygons that are NOT selected */}
-            {polygonsToRender.map((poly) => (
-              <FinalPolygon
-                key={poly.id}
-                poly={poly}
-                stageScale={stage.scale}
-                grassPattern={textures[poly.textureId || ""]}
-                isSelected={false}
-                onSelect={(e) => {
-                  if (activeTool.type !== "plot") {
-                    handleSelect(poly.id);
-                    setMenu(null);
-                    e.cancelBubble = true;
-                  }
-                }}
-                onDragStart={handleInteractionStart}
-                onDragEnd={handleObjectDragEnd}
-                onVertexDragStart={handleVertexDragStart}
-                onVertexDragEnd={handleVertexDragEnd}
-                onTransformEnd={handleTransformEnd}
-                isDraggable={activeTool.type === "select" && !poly.locked}
-                // ✅ FIX 2: Ignore mouse events when plotting
-                listening={activeTool.type !== "plot"}
-                onPointUpdate={(pointIndex, newPoint) =>
-                  handlePolygonPointUpdate(poly.id, pointIndex, newPoint)
-                }
-                onAddPoint={(segmentIndex, newPoint) =>
-                  handlePolygonAddPoint(poly.id, segmentIndex, newPoint)
-                }
-              />
-            ))}
-
-            {/* 2. Render all placed objects that are NOT selected */}
-            {objectsToRender.map((obj) => {
-              const baseWidth = obj.width || INITIAL_PRESET_SIZE;
-              const baseHeight = obj.height || INITIAL_PRESET_SIZE;
-              return (
-                <Group
-                  key={obj.id}
-                  id={obj.id}
-                  x={obj.x}
-                  y={obj.y}
-                  rotation={obj.rotation || 0}
-                  scaleX={obj.scaleX || 1}
-                  scaleY={obj.scaleY || 1}
-                  draggable={activeTool.type === "select" && !obj.locked}
-                  // ✅ FIX 2: Ignore mouse events when plotting
-                  listening={activeTool.type !== "plot"}
-                  onClick={(e) => {
-                    if (activeTool.type !== "plot") {
-                      handleSelect(obj.id);
-                      setMenu(null);
-                      e.cancelBubble = true;
-                    }
-                  }}
-                  onTap={(e) => {
-                    if (activeTool.type !== "plot") {
-                      handleSelect(obj.id);
-                      setMenu(null);
-                      e.cancelBubble = true;
-                    }
-                  }}
-                  onDragStart={handleInteractionStart}
-                  onDragEnd={handleObjectDragEnd}
-                  onTransformEnd={handleTransformEnd}
-                >
-                  <PresetObject
-                    shapeProps={{
-                      ...obj,
-                      width: baseWidth,
-                      height: baseHeight,
-                    }}
-                    onSelect={() => selectShape(obj.id)}
-                  />
-                </Group>
-              );
-            })}
-
-            {/* 3. Render the SELECTED polygon ON TOP */}
-            {selectedPolygon && (
-              <FinalPolygon
-                key={selectedPolygon.id}
-                poly={selectedPolygon}
-                opacity={0.7}
-                stageScale={stage.scale}
-                grassPattern={textures[selectedPolygon.textureId || ""]}
-                isSelected={true}
-                onSelect={(e) => {
-                  if (activeTool.type !== "plot") {
-                    handleSelect(selectedPolygon.id);
-                    setMenu(null);
-                    e.cancelBubble = true;
-                  }
-                }}
-                onDragStart={handleInteractionStart}
-                onDragEnd={handleObjectDragEnd}
-                onVertexDragStart={handleVertexDragStart}
-                onVertexDragEnd={handleVertexDragEnd}
-                onTransformEnd={handleTransformEnd}
-                isDraggable={
-                  activeTool.type === "select" && !selectedPolygon.locked
-                }
-                // ✅ FIX 2: Ignore mouse events when plotting
-                listening={activeTool.type !== "plot"}
-                onPointUpdate={(pointIndex, newPoint) =>
-                  handlePolygonPointUpdate(
-                    selectedPolygon.id,
-                    pointIndex,
-                    newPoint
-                  )
-                }
-                onAddPoint={(segmentIndex, newPoint) =>
-                  handlePolygonAddPoint(
-                    selectedPolygon.id,
-                    segmentIndex,
-                    newPoint
-                  )
-                }
-              />
-            )}
-
-            {/* 4. Render the SELECTED placed object ON TOP */}
-            {selectedObject && (
-              <Group
-                key={selectedObject.id}
-                id={selectedObject.id}
-                opacity={0.7}
-                x={selectedObject.x}
-                y={selectedObject.y}
-                rotation={selectedObject.rotation || 0}
-                scaleX={selectedObject.scaleX || 1}
-                scaleY={selectedObject.scaleY || 1}
-                draggable={
-                  activeTool.type === "select" && !selectedObject.locked
-                }
-                // ✅ FIX 2: Ignore mouse events when plotting
-                listening={activeTool.type !== "plot"}
-                onClick={(e) => {
-                  if (activeTool.type !== "plot") {
-                    handleSelect(selectedObject.id);
-                    setMenu(null);
-                    e.cancelBubble = true;
-                  }
-                }}
-                onTap={(e) => {
-                  if (activeTool.type !== "plot") {
-                    handleSelect(selectedObject.id);
-                    setMenu(null);
-                    e.cancelBubble = true;
-                  }
-                }}
-                onDragStart={handleInteractionStart}
-                onDragEnd={handleObjectDragEnd}
-                onTransformEnd={handleTransformEnd}
-              >
-                <PresetObject
-                  shapeProps={{
-                    ...selectedObject,
-                    width: selectedObject.width || INITIAL_PRESET_SIZE,
-                    height: selectedObject.height || INITIAL_PRESET_SIZE,
-                  }}
-                  onSelect={() => selectShape(selectedObject.id)}
-                />
-              </Group>
-            )}
-
-            {/* ✅ FIX 1: Moved this entire block to the end of the layer to draw it on top */}
             {activeTool.type === "plot" && (
               <Group>
                 {plottingShapes}
@@ -1995,6 +1824,7 @@ const GardenCanvas = forwardRef<
                     x={currentPoints[currentPoints.length - 2]}
                     y={currentPoints[currentPoints.length - 1]}
                     onClick={finishPlotting}
+                    onTap={finishPlotting}
                   >
                     <Circle
                       radius={14 / stage.scale}
@@ -2015,8 +1845,155 @@ const GardenCanvas = forwardRef<
                 )}
               </Group>
             )}
+
+            {/* 1. Render all polygons that are NOT selected */}
+            {polygonsToRender.map((poly) => (
+              <FinalPolygon
+                key={poly.id}
+                poly={poly}
+                stageScale={stage.scale}
+                grassPattern={textures[poly.textureId || ""]}
+                isSelected={false}
+                onSelect={() => {
+                  handleSelect(poly.id);
+                  setMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onVertexDragStart={handleVertexDragStart}
+                onVertexDragEnd={handleVertexDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={activeTool.type === "select" && !poly.locked}
+                onPointUpdate={(pointIndex, newPoint) =>
+                  handlePolygonPointUpdate(poly.id, pointIndex, newPoint)
+                }
+                onAddPoint={(segmentIndex, newPoint) =>
+                  handlePolygonAddPoint(poly.id, segmentIndex, newPoint)
+                }
+              />
+            ))}
+
+            {/* 2. Render all placed objects that are NOT selected */}
+            {objectsToRender.map((obj) => {
+              const baseWidth = obj.width || INITIAL_PRESET_SIZE;
+              const baseHeight = obj.height || INITIAL_PRESET_SIZE;
+              return (
+                <Group
+                  key={obj.id}
+                  id={obj.id}
+                  x={obj.x}
+                  y={obj.y}
+                  rotation={obj.rotation || 0}
+                  scaleX={obj.scaleX || 1}
+                  scaleY={obj.scaleY || 1}
+                  draggable={activeTool.type === "select" && !obj.locked}
+                  dragDistance={10}
+                  onClick={(e) => {
+                    handleSelect(obj.id);
+                    setMenu(null);
+                    e.cancelBubble = true;
+                  }}
+                  onTap={(e) => {
+                    handleSelect(obj.id);
+                    setMenu(null);
+                    e.cancelBubble = true;
+                  }}
+                  onDragStart={handleInteractionStart}
+                  onDragEnd={handleObjectDragEnd}
+                  onTransformEnd={handleTransformEnd}
+                >
+                  <PresetObject
+                    shapeProps={{
+                      ...obj,
+                      width: baseWidth,
+                      height: baseHeight,
+                    }}
+                    onSelect={() => selectShape(obj.id)}
+                  />
+                </Group>
+              );
+            })}
+
+            {/* 3. Render the SELECTED polygon ON TOP */}
+            {selectedPolygon && (
+              <FinalPolygon
+                key={selectedPolygon.id}
+                poly={selectedPolygon}
+                opacity={0.7}
+                stageScale={stage.scale}
+                grassPattern={textures[selectedPolygon.textureId || ""]}
+                isSelected={true}
+                onSelect={() => {
+                  handleSelect(selectedPolygon.id);
+                  setMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onVertexDragStart={handleVertexDragStart}
+                onVertexDragEnd={handleVertexDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={
+                  activeTool.type === "select" && !selectedPolygon.locked
+                }
+                onPointUpdate={(pointIndex, newPoint) =>
+                  handlePolygonPointUpdate(
+                    selectedPolygon.id,
+                    pointIndex,
+                    newPoint
+                  )
+                }
+                onAddPoint={(segmentIndex, newPoint) =>
+                  handlePolygonAddPoint(
+                    selectedPolygon.id,
+                    segmentIndex,
+                    newPoint
+                  )
+                }
+              />
+            )}
+
+            {/* 4. Render the SELECTED placed object ON TOP */}
+            {selectedObject && (
+              <Group
+                key={selectedObject.id}
+                id={selectedObject.id}
+                opacity={0.7}
+                x={selectedObject.x}
+                y={selectedObject.y}
+                rotation={selectedObject.rotation || 0}
+                scaleX={selectedObject.scaleX || 1}
+                scaleY={selectedObject.scaleY || 1}
+                draggable={
+                  activeTool.type === "select" && !selectedObject.locked
+                }
+                dragDistance={10}
+                onClick={(e) => {
+                  handleSelect(selectedObject.id);
+                  setMenu(null);
+                  e.cancelBubble = true;
+                }}
+                onTap={(e) => {
+                  handleSelect(selectedObject.id);
+                  setMenu(null);
+                  e.cancelBubble = true;
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onTransformEnd={handleTransformEnd}
+              >
+                <PresetObject
+                  shapeProps={{
+                    ...selectedObject,
+                    width: selectedObject.width || INITIAL_PRESET_SIZE,
+                    height: selectedObject.height || INITIAL_PRESET_SIZE,
+                  }}
+                  onSelect={() => selectShape(selectedObject.id)}
+                />
+              </Group>
+            )}
           </Layer>
 
+          {/* This layer remains the same */}
           <Layer>
             <Transformer
               ref={trRef}
@@ -2060,20 +2037,18 @@ const GardenCanvas = forwardRef<
             )}
           </Layer>
 
+          {/* ✅ UPDATED NOTES LAYER */}
           <Layer visible={visibility.notes}>
+            {/* 1. Render non-selected notes */}
             {notesToRender.map((note) => (
               <NoteObjectRenderer
                 key={note.id}
                 note={note}
                 isSelected={false}
-                // ✅ MODIFIED: Conditional selection logic
-                onSelect={(e) => {
-                  if (activeTool.type !== "plot") {
-                    handleSelect(note.id);
-                    setMenu(null);
-                    setColorMenu(null);
-                    e.cancelBubble = true;
-                  }
+                onSelect={() => {
+                  handleSelect(note.id);
+                  setMenu(null);
+                  setColorMenu(null);
                 }}
                 onDragStart={handleInteractionStart}
                 onDragEnd={handleObjectDragEnd}
@@ -2089,19 +2064,16 @@ const GardenCanvas = forwardRef<
               />
             ))}
 
+            {/* 2. Render the selected note ON TOP */}
             {selectedNote && (
               <NoteObjectRenderer
                 key={selectedNote.id}
                 note={selectedNote}
                 isSelected={true}
-                // ✅ MODIFIED: Conditional selection logic
-                onSelect={(e) => {
-                  if (activeTool.type !== "plot") {
-                    handleSelect(selectedNote.id);
-                    setMenu(null);
-                    setColorMenu(null);
-                    e.cancelBubble = true;
-                  }
+                onSelect={() => {
+                  handleSelect(selectedNote.id);
+                  setMenu(null);
+                  setColorMenu(null);
                 }}
                 onDragStart={handleInteractionStart}
                 onDragEnd={handleObjectDragEnd}
@@ -2129,6 +2101,7 @@ const GardenCanvas = forwardRef<
               />
             )}
           </Layer>
+          {/* ⛔️ The empty "top-layer" has been removed */}
         </Stage>
         {menu && (
           <div
@@ -2291,7 +2264,7 @@ const getTextAreaStyle = (
 interface NoteObjectRendererProps {
   note: NoteObject;
   isSelected: boolean;
-  onSelect: (e: KonvaEventObject<MouseEvent>) => void;
+  onSelect: () => void;
   onDragStart: (e: KonvaEventObject<DragEvent>) => void;
   onDragEnd: (e: KonvaEventObject<DragEvent>) => void;
   onTransformEnd: (e: KonvaEventObject<Event>) => void;
@@ -2433,6 +2406,7 @@ const NoteObjectRenderer = memo(
         offsetX={note.offsetX || 0}
         offsetY={note.offsetY || 0}
         draggable={props.isDraggable}
+        dragDistance={10}
         onClick={props.onSelect}
         onTap={props.onSelect}
         onDragStart={props.onDragStart}
@@ -2729,6 +2703,7 @@ const FinalPolygon = memo(
         onClick={onSelect}
         onTap={onSelect}
         draggable={isDraggable}
+        dragDistance={10}
         {...props}
       >
         <Line

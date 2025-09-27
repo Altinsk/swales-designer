@@ -1,44 +1,42 @@
 // components/Toolbar.tsx
-import React, { useState } from "react";
-import { ActiveTool, NoteShape } from "@/app/page"; // Import updated types
+"use client";
 
-export type Tool = "select" | "plot"; // This can be kept for original tool types
+import React, { useState, useEffect, useRef } from "react";
+import { ActiveTool, NoteShape } from "@/app/page";
 
+// --- Type Definitions (no changes) ---
+export type Tool = "select" | "plot";
 export interface Texture {
   id: string;
   name: string;
   src: string;
 }
-
 interface PlotToolConfig {
   id: "plot";
   name: string;
   type: "menu";
   textures: Texture[];
 }
-
 export interface PresetItem {
   id: string;
   name: string;
   type: "item";
   src: string;
 }
-
 export interface PresetCategory {
   id: string;
   name: string;
   type: "category";
   children?: (PresetItem | PresetCategory)[];
 }
-
 export type Preset = PresetItem | PresetCategory;
 
 interface ToolbarProps {
-  activeTool: ActiveTool; // Use the new ActiveTool interface
-  setActiveTool: (tool: ActiveTool) => void; // Update setter type
+  activeTool: ActiveTool;
+  setActiveTool: (tool: ActiveTool) => void;
   onSelectPreset: (preset: PresetItem) => void;
   onSelectTexture: (texture: Texture) => void;
-  onSelectNoteTool: (shape: NoteShape) => void; // New handler for notes
+  onSelectNoteTool: (shape: NoteShape) => void;
   config: {
     tools: PlotToolConfig[];
     objects: Preset[];
@@ -46,7 +44,7 @@ interface ToolbarProps {
   className?: string;
 }
 
-// Data URI for SVG icons to avoid extra files
+// --- Data (no changes) ---
 const icons = {
   text: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z'%3E%3C/path%3E%3Cpath d='M12 18V6'%3E%3C/path%3E%3Cpath d='M8 6h8'%3E%3C/path%3E%3Cpath d='M8 12h8'%3E%3C/path%3E%3Cpath d='M8 18h8'%3E%3C/path%3E%3C/svg%3E",
   rectangle:
@@ -57,8 +55,6 @@ const icons = {
   arrow:
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'%3E%3C/line%3E%3Cpolyline points='12 5 19 12 12 19'%3E%3C/polyline%3E%3C/svg%3E",
 };
-
-// Hardcoded definition for the "Notes" menu
 const noteTools: PresetCategory = {
   id: "notes-category",
   name: "Notes",
@@ -77,13 +73,21 @@ const noteTools: PresetCategory = {
   ],
 };
 
-// A recursive component to render object categories and items with STATE-BASED HOVER
+// ✅ MODIFIED: This sub-component now handles both hover and click logic
 const ObjectMenuItem: React.FC<{
   item: Preset;
   onSelectPreset: (preset: PresetItem) => void;
-}> = ({ item, onSelectPreset }) => {
-  // ✅ Use local state for hover to prevent cascading
-  const [isHovered, setIsHovered] = useState(false);
+  prefersHover: boolean; // ✨ NEW: Prop to determine interaction mode
+}> = ({ item, onSelectPreset, prefersHover }) => {
+  const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+
+  const handleInteraction = (e: React.MouseEvent) => {
+    // For touch devices, toggle the menu on click
+    if (!prefersHover) {
+      e.stopPropagation(); // Prevent closing immediately
+      setIsSubMenuOpen((prev) => !prev);
+    }
+  };
 
   if (item.type === "item") {
     return (
@@ -102,14 +106,20 @@ const ObjectMenuItem: React.FC<{
     );
   }
 
-  // item.type === 'category'
   return (
     <div
       className="relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => {
+        if (prefersHover) setIsSubMenuOpen(true);
+      }}
+      onMouseLeave={() => {
+        if (prefersHover) setIsSubMenuOpen(false);
+      }}
     >
-      <div className="flex items-center justify-between p-2 rounded-md hover:bg-green-100 text-gray-700 cursor-default">
+      <div
+        onClick={handleInteraction}
+        className="flex items-center justify-between p-2 rounded-md hover:bg-green-100 text-gray-700 cursor-pointer"
+      >
         <span className="text-sm font-medium whitespace-nowrap">
           {item.name}
         </span>
@@ -127,11 +137,10 @@ const ObjectMenuItem: React.FC<{
           />
         </svg>
       </div>
-      {/* Sub-menu visibility is now controlled by the isHovered state */}
       <div
         style={{ left: "95%" }}
         className={`absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg transition-opacity duration-200 w-max ${
-          isHovered
+          isSubMenuOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
         }`}
@@ -141,6 +150,7 @@ const ObjectMenuItem: React.FC<{
             key={child.id}
             item={child}
             onSelectPreset={onSelectPreset}
+            prefersHover={prefersHover} // Pass down the interaction mode
           />
         ))}
       </div>
@@ -159,8 +169,41 @@ const Toolbar: React.FC<ToolbarProps> = ({
 }) => {
   const plotToolConfig = config.tools.find((t) => t.id === "plot");
 
+  // ✨ NEW: State to control the plot tool's submenu visibility for both hover and click
+  const [isPlotMenuOpen, setIsPlotMenuOpen] = useState(false);
+  // ✨ NEW: State to determine if the device has a mouse (fine pointer)
+  const [prefersHover, setPrefersHover] = useState(false);
+
+  const plotMenuRef = useRef<HTMLDivElement>(null);
+
+  // ✨ NEW: On mount, check if the primary input is a mouse
+  useEffect(() => {
+    // window.matchMedia is not available during SSR, so we check.
+    if (typeof window !== "undefined") {
+      const mediaQuery = window.matchMedia("(pointer: fine)");
+      setPrefersHover(mediaQuery.matches);
+    }
+  }, []);
+
+  // ✨ NEW: Effect to handle clicks outside the plot menu to close it (for touch devices)
+  useEffect(() => {
+    if (prefersHover) return; // This logic is only for click/touch interaction
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        plotMenuRef.current &&
+        !plotMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsPlotMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [prefersHover]); // Re-run if interaction mode changes
+
   const handleSelectNote = (item: PresetItem) => {
-    // Extract the shape from the item's ID (e.g., 'note-rectangle' -> 'rectangle')
     const shape = item.id.split("-")[1] as NoteShape;
     if (shape) {
       onSelectNoteTool(shape);
@@ -171,15 +214,14 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <div
       className={`bg-white/90 backdrop-blur-sm p-3 w-60 rounded-xl shadow-lg flex flex-col space-y-4 z-10 transition-all duration-300 ${className}`}
     >
-      {/* Main Tools Section */}
       <div className="space-y-2">
         <h3 className="font-semibold text-gray-500 text-xs uppercase tracking-wider px-2">
           Tools
         </h3>
         <button
-          onClick={() => setActiveTool({ type: "select" })} // Update to new state structure
+          onClick={() => setActiveTool({ type: "select" })}
           className={`w-full flex items-center p-2 rounded-lg text-left transition-all duration-200 ${
-            activeTool.type === "select" // Check type property
+            activeTool.type === "select"
               ? "bg-green-600 text-white shadow"
               : "hover:bg-gray-100 text-gray-700"
           }`}
@@ -201,10 +243,22 @@ const Toolbar: React.FC<ToolbarProps> = ({
         </button>
 
         {plotToolConfig && (
-          <div className="relative group">
+          <div
+            className="relative"
+            ref={plotMenuRef}
+            onMouseEnter={() => {
+              if (prefersHover) setIsPlotMenuOpen(true);
+            }}
+            onMouseLeave={() => {
+              if (prefersHover) setIsPlotMenuOpen(false);
+            }}
+          >
             <div
+              onClick={() => {
+                if (!prefersHover) setIsPlotMenuOpen(!isPlotMenuOpen);
+              }}
               className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all duration-200 cursor-pointer ${
-                activeTool.type === "plot" // Check type property
+                activeTool.type === "plot"
                   ? "bg-green-600 text-white shadow"
                   : "hover:bg-gray-100 text-gray-700"
               }`}
@@ -241,15 +295,21 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 />
               </svg>
             </div>
-            {/* ✅ Plot menu now opens to the right */}
             <div
               style={{ left: "98%" }}
-              className="absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity duration-200 w-max"
+              className={`absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-200 w-max ${
+                isPlotMenuOpen
+                  ? "opacity-100 pointer-events-auto"
+                  : "opacity-0 pointer-events-none"
+              }`}
             >
               {plotToolConfig.textures.map((texture) => (
                 <button
                   key={texture.id}
-                  onClick={() => onSelectTexture(texture)}
+                  onClick={() => {
+                    onSelectTexture(texture);
+                    setIsPlotMenuOpen(false); // Close menu on selection
+                  }}
                   className="w-full flex items-center p-2 rounded-md hover:bg-gray-100"
                 >
                   <img
@@ -265,7 +325,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
         )}
       </div>
 
-      {/* Preset Objects Section */}
       <div className="space-y-1">
         <h3 className="font-semibold text-gray-500 text-xs uppercase tracking-wider px-2">
           Objects
@@ -275,17 +334,20 @@ const Toolbar: React.FC<ToolbarProps> = ({
             key={item.id}
             item={item}
             onSelectPreset={onSelectPreset}
+            prefersHover={prefersHover}
           />
         ))}
       </div>
 
-      {/* Notes Section - NEW */}
       <div className="space-y-1 pt-2 border-t border-gray-200">
         <h3 className="font-semibold text-gray-500 text-xs uppercase tracking-wider px-2">
           Notes
         </h3>
-        {/* We reuse the ObjectMenuItem component for a consistent UI */}
-        <ObjectMenuItem item={noteTools} onSelectPreset={handleSelectNote} />
+        <ObjectMenuItem
+          item={noteTools}
+          onSelectPreset={handleSelectNote}
+          prefersHover={prefersHover}
+        />
       </div>
     </div>
   );
