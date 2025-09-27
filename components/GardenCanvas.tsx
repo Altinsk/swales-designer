@@ -1750,14 +1750,18 @@ const GardenCanvas = forwardRef<
         className={`w-full h-full  overflow-hidden ${
           activeTool.type == "select" ? "cursor-grab" : "cursor-crosshair"
         }`}
+        style={{ touchAction: "none" }}
       >
         <Stage
           width={dimensions.width}
           height={dimensions.height}
           onMouseDown={handleStageMouseDown}
+          onTouchStart={handleStageMouseDown}
           onClick={handleCanvasClick}
           onMouseMove={handleStageMouseMove}
+          onTouchMove={handleStageMouseMove}
           onMouseUp={handleStageMouseUp}
+          onTouchEnd={handleStageMouseUp}
           ref={stageRef}
           scaleX={stage.scale}
           scaleY={stage.scale}
@@ -1820,6 +1824,7 @@ const GardenCanvas = forwardRef<
                     x={currentPoints[currentPoints.length - 2]}
                     y={currentPoints[currentPoints.length - 1]}
                     onClick={finishPlotting}
+                    onTap={finishPlotting}
                   >
                     <Circle
                       radius={14 / stage.scale}
@@ -1882,6 +1887,7 @@ const GardenCanvas = forwardRef<
                   scaleX={obj.scaleX || 1}
                   scaleY={obj.scaleY || 1}
                   draggable={activeTool.type === "select" && !obj.locked}
+                  dragDistance={10}
                   onClick={(e) => {
                     handleSelect(obj.id);
                     setMenu(null);
@@ -1960,6 +1966,7 @@ const GardenCanvas = forwardRef<
                 draggable={
                   activeTool.type === "select" && !selectedObject.locked
                 }
+                dragDistance={10}
                 onClick={(e) => {
                   handleSelect(selectedObject.id);
                   setMenu(null);
@@ -2399,6 +2406,7 @@ const NoteObjectRenderer = memo(
         offsetX={note.offsetX || 0}
         offsetY={note.offsetY || 0}
         draggable={props.isDraggable}
+        dragDistance={10}
         onClick={props.onSelect}
         onTap={props.onSelect}
         onDragStart={props.onDragStart}
@@ -2695,6 +2703,7 @@ const FinalPolygon = memo(
         onClick={onSelect}
         onTap={onSelect}
         draggable={isDraggable}
+        dragDistance={10}
         {...props}
       >
         <Line
