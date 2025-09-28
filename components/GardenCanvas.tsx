@@ -794,20 +794,23 @@ const GardenCanvas = forwardRef<
       e.cancelBubble = true;
       const node = e.target;
       const id = node.id();
+      const newX = node.x();
+      const newY = node.y();
+
+      // ✅ FIX: Prevent state updates with invalid coordinates, which can occur on mobile touch events.
+      if (isNaN(newX) || isNaN(newY)) {
+        console.warn("Invalid coordinates on drag end; update prevented.");
+        return;
+      }
+
       setPolygons((current) =>
-        current.map((p) =>
-          p.id === id ? { ...p, x: node.x(), y: node.y() } : p
-        )
+        current.map((p) => (p.id === id ? { ...p, x: newX, y: newY } : p))
       );
       setPlacedObjects((current) =>
-        current.map((o) =>
-          o.id === id ? { ...o, x: node.x(), y: node.y() } : o
-        )
+        current.map((o) => (o.id === id ? { ...o, x: newX, y: newY } : o))
       );
       setNotes((current) =>
-        current.map((n) =>
-          n.id === id ? { ...n, x: node.x(), y: node.y() } : n
-        )
+        current.map((n) => (n.id === id ? { ...n, x: newX, y: newY } : n))
       );
       setTransformCounter((c) => c + 1); // Trigger label update on drag
     };
@@ -817,6 +820,35 @@ const GardenCanvas = forwardRef<
       e.cancelBubble = true;
       const node = e.target;
       const id = node.id();
+      const newScaleX = node.scaleX();
+      const newScaleY = node.scaleY();
+      const newX = node.x();
+      const newY = node.y();
+
+      // ✅ FIX: Prevent disappearing objects by validating scale and position.
+      // This catches buggy transforms from quick taps on mobile.
+      if (
+        Math.abs(newScaleX) < 0.0001 ||
+        Math.abs(newScaleY) < 0.0001 ||
+        isNaN(newX) ||
+        isNaN(newY)
+      ) {
+        console.warn("Invalid transform detected; update prevented.");
+        // Find the object in our React state to get its last valid properties.
+        const allObjects = [...polygons, ...placedObjects, ...notes];
+        const originalObject = allObjects.find((obj) => obj.id === id);
+
+        // Manually reset the Konva node to its last known good state to prevent visual glitches.
+        if (originalObject) {
+          node.x(originalObject.x);
+          node.y(originalObject.y);
+          node.scaleX(originalObject.scaleX || 1);
+          node.scaleY(originalObject.scaleY || 1);
+          node.rotation(originalObject.rotation || 0);
+        }
+        return; // Exit without updating React state.
+      }
+
       const commonProps = {
         x: node.x(),
         y: node.y(),
