@@ -5,12 +5,12 @@ import { useAuth } from "@/context/AuthContext";
 import Modal from "./Modal";
 import {
   Search,
-  Image as ImageIcon,
+  ImageIcon,
   Trash2,
   Loader2,
   ArrowLeft,
   ArrowRight,
-  FilterX, // Icon for the new "Clear Filters" button
+  FilterX,
 } from "lucide-react";
 
 interface Project {
@@ -40,8 +40,6 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Filter and pagination state
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("date_desc");
@@ -49,11 +47,10 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Debounce search input to avoid excessive API calls
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page on new search
+      setCurrentPage(1);
     }, 500);
     return () => clearTimeout(handler);
   }, [searchTerm]);
@@ -62,7 +59,6 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
     if (!token) return;
     setIsLoading(true);
     setError(null);
-
     try {
       const params = new URLSearchParams({
         page: String(currentPage),
@@ -93,7 +89,6 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
     if (isOpen) {
       fetchAllGardens();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, currentPage, debouncedSearchTerm, sortBy, dateRange, token]);
 
   const handleLocalDelete = async (e: React.MouseEvent, projectId: number) => {
@@ -106,7 +101,6 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
       return;
     }
     await onDeleteProject(projectId);
-    // Refresh the list after deletion
     fetchAllGardens();
   };
 
@@ -120,7 +114,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   const renderContent = () => {
     if (isLoading) {
       return (
-        <div className="flex justify-center items-center h-64">
+        <div className="flex justify-center items-center h-full">
           <Loader2 className="w-8 h-8 text-gray-500 animate-spin" />
         </div>
       );
@@ -147,14 +141,14 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
               <img
                 src={garden.ThumbnailUrl}
                 alt={garden.Name}
-                className="w-16 h-12 object-cover rounded-md mr-4 bg-gray-100"
+                className="w-16 h-12 object-cover rounded-md mr-4 bg-gray-100 flex-shrink-0"
               />
             ) : (
-              <div className="w-16 h-12 flex items-center justify-center bg-gray-100 rounded-md mr-4">
+              <div className="w-16 h-12 flex items-center justify-center bg-gray-100 rounded-md mr-4 flex-shrink-0">
                 <ImageIcon className="w-6 h-6 text-gray-400" />
               </div>
             )}
-            <div className="flex-grow text-left">
+            <div className="flex-grow text-left min-w-0">
               <p className="font-semibold truncate">{garden.Name}</p>
               <p className="text-xs text-gray-500">
                 Updated: {new Date(garden.DateLastUpdated).toLocaleDateString()}
@@ -174,20 +168,23 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="My Garden Plans">
-      <div className="p-4 space-y-4">
-        {/* --- IMPROVED FILTER AND SORT CONTROLS --- */}
-        <div className="flex flex-wrap items-center justify-between gap-4 p-3 bg-gray-50  rounded-lg">
-          {/* Primary Controls: Search & Sort */}
-          <div className="flex items-center gap-4 flex-grow min-w-[300px]">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="My Garden Plans"
+      modalClassName="w-full max-w-4xl h-[90%] max-h-[700px]"
+    >
+      <div className="p-2 sm:p-4 flex flex-col h-full gap-4">
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+          <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto lg:flex-grow">
+            <div className="relative w-full md:flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search gardens..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md"
               />
             </div>
             <select
@@ -196,7 +193,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
                 setSortBy(e.target.value);
                 setCurrentPage(1);
               }}
-              className="px-3 py-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-md bg-white"
             >
               <option value="date_desc">Sort: Newest</option>
               <option value="date_asc">Sort: Oldest</option>
@@ -205,9 +202,8 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
             </select>
           </div>
 
-          {/* Secondary Controls: Date Range & Clear */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-2 w-full">
               <input
                 type="date"
                 value={dateRange.from}
@@ -215,10 +211,10 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
                   setDateRange({ ...dateRange, from: e.target.value });
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-md text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm text-gray-500"
                 title="Filter by start date"
               />
-              <span className="text-gray-400">-</span>
+              <span className="text-gray-400 hidden sm:block">-</span>
               <input
                 type="date"
                 value={dateRange.to}
@@ -227,31 +223,30 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
                   setDateRange({ ...dateRange, to: e.target.value });
                   setCurrentPage(1);
                 }}
-                className="px-3 py-2 border border-gray-300 rounded-md text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm text-gray-500"
                 title="Filter by end date"
               />
             </div>
             <button
               onClick={handleClearFilters}
-              className="p-2 text-gray-500 hover:bg-gray-200 hover:text-gray-800 rounded-md transition-colors"
+              className="p-2 text-gray-500 bg-gray-200 hover:bg-gray-300 rounded-md self-end sm:self-center"
               title="Clear all filters"
             >
               <FilterX className="w-5 h-5" />
             </button>
           </div>
         </div>
-        {/* --- END OF IMPROVED CONTROLS --- */}
 
-        {/* Content Area */}
-        <div className="h-96 overflow-y-auto pr-2">{renderContent()}</div>
+        <div className="flex-grow overflow-y-auto pr-2 min-h-0">
+          {renderContent()}
+        </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-between items-center pt-4 border-t">
+        {totalPages > 1 && !isLoading && (
+          <div className="flex justify-between items-center pt-4 border-t flex-shrink-0">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1 || isLoading}
-              className="px-3 py-1 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+              disabled={currentPage === 1}
+              className="px-3 py-1 text-sm rounded-lg flex items-center gap-1 disabled:opacity-50"
             >
               <ArrowLeft size={16} /> Previous
             </button>
@@ -260,8 +255,8 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
             </span>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || isLoading}
-              className="px-3 py-1 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 transition-colors"
+              disabled={currentPage === totalPages}
+              className="px-3 py-1 text-sm rounded-lg flex items-center gap-1 disabled:opacity-50"
             >
               Next <ArrowRight size={16} />
             </button>
