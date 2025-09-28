@@ -41,6 +41,7 @@ import SelectPdfPageStep from "@/components/onboarding/SelectPdfPageStep";
 import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
+import { AllGardensModal } from "@/components/AllGardensModal";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -136,6 +137,7 @@ export default function Home() {
     | "signup"
     | "share"
     | "saveAs"
+    | "allGardens"
     | null
   >("welcome");
 
@@ -431,6 +433,24 @@ export default function Home() {
     setActiveMobilePanel(null);
   };
 
+  const handleDeleteGarden = async (projectId: number) => {
+    if (!token) return;
+    try {
+      await axios.delete(`${API_URL}/projects/${projectId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setNotification("Garden deleted successfully.");
+      // NOTE: The modal will re-fetch its own data.
+      // If the deleted project was the one currently loaded, you might want to clear the canvas.
+      if (currentProject?.id === projectId) {
+        handlePositionLawn(); // or canvasRef.current?.clearCanvas();
+      }
+    } catch (error) {
+      console.error("Failed to delete garden", error);
+      setNotification("Error: Could not delete garden.");
+    }
+  };
+
   // ✨ NEW: Handler to toggle mobile panels
   const toggleMobilePanel = (panel: MobilePanel) => {
     setActiveMobilePanel((current) => (current === panel ? null : panel));
@@ -447,14 +467,14 @@ export default function Home() {
   return (
     <>
       {/* ✅ MODIFIED: Changed to a flexbox column layout */}
-      <div className="h-screen w-screen bg-gray-200 font-sans flex flex-col overflow-hidden">
+      <div className="h-dvh w-screen bg-gray-200 font-sans flex flex-col overflow-hidden">
         <Header
           onLoginClick={() => setActiveModal("login")}
           onSignupClick={() => setActiveModal("signup")}
         />
 
         {/* ✅ MODIFIED: Main content area that grows to fill space */}
-        <main className="flex-grow relative">
+        <main className="flex-grow relative overflow-hidden">
           {notification && (
             <Notification
               message={notification}
@@ -735,10 +755,16 @@ export default function Home() {
                 <MoreHorizontal className="w-6 h-6" />
               </button>
               <button
-                onClick={() => setActiveModal("login")} // Or open a dedicated project load modal
+                onClick={() => {
+                  if (token) {
+                    setActiveModal("allGardens");
+                  } else {
+                    setActiveModal("login");
+                  }
+                }}
                 className="p-4 rounded-full hover:bg-gray-200"
+                title={token ? "My Gardens" : "Login to see your gardens"}
               >
-                {/* Simplified version, could open a "My Gardens" modal */}
                 <TreePine className="w-6 h-6" />
               </button>
             </div>
@@ -935,6 +961,18 @@ export default function Home() {
             onClose={handleCloseModal}
           />{" "}
         </Modal>
+      )}
+
+      {activeModal === "allGardens" && (
+        <AllGardensModal
+          isOpen={true}
+          onClose={handleCloseModal}
+          onLoadProject={(projectId) => {
+            handleLoadProject(projectId);
+            handleCloseModal();
+          }}
+          onDeleteProject={handleDeleteGarden}
+        />
       )}
       {activeModal === "share" && shareUrl && (
         <Modal
