@@ -29,7 +29,7 @@ const Notification: React.FC<NotificationProps> = ({
   return (
     <div
       style={{ top: "30%" }}
-      className=" no-print fixed left-1/2 -translate-x-1/2 z-50 bg-white h-[80px] text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-lg flex items-center"
+      className=" no-print fixed left-1/2 -translate-x-1/2 z-50 bg-white h-[120px] md:h-[80px] text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-lg flex items-center"
     >
       {message}
     </div>

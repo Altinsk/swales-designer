@@ -173,11 +173,6 @@ export default function SharePage() {
             if (project && project.ProjectData) {
               const projectData = JSON.parse(project.ProjectData);
               canvasRef.current?.loadCanvasState(projectData);
-              if (activeMobilePanel) {
-                setTimeout(() => {
-                  canvasRef.current?.center();
-                }, 200);
-              }
               setNotification(
                 `Viewing shared garden. Any changes you make here won't affect the original.`
               );
@@ -314,11 +309,6 @@ export default function SharePage() {
       .then((data) => {
         if (data) {
           canvasRef.current?.loadCanvasState(data);
-          if (activeMobilePanel) {
-            setTimeout(() => {
-              canvasRef.current?.center();
-            }, 200);
-          }
           setCurrentProject(null);
           handleCloseModal();
         }
@@ -462,11 +452,6 @@ export default function SharePage() {
       if (project && project.ProjectData) {
         const projectData = JSON.parse(project.ProjectData);
         canvasRef.current?.loadCanvasState(projectData);
-        if (activeMobilePanel) {
-          setTimeout(() => {
-            canvasRef.current?.center();
-          }, 200);
-        }
         setCurrentProject({ id: project.ProjectId, name: project.Name });
         setNotification(`Loaded "${project.Name}"`);
       }

@@ -265,6 +265,12 @@ export default function Home() {
         if (data) {
           canvasRef.current?.loadCanvasState(data);
           setCurrentProject(null);
+          if (activeMobilePanel) {
+            setTimeout(() => {
+              canvasRef.current?.center();
+            }, 200);
+          }
+
           handleCloseModal();
         }
       })
@@ -407,6 +413,11 @@ export default function Home() {
       if (project && project.ProjectData) {
         const projectData = JSON.parse(project.ProjectData);
         canvasRef.current?.loadCanvasState(projectData);
+        if (activeMobilePanel) {
+          setTimeout(() => {
+            canvasRef.current?.center();
+          }, 200);
+        }
         setCurrentProject({ id: project.ProjectId, name: project.Name });
         setNotification(`Loaded "${project.Name}"`);
       }
@@ -756,6 +767,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => {
+                  setActiveModal("allGardens");
                   if (token) {
                     setActiveModal("allGardens");
                   } else {
