@@ -1,6 +1,6 @@
 // components/CanvasControls.tsx
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 interface CanvasControlsProps {
   onZoomIn: () => void;
@@ -13,18 +13,30 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
   onZoomOut,
   scaleIndicatorPixels,
 }) => {
-  // We'll create an array to easily map over for the labels
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile on mount and on resize
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Prevent lines from growing on mobile
+  const effectiveScalePixels = isMobile ? 40 : scaleIndicatorPixels; // 40px constant on mobile
+
   const meters = [1, 2, 3, 4, 5];
 
   return (
     <div
       style={{ bottom: "5%" }}
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 "
+      className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3"
     >
       {/* Zoom Out Button */}
       <button
         onClick={onZoomOut}
-        className="p-2  hover:bg-gray-200 transition-colors  backdrop-blur-sm p-3 rounded-full shadow-lg bg-white/80"
+        className="hover:bg-gray-200 transition-colors backdrop-blur-sm p-3 rounded-full shadow-lg bg-white/80"
         title="Zoom Out"
       >
         <svg
@@ -43,13 +55,13 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
         </svg>
       </button>
 
-      {/* ✨ UPDATED SCALE INDICATOR */}
-      <div className="flex items-start ">
+      {/* Scale Indicator */}
+      <div className="flex items-start">
         {meters.map((meter, i) => (
           <div
             key={meter}
             className="flex flex-col-reverse items-center"
-            style={{ width: `${scaleIndicatorPixels}px` }}
+            style={{ width: `${effectiveScalePixels}px` }}
           >
             <div
               className={`h-[5px] ${i % 2 === 0 ? "bg-black" : "bg-white"}`}
@@ -66,7 +78,7 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
       {/* Zoom In Button */}
       <button
         onClick={onZoomIn}
-        className="p-2 hover:bg-gray-200 transition-colors  backdrop-blur-sm p-3 rounded-full shadow-lg bg-white/80"
+        className="hover:bg-gray-200 transition-colors backdrop-blur-sm p-3 rounded-full shadow-lg bg-white/80"
         title="Zoom In"
       >
         <svg

@@ -598,6 +598,30 @@ const GardenCanvas = forwardRef<
       polygons,
       placedObjects,
     ]);
+
+    useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+
+      // Set initial dimensions
+      setDimensions({
+        width: container.clientWidth,
+        height: container.clientHeight,
+      });
+
+      // Use ResizeObserver for more reliable size detection
+      const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const { width, height } = entry.contentRect;
+          setDimensions({ width, height });
+        }
+      });
+
+      resizeObserver.observe(container);
+
+      // Cleanup by disconnecting the observer
+      return () => resizeObserver.disconnect();
+    }, []);
     const handleStageMouseDown = (e: KonvaEventObject<MouseEvent>) => {
       if (editingTextNode) return;
 
@@ -1819,6 +1843,156 @@ const GardenCanvas = forwardRef<
 
           {/* ✅ UPDATED ITEMS LAYER */}
           <Layer visible={visibility.items}>
+            {/* 1. Render all polygons that are NOT selected */}
+            {polygonsToRender.map((poly) => (
+              <FinalPolygon
+                key={poly.id}
+                poly={poly}
+                stageScale={stage.scale}
+                grassPattern={textures[poly.textureId || ""]}
+                isSelected={false}
+                onSelect={() => {
+                  handleSelect(poly.id);
+                  setMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onVertexDragStart={handleVertexDragStart}
+                onVertexDragEnd={handleVertexDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={activeTool.type === "select" && !poly.locked}
+                onPointUpdate={(pointIndex, newPoint) =>
+                  handlePolygonPointUpdate(poly.id, pointIndex, newPoint)
+                }
+                onAddPoint={(segmentIndex, newPoint) =>
+                  handlePolygonAddPoint(poly.id, segmentIndex, newPoint)
+                }
+                isListening={activeTool.type !== "plot"}
+              />
+            ))}
+
+            {/* 2. Render all placed objects that are NOT selected */}
+            {objectsToRender.map((obj) => {
+              const baseWidth = obj.width || INITIAL_PRESET_SIZE;
+              const baseHeight = obj.height || INITIAL_PRESET_SIZE;
+              return (
+                <Group
+                  key={obj.id}
+                  id={obj.id}
+                  x={obj.x}
+                  y={obj.y}
+                  rotation={obj.rotation || 0}
+                  scaleX={obj.scaleX || 1}
+                  scaleY={obj.scaleY || 1}
+                  draggable={activeTool.type === "select" && !obj.locked}
+                  dragDistance={10}
+                  onClick={(e) => {
+                    handleSelect(obj.id);
+                    setMenu(null);
+                    e.cancelBubble = true;
+                  }}
+                  onTap={(e) => {
+                    handleSelect(obj.id);
+                    setMenu(null);
+                    e.cancelBubble = true;
+                  }}
+                  onDragStart={handleInteractionStart}
+                  onDragEnd={handleObjectDragEnd}
+                  onTransformEnd={handleTransformEnd}
+                  listening={activeTool.type !== "plot"}
+                >
+                  <PresetObject
+                    shapeProps={{
+                      ...obj,
+                      width: baseWidth,
+                      height: baseHeight,
+                    }}
+                    onSelect={() => selectShape(obj.id)}
+                  />
+                </Group>
+              );
+            })}
+
+            {/* 3. Render the SELECTED polygon ON TOP */}
+            {selectedPolygon && (
+              <FinalPolygon
+                key={selectedPolygon.id}
+                poly={selectedPolygon}
+                opacity={0.7}
+                isListening={activeTool.type !== "plot"}
+                stageScale={stage.scale}
+                grassPattern={textures[selectedPolygon.textureId || ""]}
+                isSelected={true}
+                onSelect={() => {
+                  handleSelect(selectedPolygon.id);
+                  setMenu(null);
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onVertexDragStart={handleVertexDragStart}
+                onVertexDragEnd={handleVertexDragEnd}
+                onTransformEnd={handleTransformEnd}
+                isDraggable={
+                  activeTool.type === "select" && !selectedPolygon.locked
+                }
+                onPointUpdate={(pointIndex, newPoint) =>
+                  handlePolygonPointUpdate(
+                    selectedPolygon.id,
+                    pointIndex,
+                    newPoint
+                  )
+                }
+                onAddPoint={(segmentIndex, newPoint) =>
+                  handlePolygonAddPoint(
+                    selectedPolygon.id,
+                    segmentIndex,
+                    newPoint
+                  )
+                }
+              />
+            )}
+
+            {/* 4. Render the SELECTED placed object ON TOP */}
+            {selectedObject && (
+              <Group
+                key={selectedObject.id}
+                id={selectedObject.id}
+                opacity={0.7}
+                x={selectedObject.x}
+                y={selectedObject.y}
+                rotation={selectedObject.rotation || 0}
+                listening={activeTool.type !== "plot"}
+                scaleX={selectedObject.scaleX || 1}
+                scaleY={selectedObject.scaleY || 1}
+                draggable={
+                  activeTool.type === "select" && !selectedObject.locked
+                }
+                dragDistance={10}
+                onClick={(e) => {
+                  handleSelect(selectedObject.id);
+                  setMenu(null);
+                  e.cancelBubble = true;
+                }}
+                onTap={(e) => {
+                  handleSelect(selectedObject.id);
+                  setMenu(null);
+                  e.cancelBubble = true;
+                }}
+                onDragStart={handleInteractionStart}
+                onDragEnd={handleObjectDragEnd}
+                onTransformEnd={handleTransformEnd}
+              >
+                <PresetObject
+                  shapeProps={{
+                    ...selectedObject,
+                    width: selectedObject.width || INITIAL_PRESET_SIZE,
+                    height: selectedObject.height || INITIAL_PRESET_SIZE,
+                  }}
+                  onSelect={() => selectShape(selectedObject.id)}
+                />
+              </Group>
+            )}
+
             {activeTool.type === "plot" && (
               <Group>
                 {plottingShapes}
@@ -1875,152 +2049,6 @@ const GardenCanvas = forwardRef<
                     />
                   </Group>
                 )}
-              </Group>
-            )}
-
-            {/* 1. Render all polygons that are NOT selected */}
-            {polygonsToRender.map((poly) => (
-              <FinalPolygon
-                key={poly.id}
-                poly={poly}
-                stageScale={stage.scale}
-                grassPattern={textures[poly.textureId || ""]}
-                isSelected={false}
-                onSelect={() => {
-                  handleSelect(poly.id);
-                  setMenu(null);
-                }}
-                onDragStart={handleInteractionStart}
-                onDragEnd={handleObjectDragEnd}
-                onVertexDragStart={handleVertexDragStart}
-                onVertexDragEnd={handleVertexDragEnd}
-                onTransformEnd={handleTransformEnd}
-                isDraggable={activeTool.type === "select" && !poly.locked}
-                onPointUpdate={(pointIndex, newPoint) =>
-                  handlePolygonPointUpdate(poly.id, pointIndex, newPoint)
-                }
-                onAddPoint={(segmentIndex, newPoint) =>
-                  handlePolygonAddPoint(poly.id, segmentIndex, newPoint)
-                }
-              />
-            ))}
-
-            {/* 2. Render all placed objects that are NOT selected */}
-            {objectsToRender.map((obj) => {
-              const baseWidth = obj.width || INITIAL_PRESET_SIZE;
-              const baseHeight = obj.height || INITIAL_PRESET_SIZE;
-              return (
-                <Group
-                  key={obj.id}
-                  id={obj.id}
-                  x={obj.x}
-                  y={obj.y}
-                  rotation={obj.rotation || 0}
-                  scaleX={obj.scaleX || 1}
-                  scaleY={obj.scaleY || 1}
-                  draggable={activeTool.type === "select" && !obj.locked}
-                  dragDistance={10}
-                  onClick={(e) => {
-                    handleSelect(obj.id);
-                    setMenu(null);
-                    e.cancelBubble = true;
-                  }}
-                  onTap={(e) => {
-                    handleSelect(obj.id);
-                    setMenu(null);
-                    e.cancelBubble = true;
-                  }}
-                  onDragStart={handleInteractionStart}
-                  onDragEnd={handleObjectDragEnd}
-                  onTransformEnd={handleTransformEnd}
-                >
-                  <PresetObject
-                    shapeProps={{
-                      ...obj,
-                      width: baseWidth,
-                      height: baseHeight,
-                    }}
-                    onSelect={() => selectShape(obj.id)}
-                  />
-                </Group>
-              );
-            })}
-
-            {/* 3. Render the SELECTED polygon ON TOP */}
-            {selectedPolygon && (
-              <FinalPolygon
-                key={selectedPolygon.id}
-                poly={selectedPolygon}
-                opacity={0.7}
-                stageScale={stage.scale}
-                grassPattern={textures[selectedPolygon.textureId || ""]}
-                isSelected={true}
-                onSelect={() => {
-                  handleSelect(selectedPolygon.id);
-                  setMenu(null);
-                }}
-                onDragStart={handleInteractionStart}
-                onDragEnd={handleObjectDragEnd}
-                onVertexDragStart={handleVertexDragStart}
-                onVertexDragEnd={handleVertexDragEnd}
-                onTransformEnd={handleTransformEnd}
-                isDraggable={
-                  activeTool.type === "select" && !selectedPolygon.locked
-                }
-                onPointUpdate={(pointIndex, newPoint) =>
-                  handlePolygonPointUpdate(
-                    selectedPolygon.id,
-                    pointIndex,
-                    newPoint
-                  )
-                }
-                onAddPoint={(segmentIndex, newPoint) =>
-                  handlePolygonAddPoint(
-                    selectedPolygon.id,
-                    segmentIndex,
-                    newPoint
-                  )
-                }
-              />
-            )}
-
-            {/* 4. Render the SELECTED placed object ON TOP */}
-            {selectedObject && (
-              <Group
-                key={selectedObject.id}
-                id={selectedObject.id}
-                opacity={0.7}
-                x={selectedObject.x}
-                y={selectedObject.y}
-                rotation={selectedObject.rotation || 0}
-                scaleX={selectedObject.scaleX || 1}
-                scaleY={selectedObject.scaleY || 1}
-                draggable={
-                  activeTool.type === "select" && !selectedObject.locked
-                }
-                dragDistance={10}
-                onClick={(e) => {
-                  handleSelect(selectedObject.id);
-                  setMenu(null);
-                  e.cancelBubble = true;
-                }}
-                onTap={(e) => {
-                  handleSelect(selectedObject.id);
-                  setMenu(null);
-                  e.cancelBubble = true;
-                }}
-                onDragStart={handleInteractionStart}
-                onDragEnd={handleObjectDragEnd}
-                onTransformEnd={handleTransformEnd}
-              >
-                <PresetObject
-                  shapeProps={{
-                    ...selectedObject,
-                    width: selectedObject.width || INITIAL_PRESET_SIZE,
-                    height: selectedObject.height || INITIAL_PRESET_SIZE,
-                  }}
-                  onSelect={() => selectShape(selectedObject.id)}
-                />
               </Group>
             )}
           </Layer>
@@ -2620,6 +2648,7 @@ const FinalPolygon = memo(
     onVertexDragEnd,
     onAddPoint,
     opacity = 1,
+    isListening = true,
     ...props
   }: FinalPolygonProps) => {
     const groupRef = useRef<Konva.Group>(null);
@@ -2736,6 +2765,7 @@ const FinalPolygon = memo(
         onTap={onSelect}
         draggable={isDraggable}
         dragDistance={10}
+        listening={isListening}
         {...props}
       >
         <Line
