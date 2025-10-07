@@ -556,15 +556,24 @@ export default function Home() {
             className="hidden lg:flex absolute top-44 right-4 z-30"
           />
 
-          <CanvasControls
-            onZoomIn={handleZoomIn}
-            onZoomOut={handleZoomOut}
-            scaleIndicatorPixels={40 * canvasScale}
-          />
-
+          {/* ✨ NEW: Add mobile-specific zoom controls here */}
+          <div className="hidden lg:block">
+            <CanvasControls
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              scaleIndicatorPixels={40 * canvasScale}
+            />
+          </div>
           {/* --- Mobile UI --- */}
           <div className="lg:hidden">
             {/* ✨ NEW: Mobile Panel Overlay */}
+            <div className="absolute z-20 bottom-30 left-1/2 -translate-x-1/2 flex flex-col items-center">
+              <CanvasControls
+                onZoomIn={handleZoomIn}
+                onZoomOut={handleZoomOut}
+                scaleIndicatorPixels={40 * canvasScale}
+              />
+            </div>
             {activeMobilePanel && (
               <div
                 className="absolute inset-0 bg-black/30 z-40"
