@@ -633,35 +633,25 @@ const GardenCanvas = forwardRef<
     };
 
     const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
-      e.evt.preventDefault(); // Prevent page scrolling
-      const touch1 = e.evt.touches[0];
-      const touch2 = e.evt.touches[1];
+      e.evt.preventDefault();
       const stageNode = stageRef.current;
-
       if (!stageNode) return;
 
-      // If two fingers are touching
+      const touch1 = e.evt.touches[0];
+      const touch2 = e.evt.touches[1];
+
       if (touch1 && touch2) {
-        // If the user just started pinching, record the initial distance and center
-        if (stageNode.isDragging()) {
-          stageNode.stopDrag();
-        }
+        if (stageNode.isDragging()) stageNode.stopDrag();
 
         const p1 = { x: touch1.clientX, y: touch1.clientY };
         const p2 = { x: touch2.clientX, y: touch2.clientY };
 
         if (!lastCenter) {
-          setLastCenter({
-            x: (p1.x + p2.x) / 2,
-            y: (p1.y + p2.y) / 2,
-          });
+          setLastCenter({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 });
           return;
         }
 
-        const newCenter = {
-          x: (p1.x + p2.x) / 2,
-          y: (p1.y + p2.y) / 2,
-        };
+        const newCenter = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
         const dist = calculateDistance(p1, p2);
 
         if (lastDist === 0) {
@@ -669,25 +659,30 @@ const GardenCanvas = forwardRef<
           return;
         }
 
-        // --- ZOOM LOGIC ---
         const oldScale = stageNode.scaleX();
-
         const pointTo = {
           x: (newCenter.x - stageNode.x()) / oldScale,
           y: (newCenter.y - stageNode.y()) / oldScale,
         };
 
-        const newScale = oldScale * (dist / lastDist);
+        const newScale = Math.max(
+          0.5,
+          Math.min(4, oldScale * (dist / lastDist))
+        );
 
-        setStage({
-          scale: newScale,
+        const newPos = {
           x: newCenter.x - pointTo.x * newScale,
           y: newCenter.y - pointTo.y * newScale,
-        });
+        };
+
+        // update both state and actual Konva stage
+        setStage({ scale: newScale, ...newPos });
+        stageNode.scale({ x: newScale, y: newScale });
+        stageNode.position(newPos);
+        stageNode.batchDraw();
 
         setLastDist(dist);
       } else if (e.evt.touches.length === 1) {
-        // If only one finger, fall back to the existing mouse move logic for drawing
         handleStageMouseMove(e as any);
       }
     };
