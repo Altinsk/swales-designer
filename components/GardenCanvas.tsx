@@ -260,6 +260,8 @@ const GardenCanvas = forwardRef<
     const [selectedId, selectShape] = useState<string | null>(null);
     const [isDraggingVertex, setIsDraggingVertex] = useState(false);
     const [originalZIndex, setOriginalZIndex] = useState<number | null>(null);
+    const [lastDist, setLastDist] = useState(0);
+    const [lastCenter, setLastCenter] = useState<Point | null>(null);
     const [originalLayer, setOriginalLayer] = useState<Konva.Layer | null>(
       null
     );
@@ -622,6 +624,83 @@ const GardenCanvas = forwardRef<
       // Cleanup by disconnecting the observer
       return () => resizeObserver.disconnect();
     }, []);
+
+    const handleTouchStart = (e: KonvaEventObject<TouchEvent>) => {
+      // Handle single-touch as a mousedown for drawing/selecting
+      if (e.evt.touches.length === 1) {
+        handleStageMouseDown(e as any); // Cast to allow reuse
+      }
+    };
+
+    const handleTouchMove = (e: KonvaEventObject<TouchEvent>) => {
+      e.evt.preventDefault(); // Prevent page scrolling
+      const touch1 = e.evt.touches[0];
+      const touch2 = e.evt.touches[1];
+      const stageNode = stageRef.current;
+
+      if (!stageNode) return;
+
+      // If two fingers are touching
+      if (touch1 && touch2) {
+        // If the user just started pinching, record the initial distance and center
+        if (stageNode.isDragging()) {
+          stageNode.stopDrag();
+        }
+
+        const p1 = { x: touch1.clientX, y: touch1.clientY };
+        const p2 = { x: touch2.clientX, y: touch2.clientY };
+
+        if (!lastCenter) {
+          setLastCenter({
+            x: (p1.x + p2.x) / 2,
+            y: (p1.y + p2.y) / 2,
+          });
+          return;
+        }
+
+        const newCenter = {
+          x: (p1.x + p2.x) / 2,
+          y: (p1.y + p2.y) / 2,
+        };
+        const dist = calculateDistance(p1, p2);
+
+        if (lastDist === 0) {
+          setLastDist(dist);
+          return;
+        }
+
+        // --- ZOOM LOGIC ---
+        const oldScale = stageNode.scaleX();
+
+        const pointTo = {
+          x: (newCenter.x - stageNode.x()) / oldScale,
+          y: (newCenter.y - stageNode.y()) / oldScale,
+        };
+
+        const newScale = oldScale * (dist / lastDist);
+
+        setStage({
+          scale: newScale,
+          x: newCenter.x - pointTo.x * newScale,
+          y: newCenter.y - pointTo.y * newScale,
+        });
+
+        setLastDist(dist);
+      } else if (e.evt.touches.length === 1) {
+        // If only one finger, fall back to the existing mouse move logic for drawing
+        handleStageMouseMove(e as any);
+      }
+    };
+
+    const handleTouchEnd = (e: KonvaEventObject<TouchEvent>) => {
+      // Reset touch tracking state
+      setLastDist(0);
+      setLastCenter(null);
+
+      // Fall back to the existing mouse up logic
+      handleStageMouseUp(e as any);
+    };
+
     const handleStageMouseDown = (e: KonvaEventObject<MouseEvent>) => {
       if (editingTextNode) return;
 
@@ -1812,12 +1891,12 @@ const GardenCanvas = forwardRef<
           width={dimensions.width}
           height={dimensions.height}
           onMouseDown={handleStageMouseDown}
-          onTouchStart={handleStageMouseDown}
           onClick={handleCanvasClick}
           onMouseMove={handleStageMouseMove}
-          onTouchMove={handleStageMouseMove}
           onMouseUp={handleStageMouseUp}
-          onTouchEnd={handleStageMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
           ref={stageRef}
           scaleX={stage.scale}
           scaleY={stage.scale}
