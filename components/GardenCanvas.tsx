@@ -1905,7 +1905,13 @@ const GardenCanvas = forwardRef<
           <Layer listening={false} visible={visibility.grid}>
             {renderGrid()}
           </Layer>
-          <Layer visible={!!planningSketch && planningSketch.zIndex === 0}>
+          <Layer
+            visible={
+              !!planningSketch &&
+              planningSketch.zIndex === 0 &&
+              visibility.sketch
+            }
+          >
             {planningSketch && planningSketch.zIndex === 0 && (
               <SketchImage
                 sketch={planningSketch}
@@ -2226,7 +2232,13 @@ const GardenCanvas = forwardRef<
             )}
           </Layer>
 
-          <Layer visible={!!planningSketch && planningSketch.zIndex === 1}>
+          <Layer
+            visible={
+              !!planningSketch &&
+              planningSketch.zIndex === 1 &&
+              visibility.sketch
+            }
+          >
             {planningSketch && planningSketch.zIndex === 1 && (
               <SketchImage
                 sketch={planningSketch}

@@ -42,6 +42,7 @@ import LoginModal from "@/components/auth/LoginModal";
 import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
 import { AllGardensModal } from "@/components/AllGardensModal";
+import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -117,7 +118,7 @@ export default function Home() {
   const postSaveCallback = useRef<(() => void) | null>(null);
   const [visibility, setVisibility] = useState<VisibilityState>({
     grid: true,
-    sketch: false,
+    sketch: true,
     items: true,
     notes: true,
   });
@@ -138,6 +139,7 @@ export default function Home() {
     | "share"
     | "saveAs"
     | "allGardens"
+    | "forgot"
     | null
   >("welcome");
 
@@ -518,7 +520,7 @@ export default function Home() {
             onShare={handleShare}
             templates={config.templates}
             // ✅ MODIFIED: Responsive visibility and positioning
-            className="hidden lg:flex absolute top-34 left-1/2 -translate-x-1/2 z-30 w-fit"
+            className="hidden lg:flex absolute top-10 left-1/2 -translate-x-1/2 z-30 w-fit"
             onUploadPlan={() => setActiveModal("uploadPlan")}
             onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
             onToggleSketchLock={() => canvasRef.current?.toggleSketchLock()}
@@ -545,7 +547,7 @@ export default function Home() {
             }}
             config={config}
             // ✅ MODIFIED: Responsive visibility and positioning
-            className="hidden lg:flex absolute top-44 left-4 z-30"
+            className="hidden lg:flex absolute top-34 left-4 z-30"
           />
 
           <RightToolbar
@@ -553,7 +555,7 @@ export default function Home() {
             onCenterCanvas={() => canvasRef.current?.center()}
             onVisibilityChange={handleVisibilityChange}
             // ✅ MODIFIED: Responsive visibility and positioning
-            className="hidden lg:flex absolute top-44 right-4 z-30"
+            className="hidden lg:flex absolute top-34 right-4 z-30"
           />
 
           {/* ✨ NEW: Add mobile-specific zoom controls here */}
@@ -804,6 +806,19 @@ export default function Home() {
         </Modal>
       )}
       {/* ... all other modals ... */}
+      {activeModal === "frogot" && (
+        <Modal
+          isOpen={true}
+          onClose={handleCloseModal}
+          title="Login to Your Account"
+        >
+          {" "}
+          <ForgotPasswordModal
+            onClose={handleCloseModal}
+            onSwitchToLogin={() => setActiveModal("login")}
+          />{" "}
+        </Modal>
+      )}
       {activeModal === "login" && (
         <Modal
           isOpen={true}
@@ -814,6 +829,7 @@ export default function Home() {
           <LoginModal
             onClose={handleCloseModal}
             onSwitchToSignup={() => setActiveModal("signup")}
+            onSwitchToForgot={() => setActiveModal("frogot")}
           />{" "}
         </Modal>
       )}

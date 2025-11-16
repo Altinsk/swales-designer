@@ -13,6 +13,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 const LoginModal: React.FC<LoginModalProps> = ({
   onClose,
   onSwitchToSignup,
+  onSwitchToForgot,
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,6 +66,17 @@ const LoginModal: React.FC<LoginModalProps> = ({
             required
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
           />
+
+          {/* Forgot Password Link */}
+          <div className="flex justify-end mt-1">
+            <button
+              type="button"
+              onClick={onSwitchToForgot}
+              className="text-sm text-green-600 hover:text-green-500"
+            >
+              Forgot password?
+            </button>
+          </div>
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
         <button

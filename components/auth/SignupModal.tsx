@@ -44,6 +44,21 @@ const PasswordIcon = ({
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
+/**
+ * Validates password based on the following rules:
+ * - At least 8 characters
+ * - At least one lowercase letter
+ * - At least one uppercase letter
+ * - At least one digit
+ * - At least one special character (@$!%*#?&^)
+ */
+export const validatePassword = (password = "") => {
+  if (typeof password !== "string") return false; // Ensure input is a string
+  const re =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^])[A-Za-z\d@$!%*#?&^]{8,}$/;
+  return re.test(password);
+};
+
 const SignupModal: React.FC<SignupModalProps> = ({
   onClose,
   onSwitchToLogin,
@@ -114,9 +129,16 @@ const SignupModal: React.FC<SignupModalProps> = ({
     if (!formData.email) errors.email = "Email is required.";
     if (!formData.dateOfBirth)
       errors.dateOfBirth = "Date of birth is required.";
-    if (!formData.password) errors.password = "Password is required.";
-    else if (formData.password.length < 8)
-      errors.password = "Password must be at least 8 characters.";
+
+    // --- Updated Password Validation ---
+    if (!formData.password) {
+      errors.password = "Password is required.";
+    } else if (!validatePassword(formData.password)) {
+      errors.password =
+        "Password must be 8+ characters and include uppercase, lowercase, a number, and a special character (@$!%*#?&^).";
+    }
+    // --- End of Update ---
+
     if (formData.password !== formData.confirmPassword)
       errors.confirmPassword = "Passwords do not match.";
 
