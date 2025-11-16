@@ -4,10 +4,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { UserCircle, LogOut } from "lucide-react";
+// 1. ADDED 'Menu' AND 'X' FOR THE HAMBURGER ICON
+import { UserCircle, LogOut, Menu, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
-// --- 1. NavLinks Component (Unchanged) ---
+// --- NavLinks Component (Unchanged from your file) ---
 
 interface NavLinksProps {
   pathName: string;
@@ -84,6 +85,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
 interface HeaderProps {
   onLoginClick: () => void;
   onSignupClick: () => void;
+  nologin?: boolean; // Added nologin to interface
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -93,11 +95,14 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
-  // State for user menu dropdown
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  // 2. RENAMED STATE: This is for the USER dropdown, not the mobile nav
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null); // Renamed ref
 
-  // --- 2. Added Logic Required for NavLinks ---
+  // 3. ADDED STATE: This is for the new MOBILE nav
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // --- Logic for NavLinks (Unchanged) ---
   const pathName = usePathname();
   const mapRoutes = [
     "soil-map",
@@ -111,52 +116,57 @@ const Header: React.FC<HeaderProps> = ({
     "flooding-map",
   ];
 
-  // Effect to handle clicks outside the user menu
+  // 4. UPDATED EFFECT: This logic is for the USER dropdown
+  // It now uses the renamed state 'isUserMenuOpen'
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsUserMenuOpen(false); // Use renamed state
       }
     };
 
-    if (isMenuOpen) {
+    if (isUserMenuOpen) {
+      // Use renamed state
       document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isMenuOpen]);
+  }, [isUserMenuOpen]); // Use renamed state
 
   return (
-    <nav className="bg-white ">
+    <nav className="bg-white sticky top-0 z-30 w-full border-b border-gray-200/80">
       <header
         className={
-          // Added 'relative' to allow absolute positioning of the nav
-          " relative w-full  p-4  flex justify-between items-center z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          "relative w-full p-4 flex justify-between items-center z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         }
       >
-        {/* Left Side: Logo (This is now Child 1) */}
+        {/* Left Side: Logo (Unchanged) */}
         <div className="flex items-center space-x-3">
           <Link href="/">
             <img width={100} height={100} src="/logo.png" alt="Logo" />
           </Link>
         </div>
 
-        {/* --- Middle: NavLinks (This is now Child 2) --- */}
-        {/* We removed the wrapper and added positioning classes */}
+        {/* --- Middle: NavLinks (Unchanged, already hidden on mobile) --- */}
         <div className="hidden lg:flex items-center space-x-4 ">
           <NavLinks pathName={pathName} mapRoutes={mapRoutes} />
         </div>
 
-        {/* --- Right Side: Login/User Area (This is now Child 3) --- */}
-        {/* This is now a direct child of 'header' */}
-        <div className="flex items-center space-x-2">
+        {/* --- Right Side: Login/User Area --- */}
+        {/* 5. ADDED 'hidden lg:flex': This hides the desktop login buttons on mobile */}
+        <div className="hidden lg:flex items-center space-x-2">
           {user ? (
             // User Menu (Dropdown)
-            <div className="relative" ref={menuRef}>
+            <div className="relative" ref={userMenuRef}>
+              {" "}
+              {/* Use renamed ref */}
               <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} // Use renamed state setter
                 className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 transition-colors"
               >
                 <UserCircle className="h-6 w-6 text-slate-600" />
@@ -164,11 +174,10 @@ const Header: React.FC<HeaderProps> = ({
                   Hello, {user.firstName}
                 </span>
               </button>
-
               {/* Dropdown Panel */}
               <div
-                className={`absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-1 transition-all duration-300 ${
-                  isMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
+                className={`absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-1 transition-all duration-300 z-20 ${
+                  isUserMenuOpen ? "opacity-100 visible" : "opacity-0 invisible" // Use renamed state
                 }`}
               >
                 <button
@@ -182,7 +191,6 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           ) : (
             // Login/Signup Buttons
-
             <>
               {!nologin && (
                 <>
@@ -203,7 +211,78 @@ const Header: React.FC<HeaderProps> = ({
             </>
           )}
         </div>
+
+        {/* 6. ADDED: Mobile Menu Button (Hamburger) */}
+        {/* This is copied from your first example and shows ONLY on mobile */}
+        <div className="flex items-center lg:hidden">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} // Use new mobile state
+            className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className="sr-only">Open main menu</span>
+            {isMobileMenuOpen ? ( // Use new mobile state
+              <X className="block h-6 w-6" aria-hidden="true" />
+            ) : (
+              <Menu className="block h-6 w-6" aria-hidden="true" />
+            )}
+          </button>
+        </div>
       </header>
+
+      {/* 7. ADDED: Mobile Menu Panel */}
+      {/* This is the panel that opens. It uses your component's logic. */}
+      <div
+        className={`${
+          isMobileMenuOpen ? "block" : "hidden"
+        } lg:hidden border-t border-gray-200/80`}
+      >
+        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <NavLinks pathName={pathName} mapRoutes={mapRoutes} mobile />
+        </div>
+        <div className="pt-4 pb-3 border-t border-gray-200">
+          <div className="px-4">
+            {user ? (
+              // Mobile version of the user menu
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <UserCircle className="h-6 w-6 text-slate-600" />
+                  <span className="font-medium text-slate-700">
+                    Hello, {user.firstName}
+                  </span>
+                </div>
+                <button
+                  onClick={logout} // Use logout from useAuth
+                  className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </button>
+              </div>
+            ) : (
+              // Mobile version of the login buttons
+              <div className="space-y-2">
+                {!nologin && ( // Respect the 'nologin' prop
+                  <>
+                    <button
+                      onClick={onLoginClick} // Use prop
+                      className="w-full flex justify-center px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-100 font-medium"
+                    >
+                      Login
+                    </button>
+                    <button
+                      onClick={onSignupClick} // Use prop
+                      className="w-full mt-2 flex justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 font-medium"
+                    >
+                      Sign Up
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </nav>
   );
 };
