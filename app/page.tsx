@@ -43,6 +43,7 @@ import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
 import { AllGardensModal } from "@/components/AllGardensModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
+import MobileHeader from "@/components/MobileHeader";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -479,14 +480,22 @@ export default function Home() {
 
   return (
     <>
-      {/* ✅ MODIFIED: Changed to a flexbox column layout */}
-      <div className="h-dvh w-screen bg-gray-200 font-sans flex flex-col overflow-hidden">
-        <Header
-          onLoginClick={() => setActiveModal("login")}
-          onSignupClick={() => setActiveModal("signup")}
-        />
+      <div className="fixed inset-0 h-full w-full bg-gray-200 font-sans flex flex-col overflow-hidden z-0">
+        <div className="hidden lg:block">
+          <Header
+            onLoginClick={() => setActiveModal("login")}
+            onSignupClick={() => setActiveModal("signup")}
+          />
+        </div>
 
-        {/* ✅ MODIFIED: Main content area that grows to fill space */}
+        {/* MOBILE HEADER (Visible on mobile, optimized for landscape) */}
+        <div className="block lg:hidden">
+          <MobileHeader
+            onLoginClick={() => setActiveModal("login")}
+            onSignupClick={() => setActiveModal("signup")}
+          />
+        </div>
+
         <main className="flex-grow relative overflow-hidden">
           {notification && (
             <Notification
@@ -509,7 +518,6 @@ export default function Home() {
             onScaleChange={setCanvasScale}
           />
 
-          {/* --- Desktop Toolbars --- */}
           <TopBar
             onUndo={handleUndo}
             onRedo={handleRedo}
@@ -519,7 +527,6 @@ export default function Home() {
             onPrint={handlePrint}
             onShare={handleShare}
             templates={config.templates}
-            // ✅ MODIFIED: Responsive visibility and positioning
             className="hidden lg:flex absolute top-10 left-1/2 -translate-x-1/2 z-30 w-fit"
             onUploadPlan={() => setActiveModal("uploadPlan")}
             onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
@@ -546,7 +553,6 @@ export default function Home() {
               setActiveMobilePanel(null);
             }}
             config={config}
-            // ✅ MODIFIED: Responsive visibility and positioning
             className="hidden lg:flex absolute top-34 left-4 z-30"
           />
 
@@ -554,11 +560,9 @@ export default function Home() {
             visibility={visibility}
             onCenterCanvas={() => canvasRef.current?.center()}
             onVisibilityChange={handleVisibilityChange}
-            // ✅ MODIFIED: Responsive visibility and positioning
             className="hidden lg:flex absolute top-34 right-4 z-30"
           />
 
-          {/* ✨ NEW: Add mobile-specific zoom controls here */}
           <div className="hidden lg:block">
             <CanvasControls
               onZoomIn={handleZoomIn}
@@ -566,16 +570,18 @@ export default function Home() {
               scaleIndicatorPixels={40 * canvasScale}
             />
           </div>
-          {/* --- Mobile UI --- */}
+
           <div className="lg:hidden">
-            {/* ✨ NEW: Mobile Panel Overlay */}
-            <div className="absolute z-20 bottom-30 left-1/2 -translate-x-1/2 flex flex-col items-center">
-              <CanvasControls
-                onZoomIn={handleZoomIn}
-                onZoomOut={handleZoomOut}
-                scaleIndicatorPixels={40 * canvasScale}
-              />
+            <div className="absolute z-20 bottom-30 landscape:bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center pointer-events-none">
+              <div className="pointer-events-auto">
+                <CanvasControls
+                  onZoomIn={handleZoomIn}
+                  onZoomOut={handleZoomOut}
+                  scaleIndicatorPixels={40 * canvasScale}
+                />
+              </div>
             </div>
+
             {activeMobilePanel && (
               <div
                 className="absolute inset-0 bg-black/30 z-40"
@@ -583,9 +589,8 @@ export default function Home() {
               ></div>
             )}
 
-            {/* ✨ NEW: Panel for Tools & Notes */}
             {activeMobilePanel === "tools" && (
-              <div className="absolute bottom-24 left-4 z-50">
+              <div className="absolute bottom-24 left-4 landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:left-24 z-50 landscape:max-h-[85vh] landscape:overflow-y-auto rounded-xl">
                 <Toolbar
                   activeTool={activeTool}
                   setActiveTool={setActiveTool}
@@ -600,14 +605,13 @@ export default function Home() {
                     setActiveMobilePanel(null);
                   }}
                   config={config}
-                  className="w-64" // Give it a fixed width in panel mode
+                  className="w-64"
                 />
               </div>
             )}
 
-            {/* ✨ NEW: Panel for Layers/Visibility */}
             {activeMobilePanel === "layers" && (
-              <div className="absolute bottom-24 right-4 z-50">
+              <div className="absolute bottom-24 right-4 landscape:bottom-auto landscape:right-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:left-24 z-50 landscape:max-h-[85vh] landscape:overflow-y-auto rounded-xl">
                 <RightToolbar
                   visibility={visibility}
                   onCenterCanvas={() => canvasRef.current?.center()}
@@ -617,8 +621,7 @@ export default function Home() {
             )}
 
             {activeMobilePanel === "actions" && (
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50">
-                {/* --- User-specific actions --- */}
+              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 landscape:bottom-auto landscape:left-24 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50 h-[60vh] overflow-y-auto landscape:h-[80vh]">
                 <button
                   onClick={() => handleSave()}
                   disabled={!token}
@@ -638,7 +641,6 @@ export default function Home() {
 
                 <div className="border-t border-gray-200 mx-2 !my-2"></div>
 
-                {/* --- Planning Sketch Section --- */}
                 <button
                   onClick={() => {
                     setActiveModal("uploadPlan");
@@ -652,7 +654,6 @@ export default function Home() {
                     : "Upload Planning Sketch"}
                 </button>
 
-                {/* Conditionally render sketch controls */}
                 {planningSketch && (
                   <div className="pl-4 ml-3 border-l-2 border-gray-200 flex flex-col space-y-1">
                     <button
@@ -666,17 +667,6 @@ export default function Home() {
                       <Edit className="w-4 h-4 mr-2 flex-shrink-0" />
                       <span>Edit Position</span>
                     </button>
-                    {/* <button
-                      onClick={() => {
-                        canvasRef.current?.toggleSketchLayer();
-                        setActiveMobilePanel(null);
-                      }}
-                      className="flex items-center w-full text-left p-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100"
-                      title="Bring to Front / Send to Back"
-                    >
-                      <Layers className="w-4 h-4 mr-2 flex-shrink-0" />
-                      <span>Toggle Layer</span>
-                    </button> */}
                     <button
                       onClick={() => {
                         canvasRef.current?.deleteSketch();
@@ -693,7 +683,6 @@ export default function Home() {
 
                 <div className="border-t border-gray-200 mx-2 !my-2"></div>
 
-                {/* --- Other Actions --- */}
                 <button
                   onClick={() => {
                     setActiveModal("selectTemplate");
@@ -714,7 +703,6 @@ export default function Home() {
 
                 <div className="border-t border-gray-200 mx-2 !my-2"></div>
 
-                {/* --- History and Delete --- */}
                 <button
                   onClick={handleUndo}
                   className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
@@ -738,64 +726,94 @@ export default function Home() {
                 </button>
               </div>
             )}
-            {/* ✨ NEW: Main Mobile Toolbar */}
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-white/80 backdrop-blur-md shadow-2xl rounded-full p-2">
+
+            <div
+              className="absolute 
+  bottom-4 left-1/2 -translate-x-1/2 
+  landscape:bottom-auto landscape:left-2 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 
+  z-30 flex 
+  landscape:flex-col items-center 
+  gap-2 landscape:gap-1 
+  bg-white/80 backdrop-blur-md shadow-2xl 
+  rounded-full landscape:rounded-2xl 
+  p-2 landscape:p-1.5"
+            >
               <button
                 onClick={() => toggleMobilePanel("tools")}
-                className={`p-4 rounded-full transition-colors ${
-                  activeMobilePanel === "tools"
-                    ? "bg-green-600 text-white"
-                    : "hover:bg-gray-200"
-                }`}
+                className={`transition-colors 
+      p-4 rounded-full 
+      landscape:p-2.5 landscape:rounded-xl 
+      ${
+        activeMobilePanel === "tools"
+          ? "bg-green-600 text-white"
+          : "hover:bg-gray-200"
+      }`}
               >
-                <Brush className="w-6 h-6" />
+                <Brush className="w-6 h-6 landscape:w-5 landscape:h-5" />
               </button>
+
               <button
                 onClick={() => toggleMobilePanel("layers")}
-                className={`p-4 rounded-full transition-colors ${
-                  activeMobilePanel === "layers"
-                    ? "bg-green-600 text-white"
-                    : "hover:bg-gray-200"
-                }`}
+                className={`transition-colors 
+      p-4 rounded-full 
+      landscape:p-2.5 landscape:rounded-xl 
+      ${
+        activeMobilePanel === "layers"
+          ? "bg-green-600 text-white"
+          : "hover:bg-gray-200"
+      }`}
               >
-                <Layers className="w-6 h-6" />
+                <Layers className="w-6 h-6 landscape:w-5 landscape:h-5" />
               </button>
+
+              {/* The Plus button shrinks significantly in landscape */}
               <button
                 onClick={handleNewDrawingClick}
-                className="p-6 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transform hover:scale-105 transition-transform"
+                className="
+      bg-green-600 text-white shadow-lg hover:bg-green-700 transform hover:scale-105 transition-transform
+      p-6 rounded-full 
+      landscape:p-3 landscape:rounded-xl landscape:my-1
+    "
               >
-                <Plus className="w-8 h-8" />
+                <Plus className="w-8 h-8 landscape:w-6 landscape:h-6" />
               </button>
+
               <button
                 onClick={() => toggleMobilePanel("actions")}
-                className={`p-4 rounded-full transition-colors ${
-                  activeMobilePanel === "actions"
-                    ? "bg-green-600 text-white"
-                    : "hover:bg-gray-200"
-                }`}
+                className={`transition-colors 
+      p-4 rounded-full 
+      landscape:p-2.5 landscape:rounded-xl 
+      ${
+        activeMobilePanel === "actions"
+          ? "bg-green-600 text-white"
+          : "hover:bg-gray-200"
+      }`}
               >
-                <MoreHorizontal className="w-6 h-6" />
+                <MoreHorizontal className="w-6 h-6 landscape:w-5 landscape:h-5" />
               </button>
+
               <button
                 onClick={() => {
-                  setActiveModal("allGardens");
                   if (token) {
                     setActiveModal("allGardens");
                   } else {
                     setActiveModal("login");
                   }
                 }}
-                className="p-4 rounded-full hover:bg-gray-200"
+                className="
+      hover:bg-gray-200 
+      p-4 rounded-full 
+      landscape:p-2.5 landscape:rounded-xl
+    "
                 title={token ? "My Gardens" : "Login to see your gardens"}
               >
-                <TreePine className="w-6 h-6" />
+                <TreePine className="w-6 h-6 landscape:w-5 landscape:h-5" />
               </button>
             </div>
           </div>
         </main>
       </div>
 
-      {/* --- Modals (No changes needed here) --- */}
       {activeModal === "saveAs" && (
         <Modal
           isOpen={true}
@@ -805,18 +823,16 @@ export default function Home() {
           <SaveProjectStep onSave={executeSaveAs} />
         </Modal>
       )}
-      {/* ... all other modals ... */}
       {activeModal === "frogot" && (
         <Modal
           isOpen={true}
           onClose={handleCloseModal}
           title="Login to Your Account"
         >
-          {" "}
           <ForgotPasswordModal
             onClose={handleCloseModal}
             onSwitchToLogin={() => setActiveModal("login")}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "login" && (
@@ -825,12 +841,11 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Login to Your Account"
         >
-          {" "}
           <LoginModal
             onClose={handleCloseModal}
             onSwitchToSignup={() => setActiveModal("signup")}
             onSwitchToForgot={() => setActiveModal("frogot")}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "signup" && (
@@ -839,11 +854,10 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Create an Account"
         >
-          {" "}
           <SignupModal
             onClose={handleCloseModal}
             onSwitchToLogin={() => setActiveModal("login")}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "welcome" && (
@@ -852,8 +866,7 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Swales permaculture design planner quick guide"
         >
-          {" "}
-          <WelcomeStep onPositionLawn={handlePositionLawn} />{" "}
+          <WelcomeStep onPositionLawn={handlePositionLawn} />
         </Modal>
       )}
       {activeModal === "selectShape" && (
@@ -862,7 +875,6 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Select plot shape"
         >
-          {" "}
           <SelectShapeStep
             onSelectRectangle={handleSelectRectangle}
             onStartFreeDraw={() => {
@@ -872,13 +884,12 @@ export default function Home() {
             }}
             onUploadPlan={() => setActiveModal("uploadPlan")}
             onShowTemplates={() => setActiveModal("selectTemplate")}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "enterSize" && (
         <Modal isOpen={true} onClose={handleCloseModal} title="Enter plot size">
-          {" "}
-          <EnterSizeStep onPositionPlot={handlePositionPlot} />{" "}
+          <EnterSizeStep onPositionPlot={handlePositionPlot} />
         </Modal>
       )}
       {activeModal === "newDrawingWarning" && (
@@ -887,7 +898,6 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Start a new plan?"
         >
-          {" "}
           <NewDrawingWarningStep
             onDiscard={handlePositionLawn}
             onSave={() => {
@@ -898,7 +908,7 @@ export default function Home() {
 
               handleSave({ onSuccess: handlePositionLawn });
             }}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "uploadPlan" && (
@@ -907,17 +917,14 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Upload existing plan"
         >
-          {" "}
           {isProcessingPdf ? (
             <div className="flex flex-col items-center justify-center p-8">
-              {" "}
               <svg
                 className="animate-spin -ml-1 mr-3 h-10 w-10 text-green-600"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
               >
-                {" "}
                 <circle
                   className="opacity-25"
                   cx="12"
@@ -925,26 +932,25 @@ export default function Home() {
                   r="10"
                   stroke="currentColor"
                   strokeWidth="4"
-                ></circle>{" "}
+                ></circle>
                 <path
                   className="opacity-75"
                   fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>{" "}
-              </svg>{" "}
-              <p className="mt-4 text-gray-600">Processing PDF...</p>{" "}
+                ></path>
+              </svg>
+              <p className="mt-4 text-gray-600">Processing PDF...</p>
             </div>
           ) : (
             <UploadPlanStep
               onFileUpload={handleFileUpload}
               onClose={handleCloseModal}
             />
-          )}{" "}
+          )}
         </Modal>
       )}
       {activeModal === "alignMeasure" && uploadedImage && (
         <Modal isOpen={true} onClose={handleCloseModal} title="Align measure">
-          {" "}
           <AlignMeasureStep
             imageSrc={uploadedImage}
             onAddSketch={(data) => {
@@ -969,7 +975,7 @@ export default function Home() {
               handleCloseModal();
             }}
             onClose={handleCloseModal}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "selectTemplate" && config?.templates && (
@@ -978,11 +984,10 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Select a garden template"
         >
-          {" "}
           <SelectTemplateStep
             templates={config.templates}
             onSelectTemplate={handleLoadTemplate}
-          />{" "}
+          />
         </Modal>
       )}
       {activeModal === "selectPdfPage" && (
@@ -991,12 +996,11 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Select a Page from your PDF"
         >
-          {" "}
           <SelectPdfPageStep
             imageUrls={pdfPageImages}
             onSelect={handlePdfPageSelect}
             onClose={handleCloseModal}
-          />{" "}
+          />
         </Modal>
       )}
 
@@ -1017,22 +1021,18 @@ export default function Home() {
           onClose={closeShareModal}
           title="Share Your Garden Plan"
         >
-          {" "}
           <div className="p-4">
-            {" "}
             <p className="text-gray-600 mb-3">
-              {" "}
-              Anyone with this link can view and edit a copy of your garden.{" "}
-            </p>{" "}
+              Anyone with this link can view and edit a copy of your garden.
+            </p>
             <div className="flex items-center space-x-2">
-              {" "}
               <input
                 type="text"
                 value={shareUrl}
                 readOnly
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500"
                 onFocus={(e) => e.target.select()}
-              />{" "}
+              />
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(shareUrl);
@@ -1040,21 +1040,18 @@ export default function Home() {
                 }}
                 className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
               >
-                {" "}
-                Copy{" "}
-              </button>{" "}
-            </div>{" "}
+                Copy
+              </button>
+            </div>
             <div className="mt-4 text-right">
-              {" "}
               <button
                 onClick={closeShareModal}
                 className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                {" "}
-                Close{" "}
-              </button>{" "}
-            </div>{" "}
-          </div>{" "}
+                Close
+              </button>
+            </div>
+          </div>
         </Modal>
       )}
     </>

@@ -2347,61 +2347,67 @@ const getTextAreaStyle = (
   note: NoteObject,
   stage: Konva.Stage | null
 ): React.CSSProperties => {
-  if (!stage) {
-    return { display: "none" };
-  }
+  if (!stage) return { display: "none" };
 
-  // Find the group node for the note
   const group = stage.findOne("#" + note.id);
-  if (!group) {
-    return { display: "none" };
-  }
+  if (!group) return { display: "none" };
 
-  // Find the specific text node within the group using its name
-  const textNode = group.findOne(".text_shape");
-  if (!textNode) {
-    return { display: "none" };
-  }
+  const textNode = group.findOne(".text_shape") as Konva.Text;
+  if (!textNode) return { display: "none" };
 
-  // THE CORE FIX:
-  // Get the absolute on-screen position of the text node.
-  // This method correctly calculates the position by accounting for the
-  // stage's pan/zoom and the parent group's position, rotation, and scale.
   const textPosition = textNode.absolutePosition();
-
-  // Get the rotation from the parent group
   const rotation = group.rotation();
-
-  // Calculate the final scale by combining the group's scale and the stage's scale
   const scale = group.scaleX() * stage.scaleX();
+
+  // --- iOS ZOOM FIX START ---
+  // 1. Calculate the actual size the user sees on screen
+  const currentFontSize = textNode.fontSize() * scale;
+
+  // 2. Determine if we need to trick the browser (is font < 16px?)
+  // If true, we set font-size to 16px (to stop zoom) and scale down the element.
+  const minFontSize = 16;
+  const isSmallText = currentFontSize < minFontSize;
+  const correctionScale = isSmallText ? currentFontSize / minFontSize : 1;
+
+  // 3. Adjust dimensions: If we scale down the element, we must make the
+  //    width/height/padding LARGER in CSS so they shrink to the correct size.
+  const finalFontSize = isSmallText ? minFontSize : currentFontSize;
+  const finalWidth = (textNode.width() * scale) / correctionScale;
+  const finalHeight = (textNode.height() * scale) / correctionScale;
+  const finalPadding = (textNode.padding() * scale) / correctionScale;
+  // --- iOS ZOOM FIX END ---
 
   return {
     position: "absolute",
-    // Use the coordinates directly for CSS top and left
     top: `${textPosition.y}px`,
     left: `${textPosition.x}px`,
 
-    // Apply the combined scale to the dimensions and font properties
-    width: `${textNode.width() * scale}px`,
-    height: `${textNode.height() * scale}px`,
-    fontSize: `${textNode.fontSize() * scale}px`,
+    // Use the corrected dimensions
+    width: `${finalWidth}px`,
+    height: `${finalHeight}px`,
+    fontSize: `${finalFontSize}px`,
+    padding: `${finalPadding}px`,
+
     fontFamily: textNode.fontFamily(),
 
-    // Apply the group's rotation
-    transform: `rotate(${rotation}deg)`,
+    // Apply rotation AND the correction scale
+    // transform-origin: top left ensures it shrinks towards the correct anchor point
+    transform: `rotate(${rotation}deg) scale(${correctionScale})`,
     transformOrigin: "top left",
 
-    // Ensure other text properties match the Konva Text node
     lineHeight: textNode.lineHeight(),
-    padding: `${textNode.padding() * scale}px`,
     margin: 0,
     background:
       note.type === "callout" ? NOTE_COLORS[note.fill] : "transparent",
-    border: "2px solid #3B82F6",
-    borderRadius: note.type === "callout" ? "8px" : "4px",
+
+    // Adjust border thickness so it doesn't get too thin when scaled down
+    border: `${2 / correctionScale}px solid #3B82F6`,
+    borderRadius:
+      note.type === "callout"
+        ? `${8 / correctionScale}px`
+        : `${4 / correctionScale}px`,
     color: NOTE_STROKE_COLOR,
 
-    // Standard textarea styles
     resize: "none",
     overflow: "hidden",
     boxSizing: "border-box",
@@ -2909,12 +2915,28 @@ const ObjectIcons = memo(
     const scaledSize = ICON_SIZE;
     const scaledSpacing = ICON_SPACING;
 
-    const handleEvent = (
-      e: KonvaEventObject<MouseEvent>,
+    const handleInteraction = (
+      e: KonvaEventObject<MouseEvent> | KonvaEventObject<TouchEvent>,
       callback: Function
     ) => {
-      e.cancelBubble = true; // This is crucial to stop the event from reaching the stage
+      e.cancelBubble = true;
+
+      // ✅ CRITICAL FIX: The parent component expects e.evt.clientX/Y.
+      // On mobile 'tap', the event is 'touchend' which lacks clientX.
+      // We manually map the touch coordinates to clientX/Y so the parent doesn't crash.
+      const evt = e.evt as any;
+      if (evt.changedTouches && evt.changedTouches.length > 0) {
+        const touch = evt.changedTouches[0];
+        // Polyfill these properties if they are missing
+        if (evt.clientX === undefined) evt.clientX = touch.clientX;
+        if (evt.clientY === undefined) evt.clientY = touch.clientY;
+      }
+
       callback(e);
+    };
+
+    const stopPropagation = (e: KonvaEventObject<TouchEvent>) => {
+      e.cancelBubble = true;
     };
 
     return (
@@ -2922,9 +2944,10 @@ const ObjectIcons = memo(
         {showLock && (
           <Group
             x={0}
-            onClick={(e) => handleEvent(e, onLockToggle)}
-            onTap={(e) => handleEvent(e, onLockToggle)}
-            listening={true} // ✅ Add this to make the icon clickable
+            onClick={(e) => handleInteraction(e, onLockToggle)}
+            onTap={(e) => handleInteraction(e, onLockToggle)}
+            onTouchStart={stopPropagation}
+            listening={true}
           >
             <Rect
               width={scaledSize}
@@ -2945,15 +2968,17 @@ const ObjectIcons = memo(
               offsetY={12}
               x={scaledSize / 2}
               y={scaledSize / 2}
+              listening={false} // ✅ Ensure clicks pass through to the Rect
             />
           </Group>
         )}
         {!isLocked && (
           <Group
             x={showLock ? scaledSize + scaledSpacing : 0}
-            onClick={(e) => handleEvent(e, onSettingsClick)}
-            onTap={(e) => handleEvent(e, onSettingsClick)}
-            listening={true} // ✅ And add this here too
+            onClick={(e) => handleInteraction(e, onSettingsClick)}
+            onTap={(e) => handleInteraction(e, onSettingsClick)}
+            onTouchStart={stopPropagation}
+            listening={true}
           >
             <Rect
               width={scaledSize}
@@ -2973,6 +2998,7 @@ const ObjectIcons = memo(
               offsetY={12}
               x={scaledSize / 2}
               y={scaledSize / 2}
+              listening={false} // ✅ Ensure clicks pass through to the Rect
             />
           </Group>
         )}
