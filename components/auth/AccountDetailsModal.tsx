@@ -88,11 +88,15 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     const fetchUserData = async () => {
       if (isOpen) {
         setIsLoading(true);
+        const storedToken = localStorage.getItem("token");
         setMessages({ error: "", success: "" });
         try {
           // Use the new endpoint
           const res = await axios.get(`${API_URL}/auth/me`, {
             withCredentials: true,
+            headers: {
+              Authorization: `Bearer ${storedToken}`, // Include token from LocalStorage
+            },
           });
 
           if (res.data.success) {
