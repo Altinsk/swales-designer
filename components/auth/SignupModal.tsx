@@ -157,6 +157,7 @@ const SignupModal: React.FC<SignupModalProps> = ({
         ...formData,
         // Format date for the backend if needed, e.g., to 'YYYY-MM-DD'
         dateOfBirth: formData.dateOfBirth?.toISOString().split("T")[0],
+        src: "designer",
       };
 
       const res = await axios.post(`${API_URL}/auth/register`, payload, {
