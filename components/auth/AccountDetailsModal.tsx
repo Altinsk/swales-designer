@@ -167,9 +167,10 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
           ? new Date(profileData.dateOfBirth).toISOString().split("T")[0]
           : null,
       };
-
+      const storedToken = localStorage.getItem("token");
       const res = await axios.put(
         `${API_URL}/auth/update-profile`,
+
         {
           firstName: profileData.firstName,
           lastName: profileData.lastName,
@@ -179,6 +180,9 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         },
         {
           withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${storedToken}`,
+          },
         }
       );
 
@@ -225,9 +229,12 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         currentPassword: passData.currentPassword,
         newPassword: passData.newPassword,
       };
-
+      const storedToken = localStorage.getItem("token");
       const res = await axios.put(`${API_URL}/auth/change-password`, payload, {
         withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
       });
 
       if (res.data.success) {
