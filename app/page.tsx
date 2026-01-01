@@ -588,9 +588,26 @@ export default function Home() {
                 onClick={() => setActiveMobilePanel(null)}
               ></div>
             )}
-
             {activeMobilePanel === "tools" && (
-              <div className="absolute bottom-24 left-4 landscape:bottom-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:left-24 z-50 landscape:max-h-[85vh] landscape:overflow-y-auto rounded-xl">
+              <div
+                style={{ zIndex: "9999999" }}
+                className="
+                /* Portrait Positioning */
+                absolute bottom-24 left-4 z-50 rounded-xl
+                
+                /* Landscape: Fixed to screen, pinned top/bottom to force scroll */
+                landscape:fixed 
+                landscape:top-4 
+                landscape:bottom-4 
+                landscape:left-24 
+                landscape:overflow-y-auto
+                landscape:w-auto
+                landscape:rounded-xl
+                
+                /* Hide scrollbar visually but allow functionality if preferred */
+                scrollbar-hide
+              "
+              >
                 <Toolbar
                   activeTool={activeTool}
                   setActiveTool={setActiveTool}
@@ -605,13 +622,23 @@ export default function Home() {
                     setActiveMobilePanel(null);
                   }}
                   config={config}
-                  className="w-64"
+                  className="
+                    w-64
+                    /* Landscape: Wide 2-column grid */
+                    landscape:w-[480px]
+                    landscape:grid
+                    landscape:grid-cols-2
+                    landscape:gap-3
+                    landscape:items-start
+                  "
                 />
               </div>
             )}
-
             {activeMobilePanel === "layers" && (
-              <div className="absolute bottom-24 right-4 landscape:bottom-auto landscape:right-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:left-24 z-50 landscape:max-h-[85vh] landscape:overflow-y-auto rounded-xl">
+              <div
+                style={{ zIndex: "9999999" }}
+                className="absolute bottom-24 right-4 landscape:bottom-auto landscape:right-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:left-24  landscape:max-h-[75vh] landscape:overflow-y-auto rounded-xl"
+              >
                 <RightToolbar
                   visibility={visibility}
                   onCenterCanvas={() => canvasRef.current?.center()}
@@ -619,7 +646,6 @@ export default function Home() {
                 />
               </div>
             )}
-
             {activeMobilePanel === "actions" && (
               <div className="absolute bottom-24 left-1/2 -translate-x-1/2 landscape:bottom-auto landscape:left-24 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50 h-[60vh] overflow-y-auto landscape:h-[80vh]">
                 <button

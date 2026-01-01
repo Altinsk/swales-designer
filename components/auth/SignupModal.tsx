@@ -4,6 +4,7 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"; // Styles for DatePicker
 import { isValid } from "date-fns";
+import GoogleLogin from "./GoogleLogin";
 
 interface SignupModalProps {
   onClose: () => void;
@@ -333,6 +334,15 @@ const SignupModal: React.FC<SignupModalProps> = ({
           Create Account
         </button>
       </form>
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300" />
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or</span>
+        </div>
+      </div>
+      <GoogleLogin onClose={onClose} />
       <p className="text-center text-sm text-gray-600">
         Already have an account?{" "}
         <button

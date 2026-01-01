@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
+import GoogleLogin from "./GoogleLogin";
 
 interface LoginModalProps {
   onClose: () => void;
@@ -91,10 +92,10 @@ const LoginModal: React.FC<LoginModalProps> = ({
           <div className="w-full border-t border-gray-300" />
         </div>
         <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or continue with</span>
+          <span className="px-2 bg-white text-gray-500">Or</span>
         </div>
       </div>
-
+      <GoogleLogin onClose={onClose} />
       <p className="text-center text-sm text-gray-600">
         No account?{" "}
         <button
