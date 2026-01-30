@@ -6,17 +6,28 @@ import React, { useState, useEffect, useRef } from "react";
 import { ActiveTool, NoteShape } from "@/app/page";
 
 // --- Type Definitions (no changes) ---
-export type Tool = "select" | "plot";
+export type Tool = "select" | "plot" | "zone";
 export interface Texture {
   id: string;
   name: string;
   src: string;
+}
+export interface ZoneOption {
+  id: string;
+  name: string;
+  color: string;
 }
 interface PlotToolConfig {
   id: "plot";
   name: string;
   type: "menu";
   textures: Texture[];
+}
+interface ZoneToolConfig {
+  id: "zone";
+  name: string;
+  type: "menu";
+  options: ZoneOption[];
 }
 export interface PresetItem {
   id: string;
@@ -37,9 +48,10 @@ interface ToolbarProps {
   setActiveTool: (tool: ActiveTool) => void;
   onSelectPreset: (preset: PresetItem) => void;
   onSelectTexture: (texture: Texture) => void;
+  onSelectZone: (zone: ZoneOption) => void;
   onSelectNoteTool: (shape: NoteShape) => void;
   config: {
-    tools: PlotToolConfig[];
+    tools: (PlotToolConfig | ZoneToolConfig)[];
     objects: Preset[];
   };
   className?: string;
@@ -55,6 +67,7 @@ const icons = {
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'%3E%3C/path%3E%3C/svg%3E",
   arrow:
     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='5' y1='12' x2='19' y2='12'%3E%3C/line%3E%3Cpolyline points='12 5 19 12 12 19'%3E%3C/polyline%3E%3C/svg%3E",
+  zone: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3v18h18'%3E%3C/path%3E%3Cpath d='M18.7 8l-5.1 5.2-2.8-2.7L7 14.3'%3E%3C/path%3E%3C/svg%3E",
 };
 const noteTools: PresetCategory = {
   id: "notes-category",
@@ -182,8 +195,8 @@ const ObjectMenuItem: React.FC<{
       ) : (
         // --- MOBILE (CLICK): This is the new accordion menu for touch devices ---
         <div
-          className={`pl-4 transition-all duration-300 ease-in-out overflow-hidden ${
-            isSubMenuOpen ? "max-h-screen" : "max-h-0"
+          className={`pl-4 transition-all duration-300 ease-in-out ${
+            isSubMenuOpen ? "max-h-60 overflow-y-auto" : "max-h-0 overflow-hidden"
           }`}
         >
           <div className="pt-1 space-y-1">{subMenuItems}</div>{" "}
@@ -198,14 +211,22 @@ const Toolbar: React.FC<ToolbarProps> = ({
   setActiveTool,
   onSelectPreset,
   onSelectTexture,
+  onSelectZone,
   onSelectNoteTool,
   config,
   className,
 }) => {
-  const plotToolConfig = config.tools.find((t) => t.id === "plot");
-  const [isPlotMenuOpen, setIsPlotMenuOpen] = useState(false); // ✅ FIXED: Default state is now `true` to assume a desktop device first. // This prevents the mobile layout from flashing on desktop screens during page load.
+  const plotToolConfig = config.tools.find((t) => t.id === "plot") as
+    | PlotToolConfig
+    | undefined;
+  const zoneToolConfig = config.tools.find((t) => t.id === "zone") as
+    | ZoneToolConfig
+    | undefined;
+  const [isPlotMenuOpen, setIsPlotMenuOpen] = useState(false);
+  const [isZoneMenuOpen, setIsZoneMenuOpen] = useState(false);
   const [prefersHover, setPrefersHover] = useState(true);
   const plotMenuRef = useRef<HTMLDivElement>(null);
+  const zoneMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -222,6 +243,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
         !plotMenuRef.current.contains(event.target as Node)
       ) {
         setIsPlotMenuOpen(false);
+      }
+      if (
+        zoneMenuRef.current &&
+        !zoneMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsZoneMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -332,7 +359,6 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 />{" "}
               </svg>{" "}
             </div>{" "}
-            {/* ✅ MODIFIED: This logic also correctly separates desktop and mobile views */}{" "}
             {prefersHover ? (
               <div
                 style={{ left: "98%" }}
@@ -364,8 +390,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
               </div>
             ) : (
               <div
-                className={`pl-4 transition-all duration-300 ease-in-out overflow-hidden ${
-                  isPlotMenuOpen ? "max-h-screen" : "max-h-0"
+                className={`pl-4 transition-all duration-300 ease-in-out ${
+                  isPlotMenuOpen ? "max-h-60 overflow-y-auto" : "max-h-0 overflow-hidden"
                 }`}
               >
                 {" "}
@@ -387,6 +413,113 @@ const Toolbar: React.FC<ToolbarProps> = ({
                         className="w-5 h-5 rounded-sm mr-3 object-cover"
                       />{" "}
                       <span className="text-sm">{texture.name}</span>{" "}
+                    </button>
+                  ))}{" "}
+                </div>{" "}
+              </div>
+            )}{" "}
+          </div>
+        )}{" "}
+        {zoneToolConfig && (
+          <div
+            className="relative"
+            ref={zoneMenuRef}
+            onMouseEnter={() => {
+              if (prefersHover) setIsZoneMenuOpen(true);
+            }}
+            onMouseLeave={() => {
+              if (prefersHover) setIsZoneMenuOpen(false);
+            }}
+          >
+            {" "}
+            <div
+              onClick={() => {
+                if (!prefersHover) setIsZoneMenuOpen(!isZoneMenuOpen);
+              }}
+              className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all duration-200 cursor-pointer ${
+                activeTool.type === "zone"
+                  ? "bg-green-600 text-white shadow"
+                  : "hover:bg-gray-100 text-gray-700"
+              }`}
+            >
+              {" "}
+              <div className="flex items-center">
+                {" "}
+                {/* Use the SVG from icons object */}
+                <img src={icons.zone} className="h-5 w-5 mr-3" alt="Zones" />
+                <span className="text-sm font-medium">
+                  {zoneToolConfig.name}
+                </span>{" "}
+              </div>{" "}
+              <svg
+                className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                  isZoneMenuOpen && !prefersHover ? "rotate-90" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                {" "}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 5l7 7-7 7"
+                />{" "}
+              </svg>{" "}
+            </div>{" "}
+            {prefersHover ? (
+              <div
+                style={{ left: "98%" }}
+                className={`absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-200 w-max ${
+                  isZoneMenuOpen
+                    ? "opacity-100 pointer-events-auto"
+                    : "opacity-0 pointer-events-none"
+                }`}
+              >
+                {" "}
+                {zoneToolConfig.options.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => {
+                      onSelectZone(option);
+                      setIsZoneMenuOpen(false);
+                    }}
+                    className="w-full flex items-center p-2 rounded-md hover:bg-gray-100"
+                  >
+                    {" "}
+                    <div
+                      className="w-5 h-5 rounded-sm mr-3"
+                      style={{ backgroundColor: option.color }}
+                    />{" "}
+                    <span className="text-sm">{option.name}</span>{" "}
+                  </button>
+                ))}{" "}
+              </div>
+            ) : (
+              <div
+                className={`pl-4 transition-all duration-300 ease-in-out ${
+                  isZoneMenuOpen ? "max-h-60 overflow-y-auto" : "max-h-0 overflow-hidden"
+                }`}
+              >
+                {" "}
+                <div className="pt-2 space-y-1">
+                  {" "}
+                  {zoneToolConfig.options.map((option) => (
+                    <button
+                      key={option.id}
+                      onClick={() => {
+                        onSelectZone(option);
+                        setIsZoneMenuOpen(false);
+                      }}
+                      className="w-full flex items-center p-2 rounded-md hover:bg-gray-100"
+                    >
+                      {" "}
+                      <div
+                        className="w-5 h-5 rounded-sm mr-3"
+                        style={{ backgroundColor: option.color }}
+                      />{" "}
+                      <span className="text-sm">{option.name}</span>{" "}
                     </button>
                   ))}{" "}
                 </div>{" "}

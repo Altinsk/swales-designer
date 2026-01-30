@@ -19,7 +19,7 @@ import {
 
 // --- Component Imports ---
 import TopBar from "@/components/TopBar";
-import Toolbar, { PresetItem, Texture } from "@/components/Toolbar";
+import Toolbar, { PresetItem, Texture, ZoneOption } from "@/components/Toolbar";
 import CanvasControls from "@/components/CanvasControls";
 import Header from "@/components/Header";
 import RightToolbar from "@/components/RightToolbar";
@@ -52,7 +52,7 @@ interface AppConfig {
   templates: any[];
 }
 export type NoteShape = "text" | "rectangle" | "oval" | "callout" | "arrow";
-export type ActiveToolType = "select" | "plot" | "note";
+export type ActiveToolType = "select" | "plot" | "note" | "zone";
 export interface ActiveTool {
   type: ActiveToolType;
   shape?: NoteShape;
@@ -103,6 +103,7 @@ export default function Home() {
   const [activeTool, setActiveTool] = useState<ActiveTool>({ type: "select" });
   const [selectedPreset, setSelectedPreset] = useState<PresetItem | null>(null);
   const [plotTexture, setPlotTexture] = useState<Texture | null>(null);
+  const [activeZone, setActiveZone] = useState<ZoneOption | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [planningSketch, setPlanningSketch] = useState<any | null>(null);
@@ -155,6 +156,9 @@ export default function Home() {
         setConfig(data);
         if (data.tools?.[0]?.textures?.[0]) {
           setPlotTexture(data.tools[0].textures[0]);
+        }
+        if (data.tools?.[1]?.options?.[0]) {
+           setActiveZone(data.tools[1].options[0]);
         }
       });
   }, []);
@@ -348,7 +352,7 @@ export default function Home() {
           projectData: canvasData.canvasState,
           thumbnail: canvasData.thumbnail,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       if (res.data.success) {
         setCurrentProject({
@@ -383,7 +387,7 @@ export default function Home() {
             projectData: canvasData.canvasState,
             thumbnail: canvasData.thumbnail,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         setNotification("Garden updated!");
         if (onSuccess) onSuccess();
@@ -511,6 +515,7 @@ export default function Home() {
             onObjectAdd={handleObjectAdded}
             setActiveTool={setActiveTool}
             plotTexture={plotTexture}
+            activeZone={activeZone}
             config={config}
             planningSketch={planningSketch}
             onSketchChange={setPlanningSketch}
@@ -546,6 +551,11 @@ export default function Home() {
             onSelectTexture={(texture) => {
               setPlotTexture(texture);
               setActiveTool({ type: "plot" });
+              setActiveMobilePanel(null);
+            }}
+            onSelectZone={(zone) => {
+              setActiveZone(zone);
+              setActiveTool({ type: "zone" });
               setActiveMobilePanel(null);
             }}
             onSelectNoteTool={(shape) => {
@@ -594,6 +604,8 @@ export default function Home() {
                 className="
                 /* Portrait Positioning */
                 absolute bottom-24 left-4 z-50 rounded-xl
+                max-h-[70vh]
+                overflow-y-auto
                 
                 /* Landscape: Fixed to screen, pinned top/bottom to force scroll */
                 landscape:fixed 
@@ -603,6 +615,7 @@ export default function Home() {
                 landscape:overflow-y-auto
                 landscape:w-auto
                 landscape:rounded-xl
+                landscape:max-h-none
                 
                 /* Hide scrollbar visually but allow functionality if preferred */
                 scrollbar-hide
@@ -615,6 +628,11 @@ export default function Home() {
                   onSelectTexture={(texture) => {
                     setPlotTexture(texture);
                     setActiveTool({ type: "plot" });
+                    setActiveMobilePanel(null);
+                  }}
+                  onSelectZone={(zone) => {
+                    setActiveZone(zone);
+                    setActiveTool({ type: "zone" });
                     setActiveMobilePanel(null);
                   }}
                   onSelectNoteTool={(shape) => {

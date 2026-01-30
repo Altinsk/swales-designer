@@ -21,6 +21,19 @@
           "src": "/wood.png"
         }
       ]
+    },
+    {
+      "id": "zone",
+      "name": "Zones",
+      "type": "menu",
+      "options": [
+        { "id": "zone-0", "name": "Zone 0", "color": "#FF7043" },
+        { "id": "zone-1", "name": "Zone 1", "color": "#FFD54F" },
+        { "id": "zone-2", "name": "Zone 2", "color": "#81C784" },
+        { "id": "zone-3", "name": "Zone 3", "color": "#388E3C" },
+        { "id": "zone-4", "name": "Zone 4", "color": "#8D6E63" },
+        { "id": "zone-5", "name": "Zone 5", "color": "#004D40" }
+      ]
     }
   ],
   "objects": [

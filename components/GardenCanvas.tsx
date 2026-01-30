@@ -28,7 +28,7 @@ import {
 } from "react-konva";
 import Konva from "konva";
 import { KonvaEventObject } from "konva/lib/Node";
-import { PresetItem, Texture } from "./Toolbar"; // Import types
+import { PresetItem, Texture, ZoneOption } from "./Toolbar"; // Import types
 import PresetObject from "./PresetObject"; // Import the actual component
 import { ActiveTool, NoteShape, VisibilityState } from "@/app/page"; // Import visibility state type
 import { Image as KonvaImage } from "react-konva"; // Add KonvaImage import
@@ -73,6 +73,10 @@ export interface Polygon {
   scaleY: number;
   locked?: boolean;
   textureId?: string; // To store the selected texture
+  isZone?: boolean;
+  strokeColor?: string;
+  strokeWidth?: number;
+  closed?: boolean;
 }
 export interface PlacedObject extends PresetItem {
   x: number;
@@ -229,6 +233,7 @@ const GardenCanvas = forwardRef<
     onObjectAdd: () => void;
     setActiveTool: (tool: ActiveTool) => void;
     plotTexture: Texture | null;
+    activeZone?: ZoneOption | null;
     config: any;
     visibility: VisibilityState;
     planningSketch: PlanningSketch | null;
@@ -243,13 +248,14 @@ const GardenCanvas = forwardRef<
       onObjectAdd,
       setActiveTool,
       plotTexture,
+      activeZone,
       config,
       visibility,
       planningSketch,
       onSketchChange,
       onScaleChange,
     },
-    ref
+    ref,
   ) => {
     const [polygons, setPolygons] = useState<Polygon[]>([]);
     const [placedObjects, setPlacedObjects] = useState<PlacedObject[]>([]);
@@ -263,7 +269,7 @@ const GardenCanvas = forwardRef<
     const [lastDist, setLastDist] = useState(0);
     const [lastCenter, setLastCenter] = useState<Point | null>(null);
     const [originalLayer, setOriginalLayer] = useState<Konva.Layer | null>(
-      null
+      null,
     );
     const [colorMenu, setColorMenu] = useState<{
       x: number;
@@ -273,7 +279,7 @@ const GardenCanvas = forwardRef<
     const [isDrawing, setIsDrawing] = useState(false);
     const [isInteracting, setIsInteracting] = useState(false);
     const [editingTextNode, setEditingTextNode] = useState<NoteObject | null>(
-      null
+      null,
     );
     // ✅ FIX #1: State to manage selecting a newly added object robustly.
     const [lastAddedId, setLastAddedId] = useState<string | null>(null);
@@ -317,16 +323,16 @@ const GardenCanvas = forwardRef<
     const handleLockToggle = useCallback((id: string) => {
       setPolygons((currentPolygons) =>
         currentPolygons.map((p) =>
-          p.id === id ? { ...p, locked: !p.locked } : p
-        )
+          p.id === id ? { ...p, locked: !p.locked } : p,
+        ),
       );
       setPlacedObjects((currentObjects) =>
         currentObjects.map((o) =>
-          o.id === id ? { ...o, locked: !o.locked } : o
-        )
+          o.id === id ? { ...o, locked: !o.locked } : o,
+        ),
       );
       setNotes((current) =>
-        current.map((n) => (n.id === id ? { ...n, locked: !n.locked } : n))
+        current.map((n) => (n.id === id ? { ...n, locked: !n.locked } : n)),
       );
       // Since we are changing a property that affects the UI,
       // it's a good idea to trigger the effect manually.
@@ -344,10 +350,10 @@ const GardenCanvas = forwardRef<
               return { ...p, points: newPoints };
             }
             return p;
-          })
+          }),
         );
       },
-      []
+      [],
     );
 
     const saveStateToHistory = useCallback(() => {
@@ -416,6 +422,8 @@ const GardenCanvas = forwardRef<
       const timeoutId = setTimeout(saveStateToHistory, 500);
       return () => clearTimeout(timeoutId);
     }, [polygons, placedObjects, saveStateToHistory, notes]);
+
+
 
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
@@ -579,7 +587,7 @@ const GardenCanvas = forwardRef<
 
         // Configure the transformer's behavior based on the object type
         const isResizableNote = notes.some(
-          (n) => n.id === selectedId && n.type !== "arrow"
+          (n) => n.id === selectedId && n.type !== "arrow",
         );
         const isPreset = placedObjects.some((o) => o.id === selectedId);
         transformer.keepRatio(isPreset);
@@ -667,7 +675,7 @@ const GardenCanvas = forwardRef<
 
         const newScale = Math.max(
           0.5,
-          Math.min(4, oldScale * (dist / lastDist))
+          Math.min(4, oldScale * (dist / lastDist)),
         );
 
         const newPos = {
@@ -774,7 +782,7 @@ const GardenCanvas = forwardRef<
               const totalHeight = Math.abs(pos.y - startY);
               const newHeight = Math.max(
                 0,
-                totalHeight - CALLOUT_POINTER_HEIGHT
+                totalHeight - CALLOUT_POINTER_HEIGHT,
               );
 
               let newOffsetX = 0;
@@ -819,7 +827,7 @@ const GardenCanvas = forwardRef<
             }
           }
           return n;
-        })
+        }),
       );
     };
 
@@ -902,13 +910,13 @@ const GardenCanvas = forwardRef<
       }
 
       setPolygons((current) =>
-        current.map((p) => (p.id === id ? { ...p, x: newX, y: newY } : p))
+        current.map((p) => (p.id === id ? { ...p, x: newX, y: newY } : p)),
       );
       setPlacedObjects((current) =>
-        current.map((o) => (o.id === id ? { ...o, x: newX, y: newY } : o))
+        current.map((o) => (o.id === id ? { ...o, x: newX, y: newY } : o)),
       );
       setNotes((current) =>
-        current.map((n) => (n.id === id ? { ...n, x: newX, y: newY } : n))
+        current.map((n) => (n.id === id ? { ...n, x: newX, y: newY } : n)),
       );
       setTransformCounter((c) => c + 1); // Trigger label update on drag
     };
@@ -964,10 +972,10 @@ const GardenCanvas = forwardRef<
       };
 
       setPolygons((current) =>
-        current.map((p) => (p.id === id ? { ...p, ...commonProps } : p))
+        current.map((p) => (p.id === id ? { ...p, ...commonProps } : p)),
       );
       setPlacedObjects((current) =>
-        current.map((o) => (o.id === id ? { ...o, ...commonProps } : o))
+        current.map((o) => (o.id === id ? { ...o, ...commonProps } : o)),
       );
       setNotes((current) => current.map(updateNote));
     };
@@ -1201,10 +1209,12 @@ const GardenCanvas = forwardRef<
       },
     }));
 
-    const finishPlotting = () => {
-      console.log(plotTexture?.id);
+    const finishPlotting = (closed: boolean = true) => {
+      const minPoints = closed ? 6 : 4;
+      if (currentPoints.length < minPoints) return;
 
-      if (currentPoints.length < 6) return;
+      const isZone = activeTool.type === "zone";
+
       const newPolygon: Polygon = {
         id: `poly_${Date.now()}`,
         points: [...currentPoints],
@@ -1213,8 +1223,12 @@ const GardenCanvas = forwardRef<
         rotation: 0,
         scaleX: 1,
         scaleY: 1,
-        locked: plotTexture?.id == "grass" ? true : false,
-        textureId: plotTexture?.id,
+        locked: isZone ? false : plotTexture?.id == "grass" ? true : false,
+        textureId: isZone ? undefined : plotTexture?.id,
+        isZone: isZone,
+        strokeColor: isZone ? activeZone?.color : undefined,
+        strokeWidth: isZone ? 5 : undefined,
+        closed: closed,
       };
       setPolygons((prev) => [...prev, newPolygon]);
       setCurrentPoints([]);
@@ -1222,12 +1236,18 @@ const GardenCanvas = forwardRef<
       setActiveTool({ type: "select" });
     };
 
+    const handleStageDblClick = (e: KonvaEventObject<MouseEvent>) => {
+      if (activeTool.type === "zone") {
+        finishPlotting(false);
+      }
+    };
+
     const handleCanvasClick = (e: KonvaEventObject<MouseEvent>) => {
       if (e.target !== e.target.getStage()) return;
 
-      if (activeTool.type === "plot") {
+      if (activeTool.type === "plot" || activeTool.type === "zone") {
         if (isClosing) {
-          finishPlotting();
+          finishPlotting(true);
           return;
         }
         const pos = stageRef.current?.getRelativePointerPosition();
@@ -1283,7 +1303,7 @@ const GardenCanvas = forwardRef<
         setColorMenu({ x, y, noteId });
         setMenu(null);
       },
-      []
+      [],
     );
 
     const handlePolygonAddPoint = useCallback(
@@ -1297,22 +1317,22 @@ const GardenCanvas = forwardRef<
                 (segmentIndex + 1) * 2,
                 0,
                 newPoint.x,
-                newPoint.y
+                newPoint.y,
               );
               return { ...p, points: newPoints };
             }
             return p;
-          })
+          }),
         );
         // Force the floating labels to re-render with the new point
         setTransformCounter((c) => c + 1);
       },
-      []
+      [],
     );
 
     const handleColorChange = (noteId: string, color: NoteColor) => {
       setNotes((current) =>
-        current.map((n) => (n.id === noteId ? { ...n, fill: color } : n))
+        current.map((n) => (n.id === noteId ? { ...n, fill: color } : n)),
       );
       setColorMenu(null);
     };
@@ -1329,8 +1349,10 @@ const GardenCanvas = forwardRef<
 
       setNotes((currentNotes) =>
         currentNotes.map((n) =>
-          n.id === editingTextNode.id ? { ...n, text: editingTextNode.text } : n
-        )
+          n.id === editingTextNode.id
+            ? { ...n, text: editingTextNode.text }
+            : n,
+        ),
       );
 
       const groupNode = stageRef.current?.findOne(`#${editingTextNode.id}`);
@@ -1362,13 +1384,17 @@ const GardenCanvas = forwardRef<
       }
       setIsNearVertex(isNearAnyPoint);
 
-      if (activeTool.type !== "plot" || currentPoints.length === 0) {
+      if (
+        (activeTool.type !== "plot" && activeTool.type !== "zone") ||
+        currentPoints.length === 0
+      ) {
         setSnapDetails({
           isSnapped: false,
           point: pos,
           isLineSnap: false,
           isAngleSnap: false,
         });
+        setIsClosing(false);
         return;
       }
 
@@ -1383,7 +1409,11 @@ const GardenCanvas = forwardRef<
         y: currentPoints[currentPoints.length - 1],
       };
 
-      if (currentPoints.length >= 4 && !isNearAnyPoint) {
+      if (
+        currentPoints.length >= 4 &&
+        !isNearAnyPoint &&
+        activeTool.type === "plot"
+      ) {
         const p2 = {
           x: currentPoints[currentPoints.length - 4],
           y: currentPoints[currentPoints.length - 3],
@@ -1408,7 +1438,7 @@ const GardenCanvas = forwardRef<
         }
       }
 
-      if (!isAngleSnap && !isNearAnyPoint) {
+      if (!isAngleSnap && !isNearAnyPoint && activeTool.type === "plot") {
         const dx = Math.abs(pos.x - lastPoint.x);
         const dy = Math.abs(pos.y - lastPoint.y);
 
@@ -1449,12 +1479,12 @@ const GardenCanvas = forwardRef<
 
         setMenu({ x: x - 5, y: y - 130, polyId });
       },
-      []
+      [],
     );
 
     const copyObject = (
       objectId: string,
-      direction: "horizontal" | "vertical"
+      direction: "horizontal" | "vertical",
     ) => {
       const node = stageRef.current?.findOne("#" + objectId);
       if (!node) return;
@@ -1519,7 +1549,7 @@ const GardenCanvas = forwardRef<
             points={[i * GRID_SIZE, topLeft.y, i * GRID_SIZE, bottomRight.y]}
             stroke="#D9DADA"
             strokeWidth={1 / scale}
-          />
+          />,
         );
       for (let j = startCellY; j <= endCellY; j++)
         lines.push(
@@ -1528,7 +1558,7 @@ const GardenCanvas = forwardRef<
             points={[topLeft.x, j * GRID_SIZE, bottomRight.x, j * GRID_SIZE]}
             stroke="#D9DADA"
             strokeWidth={1 / scale}
-          />
+          />,
         );
       return lines;
     };
@@ -1576,7 +1606,7 @@ const GardenCanvas = forwardRef<
             }
             strokeWidth={isAngleSnapSegment ? 2.5 : 2}
             offsetVector={{ x: 0, y: 0 }} // Plotting guides don't need an offset
-          />
+          />,
         );
       }
       if (numTempVertices >= 3) {
@@ -1590,7 +1620,7 @@ const GardenCanvas = forwardRef<
             dashed
             color={defaultColor}
             offsetVector={{ x: 0, y: 0 }}
-          />
+          />,
         );
       }
 
@@ -1610,7 +1640,7 @@ const GardenCanvas = forwardRef<
               p3={p_next}
               scale={stage.scale}
               text={`${angle.toFixed(1)}°`}
-            />
+            />,
           );
         }
       }
@@ -1659,8 +1689,16 @@ const GardenCanvas = forwardRef<
         // We only need to set the ID. The useLayoutEffect will handle the rest.
         selectShape(id);
       },
-      [] // Dependencies are no longer needed
+      [], // Dependencies are no longer needed
     );
+
+    // ✅ FIX: Clears selection when switching away from the "select" tool to prevent interaction conflicts.
+    useEffect(() => {
+      if (activeTool.type !== "select") {
+        handleSelect(null);
+      }
+    }, [activeTool.type, handleSelect]);
+
     const handleSketchDragEnd = (e: KonvaEventObject<DragEvent>) => {
       handleInteractionEnd();
       if (!planningSketch) return;
@@ -1731,13 +1769,13 @@ const GardenCanvas = forwardRef<
         if (localPoints.length > 0) {
           const absoluteTransform = currentNode.getAbsoluteTransform();
           const absolutePoints = localPoints.map((p) =>
-            absoluteTransform.point(p)
+            absoluteTransform.point(p),
           );
 
           // --- FLOATING LABELS LOGIC (Unchanged) ---
           const absoluteCentroid = absolutePoints.reduce(
             (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y }),
-            { x: 0, y: 0 }
+            { x: 0, y: 0 },
           );
           if (absolutePoints.length > 0) {
             absoluteCentroid.x /= absolutePoints.length;
@@ -1769,11 +1807,11 @@ const GardenCanvas = forwardRef<
                 const offsetDist = 20;
                 const effectiveScale = Math.max(
                   stageRef.current?.scaleX() || 1,
-                  MIN_EFFECTIVE_SCALE
+                  MIN_EFFECTIVE_SCALE,
                 );
                 const offsetVector = vScale(
                   normalizedNormal,
-                  offsetDist / effectiveScale
+                  offsetDist / effectiveScale,
                 );
                 return (
                   <LengthGuide
@@ -1827,7 +1865,7 @@ const GardenCanvas = forwardRef<
             planningSketch,
           ].filter(Boolean);
           const selectedObject = allObjects.find(
-            (obj) => obj!.id === selectedId
+            (obj) => obj!.id === selectedId,
           );
 
           if (selectedObject) {
@@ -1887,6 +1925,7 @@ const GardenCanvas = forwardRef<
           height={dimensions.height}
           onMouseDown={handleStageMouseDown}
           onClick={handleCanvasClick}
+          onDblClick={handleStageDblClick}
           onMouseMove={handleStageMouseMove}
           onMouseUp={handleStageMouseUp}
           onTouchStart={handleTouchStart}
@@ -1911,6 +1950,9 @@ const GardenCanvas = forwardRef<
               planningSketch.zIndex === 0 &&
               visibility.sketch
             }
+            listening={
+              activeTool.type !== "plot" && activeTool.type !== "zone"
+            }
           >
             {planningSketch && planningSketch.zIndex === 0 && (
               <SketchImage
@@ -1922,7 +1964,12 @@ const GardenCanvas = forwardRef<
           </Layer>
 
           {/* ✅ UPDATED ITEMS LAYER */}
-          <Layer visible={visibility.items}>
+          <Layer
+            visible={visibility.items}
+            listening={
+              activeTool.type !== "plot" && activeTool.type !== "zone"
+            }
+          >
             {/* 1. Render all polygons that are NOT selected */}
             {polygonsToRender.map((poly) => (
               <FinalPolygon
@@ -1947,7 +1994,9 @@ const GardenCanvas = forwardRef<
                 onAddPoint={(segmentIndex, newPoint) =>
                   handlePolygonAddPoint(poly.id, segmentIndex, newPoint)
                 }
-                isListening={activeTool.type !== "plot"}
+                isListening={
+                  activeTool.type !== "plot" && activeTool.type !== "zone"
+                }
               />
             ))}
 
@@ -1979,7 +2028,9 @@ const GardenCanvas = forwardRef<
                   onDragStart={handleInteractionStart}
                   onDragEnd={handleObjectDragEnd}
                   onTransformEnd={handleTransformEnd}
-                  listening={activeTool.type !== "plot"}
+                  listening={
+                    activeTool.type !== "plot" && activeTool.type !== "zone"
+                  }
                 >
                   <PresetObject
                     shapeProps={{
@@ -1999,7 +2050,6 @@ const GardenCanvas = forwardRef<
                 key={selectedPolygon.id}
                 poly={selectedPolygon}
                 opacity={0.7}
-                isListening={activeTool.type !== "plot"}
                 stageScale={stage.scale}
                 grassPattern={textures[selectedPolygon.textureId || ""]}
                 isSelected={true}
@@ -2019,15 +2069,18 @@ const GardenCanvas = forwardRef<
                   handlePolygonPointUpdate(
                     selectedPolygon.id,
                     pointIndex,
-                    newPoint
+                    newPoint,
                   )
                 }
                 onAddPoint={(segmentIndex, newPoint) =>
                   handlePolygonAddPoint(
                     selectedPolygon.id,
                     segmentIndex,
-                    newPoint
+                    newPoint,
                   )
+                }
+                isListening={
+                  activeTool.type !== "plot" && activeTool.type !== "zone"
                 }
               />
             )}
@@ -2041,7 +2094,9 @@ const GardenCanvas = forwardRef<
                 x={selectedObject.x}
                 y={selectedObject.y}
                 rotation={selectedObject.rotation || 0}
-                listening={activeTool.type !== "plot"}
+                listening={
+                  activeTool.type !== "plot" && activeTool.type !== "zone"
+                }
                 scaleX={selectedObject.scaleX || 1}
                 scaleY={selectedObject.scaleY || 1}
                 draggable={
@@ -2073,15 +2128,29 @@ const GardenCanvas = forwardRef<
               </Group>
             )}
 
-            {activeTool.type === "plot" && (
+          </Layer>
+
+          {/* ✅ UPDATED: Plotting Layer - Always listening so the checkmark button works */}
+          <Layer>
+            {(activeTool.type === "plot" || activeTool.type === "zone") && (
               <Group>
                 {plottingShapes}
-                {currentPoints.length >= 6 && (
+                {currentPoints.length >= (activeTool.type === "zone" ? 4 : 6) && (
                   <Line
                     points={currentPoints}
-                    fillPatternImage={textures[plotTexture?.id || ""]}
+                    fillPatternImage={
+                      activeTool.type === "zone"
+                        ? undefined
+                        : textures[plotTexture?.id || ""]
+                    }
                     fillPatternScale={{ x: 0.2, y: 0.2 }}
-                    closed
+                    stroke={
+                      activeTool.type === "zone"
+                        ? activeZone?.color
+                        : undefined
+                    }
+                    strokeWidth={activeTool.type === "zone" ? 5 : undefined}
+                    closed={activeTool.type === "plot"}
                     listening={false}
                     opacity={0.6}
                   />
@@ -2098,43 +2167,57 @@ const GardenCanvas = forwardRef<
                         snapDetails.isAngleSnap
                           ? snapColor
                           : i === 0 && isClosing
-                          ? snapColor
-                          : defaultColor
+                            ? snapColor
+                            : defaultColor
                       }
                       listening={false}
                     />
-                  ) : null
+                  ) : null,
                 )}
-                {currentPoints.length >= 6 && !isClosing && (
-                  <Group
-                    x={currentPoints[currentPoints.length - 2]}
-                    y={currentPoints[currentPoints.length - 1]}
-                    onClick={finishPlotting}
-                    onTap={finishPlotting}
-                  >
-                    <Circle
-                      radius={14 / stage.scale}
-                      fill={snapColor}
-                      shadowColor="black"
-                      shadowBlur={5}
-                      shadowOpacity={0.3}
-                    />
-                    <Path
-                      data="M20 6 9 17l-5-5"
-                      stroke="white"
-                      strokeWidth={3 / stage.scale}
-                      scale={{ x: 0.8 / stage.scale, y: 0.8 / stage.scale }}
-                      offsetX={12}
-                      offsetY={12}
-                    />
-                  </Group>
-                )}
+                {currentPoints.length >=
+                  (activeTool.type === "zone" ? 4 : 6) &&
+                  !isClosing && (
+                    <Group
+                      x={currentPoints[currentPoints.length - 2]}
+                      y={currentPoints[currentPoints.length - 1]}
+                      onClick={(e) => {
+                        e.cancelBubble = true;
+                        finishPlotting(activeTool.type === "plot");
+                        setIsClosing(false);
+                      }}
+                      onTap={(e) => {
+                        e.cancelBubble = true;
+                        finishPlotting(activeTool.type === "plot");
+                        setIsClosing(false);
+                      }}
+                    >
+                      <Circle
+                        radius={14 / stage.scale}
+                        fill={snapColor}
+                        shadowColor="black"
+                        shadowBlur={5}
+                        shadowOpacity={0.3}
+                      />
+                      <Path
+                        data="M20 6 9 17l-5-5"
+                        stroke="white"
+                        strokeWidth={3 / stage.scale}
+                        scale={{ x: 0.8 / stage.scale, y: 0.8 / stage.scale }}
+                        offsetX={12}
+                        offsetY={12}
+                      />
+                    </Group>
+                  )}
               </Group>
             )}
           </Layer>
 
           {/* This layer remains the same */}
-          <Layer>
+          <Layer
+            listening={
+              activeTool.type !== "plot" && activeTool.type !== "zone"
+            }
+          >
             <Transformer
               ref={trRef}
               rotateEnabled={true}
@@ -2238,6 +2321,9 @@ const GardenCanvas = forwardRef<
               planningSketch.zIndex === 1 &&
               visibility.sketch
             }
+            listening={
+              activeTool.type !== "plot" && activeTool.type !== "zone"
+            }
           >
             {planningSketch && planningSketch.zIndex === 1 && (
               <SketchImage
@@ -2304,8 +2390,8 @@ const GardenCanvas = forwardRef<
                     color === "gray"
                       ? "#E5E7EB"
                       : color === "blue"
-                      ? "#BFDBFE"
-                      : "#FDE68A",
+                        ? "#BFDBFE"
+                        : "#FDE68A",
                   borderColor:
                     notes.find((n) => n.id === colorMenu.noteId)?.fill === color
                       ? "#3B82F6"
@@ -2328,7 +2414,7 @@ const GardenCanvas = forwardRef<
         )}
       </div>
     );
-  }
+  },
 );
 GardenCanvas.displayName = "GardenCanvas";
 export default GardenCanvas;
@@ -2345,7 +2431,7 @@ const CALLOUT_POINTER_HEIGHT = 10;
 // Helper to calculate textarea position
 const getTextAreaStyle = (
   note: NoteObject,
-  stage: Konva.Stage | null
+  stage: Konva.Stage | null,
 ): React.CSSProperties => {
   if (!stage) return { display: "none" };
 
@@ -2568,7 +2654,7 @@ const NoteObjectRenderer = memo(
         {renderShape()}
       </Group>
     );
-  }
+  },
 );
 NoteObjectRenderer.displayName = "NoteObjectRenderer";
 
@@ -2604,7 +2690,7 @@ const AngleGuide = memo(
         offsetY={fontSize / 2}
       />
     );
-  }
+  },
 );
 AngleGuide.displayName = "AngleGuide";
 interface LengthGuideProps {
@@ -2707,7 +2793,7 @@ const LengthGuide = memo(
         )}
       </Group>
     );
-  }
+  },
 );
 LengthGuide.displayName = "LengthGuide";
 
@@ -2752,7 +2838,7 @@ const FinalPolygon = memo(
 
     const handlePointDragMove = (
       e: KonvaEventObject<DragEvent>,
-      index: number
+      index: number,
     ) => {
       const group = groupRef.current;
       if (!group) return;
@@ -2862,12 +2948,14 @@ const FinalPolygon = memo(
       >
         <Line
           points={poly.points}
-          fillPatternImage={grassPattern}
+          fillPatternImage={poly.isZone ? undefined : grassPattern}
           fillPatternScale={{ x: 0.2, y: 0.2 }}
-          stroke="black"
-          strokeWidth={3 / stageScale}
-          closed
+          stroke={poly.strokeColor || "black"}
+          strokeWidth={(poly.strokeWidth || 3) / stageScale}
+          closed={poly.closed ?? true}
           hitStrokeWidth={15 / stageScale}
+          fillEnabled={!poly.isZone}
+          listening={isListening}
           // Use onClick for adding points and hover events for the cursor
           onClick={handleEdgeClick}
           onTap={handleEdgeClick}
@@ -2893,7 +2981,7 @@ const FinalPolygon = memo(
           ))}
       </Group>
     );
-  }
+  },
 );
 FinalPolygon.displayName = "FinalPolygon";
 
@@ -2917,7 +3005,7 @@ const ObjectIcons = memo(
 
     const handleInteraction = (
       e: KonvaEventObject<MouseEvent> | KonvaEventObject<TouchEvent>,
-      callback: Function
+      callback: Function,
     ) => {
       e.cancelBubble = true;
 
@@ -3004,6 +3092,6 @@ const ObjectIcons = memo(
         )}
       </Group>
     );
-  }
+  },
 );
 ObjectIcons.displayName = "ObjectIcons";
