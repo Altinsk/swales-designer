@@ -608,10 +608,10 @@ export default function Home() {
                 overflow-y-auto
                 
                 /* Landscape: Fixed to screen, pinned top/bottom to force scroll */
-                landscape:fixed 
-                landscape:top-4 
-                landscape:bottom-4 
-                landscape:left-24 
+                landscape:fixed
+                landscape:top-4
+                landscape:bottom-4
+                landscape-safe-left-24
                 landscape:overflow-y-auto
                 landscape:w-auto
                 landscape:rounded-xl
@@ -655,7 +655,7 @@ export default function Home() {
             {activeMobilePanel === "layers" && (
               <div
                 style={{ zIndex: "9999999" }}
-                className="absolute bottom-24 right-4 landscape:bottom-auto landscape:right-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape:left-24  landscape:max-h-[75vh] landscape:overflow-y-auto rounded-xl"
+                className="absolute bottom-24 right-4 landscape:bottom-auto landscape:right-auto landscape:top-1/2 landscape:-translate-y-1/2 landscape-safe-left-24 landscape:max-h-[75vh] landscape:overflow-y-auto rounded-xl"
               >
                 <RightToolbar
                   visibility={visibility}
@@ -665,7 +665,7 @@ export default function Home() {
               </div>
             )}
             {activeMobilePanel === "actions" && (
-              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 landscape:bottom-auto landscape:left-24 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50 h-[60vh] overflow-y-auto landscape:h-[80vh]">
+              <div className="absolute bottom-24 left-1/2 -translate-x-1/2 landscape:bottom-auto landscape-safe-left-24 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50 h-[60vh] overflow-y-auto landscape:h-[80vh]">
                 <button
                   onClick={() => handleSave()}
                   disabled={!token}
@@ -774,7 +774,7 @@ export default function Home() {
             <div
               className="absolute 
   bottom-4 left-1/2 -translate-x-1/2 
-  landscape:bottom-auto landscape:left-2 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 
+  landscape:bottom-auto landscape-safe-left-2 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2
   z-30 flex 
   landscape:flex-col items-center 
   gap-2 landscape:gap-1 

@@ -1,5 +1,19 @@
 @import "tailwindcss";
 
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+@media (orientation: landscape) {
+  .landscape-safe-left-2 {
+    left: calc(env(safe-area-inset-left) + 0.5rem);
+  }
+  .landscape-safe-left-24 {
+    left: calc(env(safe-area-inset-left) + 6rem);
+  }
+}
+
 .react-datepicker-wrapper {
   width: 100%;
 }
