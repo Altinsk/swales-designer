@@ -158,7 +158,7 @@ export default function Home() {
           setPlotTexture(data.tools[0].textures[0]);
         }
         if (data.tools?.[1]?.options?.[0]) {
-           setActiveZone(data.tools[1].options[0]);
+          setActiveZone(data.tools[1].options[0]);
         }
       });
   }, []);
