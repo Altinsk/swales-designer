@@ -5,6 +5,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css"; // Styles for DatePicker
 import { isValid } from "date-fns";
 import GoogleLogin from "./GoogleLogin";
+import { getApiErrorMessage, getApiFieldErrors, Spinner } from "./authFeedback";
 
 interface SignupModalProps {
   onClose: () => void;
@@ -90,13 +91,14 @@ const SignupModal: React.FC<SignupModalProps> = ({
   });
 
   const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    // Clear the specific error when the user starts typing
-    if (formErrors[name as keyof typeof formErrors]) {
-      setFormErrors({ ...formErrors, [name]: "" });
+    // Clear the specific error (and any API error) when the user starts typing
+    if (formErrors[name as keyof typeof formErrors] || formErrors.form) {
+      setFormErrors({ ...formErrors, [name]: "", form: "" });
     }
   };
 
@@ -149,9 +151,13 @@ const SignupModal: React.FC<SignupModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setFormErrors({} as any); // Clear previous errors
 
     if (!validateForm()) return;
+
+    setIsLoading(true);
 
     try {
       const payload = {
@@ -165,14 +171,26 @@ const SignupModal: React.FC<SignupModalProps> = ({
         withCredentials: true,
       });
       if (res.data.success) {
-        setSuccessMessage(res.data.message + ". You can now log in.");
+        setSuccessMessage(
+          (res.data.message || "Account created") + ". You can now log in."
+        );
+        return;
       }
-    } catch (err: any) {
+      // Server answered 2xx but rejected the registration
       setFormErrors((prev) => ({
         ...prev,
-        form:
-          err.response?.data?.message || "An error occurred during sign up.",
+        form: res.data.message || "An error occurred during sign up.",
       }));
+    } catch (err: any) {
+      // Surface per-field errors (e.g. "email already exists") next to the
+      // field when the API sends them, and always show the general message.
+      setFormErrors((prev) => ({
+        ...prev,
+        ...getApiFieldErrors(err),
+        form: getApiErrorMessage(err, "An error occurred during sign up."),
+      }));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -201,7 +219,8 @@ const SignupModal: React.FC<SignupModalProps> = ({
               placeholder="First Name"
               value={formData.firstName}
               onChange={handleChange}
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
+              disabled={isLoading}
+              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
                 formErrors.firstName ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -217,7 +236,8 @@ const SignupModal: React.FC<SignupModalProps> = ({
               placeholder="Last Name"
               value={formData.lastName}
               onChange={handleChange}
-              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
+              disabled={isLoading}
+              className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
                 formErrors.lastName ? "border-red-500" : "border-gray-300"
               }`}
             />
@@ -238,7 +258,8 @@ const SignupModal: React.FC<SignupModalProps> = ({
             scrollableYearDropdown
             yearDropdownItemNumber={100}
             placeholderText="Date of Birth"
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
+            disabled={isLoading}
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
               formErrors.dateOfBirth ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -257,7 +278,8 @@ const SignupModal: React.FC<SignupModalProps> = ({
             placeholder="Email"
             value={formData.email}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
+            disabled={isLoading}
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
               formErrors.email ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -274,7 +296,8 @@ const SignupModal: React.FC<SignupModalProps> = ({
             placeholder="Password"
             value={formData.password}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
+            disabled={isLoading}
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
               formErrors.password ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -302,7 +325,8 @@ const SignupModal: React.FC<SignupModalProps> = ({
             placeholder="Confirm Password"
             value={formData.confirmPassword}
             onChange={handleChange}
-            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 ${
+            disabled={isLoading}
+            className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
               formErrors.confirmPassword ? "border-red-500" : "border-gray-300"
             }`}
           />
@@ -325,13 +349,20 @@ const SignupModal: React.FC<SignupModalProps> = ({
         )}
 
         {formErrors.form && (
-          <p className="text-sm text-red-600">{formErrors.form}</p>
+          <p
+            role="alert"
+            className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2"
+          >
+            {formErrors.form}
+          </p>
         )}
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          disabled={isLoading}
+          className="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          Create Account
+          {isLoading && <Spinner />}
+          {isLoading ? "Creating Account..." : "Create Account"}
         </button>
       </form>
       <div className="relative">
