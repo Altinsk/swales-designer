@@ -3,10 +3,12 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import GoogleLogin from "./GoogleLogin";
+import { getApiErrorMessage, Spinner } from "./authFeedback";
 
 interface LoginModalProps {
   onClose: () => void;
   onSwitchToSignup: () => void;
+  onSwitchToForgot: () => void;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
@@ -19,11 +21,16 @@ const LoginModal: React.FC<LoginModalProps> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
+
     setError("");
+    setIsLoading(true);
+
     try {
       const res = await axios.post(
         `${API_URL}/auth/login`,
@@ -31,13 +38,16 @@ const LoginModal: React.FC<LoginModalProps> = ({
         { withCredentials: true }
       );
       if (res.data.success) {
-        login(res.data.data.accessToken);
+        await login(res.data.data.accessToken);
         onClose();
+        return;
       }
+      // Server answered 2xx but rejected the login
+      setError(res.data.message || "Invalid email or password.");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message || "An error occurred during login."
-      );
+      setError(getApiErrorMessage(err, "An error occurred during login."));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -53,7 +63,8 @@ const LoginModal: React.FC<LoginModalProps> = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+            disabled={isLoading}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           />
         </div>
         <div>
@@ -65,7 +76,8 @@ const LoginModal: React.FC<LoginModalProps> = ({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500"
+            disabled={isLoading}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100"
           />
 
           {/* Forgot Password Link */}
@@ -79,12 +91,21 @@ const LoginModal: React.FC<LoginModalProps> = ({
             </button>
           </div>
         </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && (
+          <p
+            role="alert"
+            className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2"
+          >
+            {error}
+          </p>
+        )}
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700"
+          disabled={isLoading}
+          className="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
-          Sign In
+          {isLoading && <Spinner />}
+          {isLoading ? "Signing In..." : "Sign In"}
         </button>
       </form>
       <div className="relative">
