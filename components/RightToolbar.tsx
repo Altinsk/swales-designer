@@ -118,7 +118,7 @@ const RightToolbar: React.FC<RightToolbarProps> = ({
       <button
         onClick={onCenterCanvas}
         title="Center Canvas"
-        className="w-20 h-16 flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 bg-gray-200 text-gray-600 hover:bg-gray-300"
+        className="w-20 h-16 flex flex-col items-center justify-center p-2 rounded-lg transition-all duration-200 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 bg-gray-200 text-[#4b5563] hover:bg-gray-300"
       >
         <CenterIcon className="h-6 w-6 mb-1" />
         <span className="text-center leading-tight">Center Canvas</span>
@@ -134,7 +134,7 @@ const RightToolbar: React.FC<RightToolbarProps> = ({
             ${
               visibility[key]
                 ? "bg-green-100 text-green-800"
-                : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                : "bg-gray-200 text-[#4b5563] hover:bg-gray-300"
             }
           `}
         >

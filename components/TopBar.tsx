@@ -64,7 +64,7 @@ const Icon = ({
     disabled={disabled}
     className="p-2 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
   >
-    <IconComponent className="w-6 h-6 text-gray-700" strokeWidth={2} />
+    <IconComponent className="w-6 h-6 text-[#374151]" strokeWidth={2} />
   </button>
 );
 
