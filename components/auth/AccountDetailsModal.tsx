@@ -29,7 +29,7 @@ const PasswordIcon = ({
     strokeWidth={1.5}
     stroke="currentColor"
     className={`w-5 h-5 cursor-pointer ${
-      showPassword ? "text-green-600" : "text-gray-400"
+      showPassword ? "text-green-600" : "text-[#9ca3af]"
     }`}
   >
     <path
@@ -264,12 +264,12 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
           className="flex justify-between items-center p-4 "
           style={{ borderBottom: "1px solid #8080802e" }}
         >
-          <h2 className="text-xl font-semibold text-gray-800">
+          <h2 className="text-xl font-semibold text-[#1f2937]">
             Account Details
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            className="text-[#6b7280] hover:text-[#374151]"
           >
             <X className="w-6 h-6" />
           </button>
@@ -279,7 +279,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         {isLoading ? (
           <div className="flex flex-col items-center justify-center h-64 space-y-4">
             <Loader2 className="w-10 h-10 animate-spin text-green-600" />
-            <p className="text-gray-500">Loading your details...</p>
+            <p className="text-[#6b7280]">Loading your details...</p>
           </div>
         ) : (
           <div className="p-6 space-y-8">
@@ -298,14 +298,14 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
             {/* --- SECTION 1: Personal Information --- */}
             <form onSubmit={handleUpdateProfile} className="space-y-4">
               <h3
-                className="text-lg font-medium text-gray-900 pb-2"
+                className="text-lg font-medium text-[#111827] pb-2"
                 style={{ borderBottom: "1px solid #8080802e" }}
               >
                 Personal Information
               </h3>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="w-full">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-[#374151]">
                     First Name
                   </label>
                   <input
@@ -316,7 +316,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
                   />
                 </div>
                 <div className="w-full">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-[#374151]">
                     Last Name
                   </label>
                   <input
@@ -329,19 +329,19 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-[#374151]">
                   Email (Cannot be changed)
                 </label>
                 <input
                   name="email"
                   value={profileData.email}
                   disabled
-                  className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm text-gray-500 cursor-not-allowed"
+                  className="mt-1 block w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-md shadow-sm text-[#6b7280] cursor-not-allowed"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-[#374151] mb-1">
                   Date of Birth
                 </label>
                 <DatePicker
@@ -367,7 +367,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
             {/* --- SECTION 2: Change Password --- */}
             <form onSubmit={handleChangePassword} className="space-y-4 pt-4">
               <h3
-                className="text-lg font-medium text-gray-900  pb-2"
+                className="text-lg font-medium text-[#111827]  pb-2"
                 style={{ borderBottom: "1px solid #8080802e" }}
               >
                 Change Password

@@ -22,7 +22,7 @@ const SelectPdfPageStep: React.FC<SelectPdfPageStepProps> = ({
 
   return (
     <div>
-      <p className="text-gray-600 my-4">
+      <p className="text-[#4b5563] my-4">
         Your PDF has been processed. Please select the page you'd like to use as
         your plan.
       </p>
@@ -53,7 +53,7 @@ const SelectPdfPageStep: React.FC<SelectPdfPageStepProps> = ({
       <div className="mt-8 flex justify-end items-center gap-4">
         <button
           onClick={onClose}
-          className="px-6 py-2 rounded-full text-gray-700 border border-gray-300 hover:bg-gray-100"
+          className="px-6 py-2 rounded-full text-[#374151] border border-gray-300 hover:bg-gray-100"
         >
           Cancel
         </button>

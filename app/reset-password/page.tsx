@@ -98,13 +98,13 @@ const ResetPasswordForm = () => {
         className="max-w-md mx-auto mt-10 p-6    rounded-lg shadow-lg bg-white"
         style={{ border: "1px solid #8080802e" }}
       >
-        <h2 className="text-2xl font-semibold text-center text-gray-800 mb-6">
+        <h2 className="text-2xl font-semibold text-center text-[#1f2937] mb-6">
           Set New Password
         </h2>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* New Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-[#374151]">
               New Password
             </label>
             <div className="relative mt-1">
@@ -119,7 +119,7 @@ const ResetPasswordForm = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#6b7280]"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -129,7 +129,7 @@ const ResetPasswordForm = () => {
 
           {/* Confirm New Password Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-[#374151]">
               Confirm New Password
             </label>
             <div className="relative mt-1">
@@ -144,7 +144,7 @@ const ResetPasswordForm = () => {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-[#6b7280]"
                 aria-label={
                   showConfirmPassword ? "Hide password" : "Show password"
                 }

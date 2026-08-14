@@ -19,7 +19,7 @@ const SelectTemplateStep: React.FC<SelectTemplateStepProps> = ({
 }) => {
   return (
     <div>
-      <p className="text-gray-600 mt-1 mb-6">
+      <p className="text-[#4b5563] mt-1 mb-6">
         Choose a pre-designed garden layout to get started quickly.
       </p>
       <div className="grid grid-cols-3 gap-4">
@@ -34,7 +34,7 @@ const SelectTemplateStep: React.FC<SelectTemplateStepProps> = ({
               alt={template.name}
               className="w-full h-32 object-cover rounded-md mb-2"
             />
-            <span className="font-semibold text-gray-700 text-sm">
+            <span className="font-semibold text-[#374151] text-sm">
               {template.name}
             </span>
           </button>

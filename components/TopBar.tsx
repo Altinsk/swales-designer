@@ -208,7 +208,7 @@ const TopBar: React.FC<TopBarProps> = ({
           </button>
           {/* Templates Dropdown (no change) */}
           <div className="relative group">
-            <button className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+            <button className="px-4 py-2 text-sm font-semibold text-[#374151] bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
               Templates
             </button>
             <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 p-2 space-y-1">
@@ -234,13 +234,13 @@ const TopBar: React.FC<TopBarProps> = ({
             <div className="relative group">
               <button
                 onMouseEnter={fetchMyGardens}
-                className="px-4 whitespace-nowrap py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
+                className="px-4 whitespace-nowrap py-2 text-sm font-semibold text-[#374151] bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-2"
               >
                 My Gardens
               </button>
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 p-2 space-y-1 z-50">
                 <div className="flex justify-between items-center text-sm pb-1 border-b border-gray-200">
-                  <span className="font-semibold text-gray-700">
+                  <span className="font-semibold text-[#374151]">
                     Recent Gardens
                   </span>
                   {/* ✅ MODIFIED: Button now opens the modal */}
@@ -266,12 +266,12 @@ const TopBar: React.FC<TopBarProps> = ({
                         />
                       ) : (
                         <div className="w-16 h-12 flex items-center justify-center bg-gray-100 rounded-md mr-4">
-                          <ImageIcon className="w-6 h-6 text-gray-400" />
+                          <ImageIcon className="w-6 h-6 text-[#9ca3af]" />
                         </div>
                       )}
                       <div className="flex-grow text-left">
                         <p className="font-semibold truncate">{garden.Name}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-[#6b7280]">
                           Updated:{" "}
                           {new Date(
                             garden.DateLastUpdated
@@ -289,7 +289,7 @@ const TopBar: React.FC<TopBarProps> = ({
                             handleDeleteGarden(garden.ProjectId);
                           }
                         }}
-                        className="p-1 rounded-full text-gray-400 hover:bg-red-100 hover:text-red-600 ml-2 flex-shrink-0"
+                        className="p-1 rounded-full text-[#9ca3af] hover:bg-red-100 hover:text-red-600 ml-2 flex-shrink-0"
                         title="Delete Garden"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -297,7 +297,7 @@ const TopBar: React.FC<TopBarProps> = ({
                     </div>
                   ))
                 ) : (
-                  <p className="text-center text-gray-500 p-4">
+                  <p className="text-center text-[#6b7280] p-4">
                     You have no saved gardens.
                   </p>
                 )}

@@ -32,11 +32,11 @@ const UploadPlanStep: React.FC<UploadPlanStepProps> = ({
 
   return (
     <div>
-      <p className="text-gray-600 my-4">
+      <p className="text-[#4b5563] my-4">
         Here you can upload an existing plan. This could be a landscape
         architect's plan or a hand-drawn sketch. Please consider the following:
       </p>
-      <ul className="list-disc text-sm list-inside text-gray-600 space-y-2 my-4">
+      <ul className="list-disc text-sm list-inside text-[#4b5563] space-y-2 my-4">
         <li>You can use JPEG or PNG formats with a file size up to 5 MB.</li>
         <li>
           You can use a <strong>PDF</strong> with a file size up to 5 MB and
@@ -54,7 +54,7 @@ const UploadPlanStep: React.FC<UploadPlanStepProps> = ({
         }`}
       >
         <input {...getInputProps()} />
-        <p className="text-gray-500">
+        <p className="text-[#6b7280]">
           Files can be added via drag/drop, clipboard or by{" "}
           <span className="text-green-600 font-semibold">Search</span>.
         </p>
@@ -62,7 +62,7 @@ const UploadPlanStep: React.FC<UploadPlanStepProps> = ({
       <div className="mt-8 flex justify-end">
         <button
           onClick={onClose}
-          className="px-6 py-2 rounded-full text-gray-700 border border-gray-300 hover:bg-gray-100"
+          className="px-6 py-2 rounded-full text-[#374151] border border-gray-300 hover:bg-gray-100"
         >
           Cancel
         </button>

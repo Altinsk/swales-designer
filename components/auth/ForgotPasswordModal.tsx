@@ -47,15 +47,15 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-xl font-semibold text-center text-gray-800">
+      <h2 className="text-xl font-semibold text-center text-[#1f2937]">
         Reset Password
       </h2>
-      <p className="text-sm text-center text-gray-600">
+      <p className="text-sm text-center text-[#4b5563]">
         Enter your email and we'll send you a link to reset your password.
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-[#374151]">
             Email
           </label>
           <input
@@ -81,7 +81,7 @@ const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
           {isLoading ? "Sending..." : "Send Reset Link"}
         </button>
       </form>
-      <p className="text-center text-sm text-gray-600">
+      <p className="text-center text-sm text-[#4b5563]">
         {" "}
         <button
           onClick={onSwitchToLogin}

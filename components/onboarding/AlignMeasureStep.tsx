@@ -151,7 +151,7 @@ const AlignMeasureStep: React.FC<AlignMeasureStepProps> = ({
 
   return (
     <div className="max-w-2xl mx-auto">
-      <p className="text-gray-600 my-4">
+      <p className="text-[#4b5563] my-4">
         Pan the image underneath the ruler. Align, rotate, and resize the ruler
         to a known length, then enter that length below it.
       </p>
@@ -300,7 +300,7 @@ const AlignMeasureStep: React.FC<AlignMeasureStepProps> = ({
       <div className="mt-8 flex justify-end items-center gap-4">
         <button
           onClick={onClose}
-          className="px-6 py-2 rounded-full text-gray-700 border border-gray-300 hover:bg-gray-100"
+          className="px-6 py-2 rounded-full text-[#374151] border border-gray-300 hover:bg-gray-100"
         >
           Close
         </button>

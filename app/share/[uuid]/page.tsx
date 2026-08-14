@@ -523,7 +523,7 @@ export default function SharePage() {
   if (!config) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-200">
-        <p className="text-lg font-medium text-gray-600">Loading Planner...</p>
+        <p className="text-lg font-medium text-[#4b5563]">Loading Planner...</p>
       </div>
     );
   }
@@ -664,7 +664,7 @@ export default function SharePage() {
                 <button
                   onClick={() => handleSave()}
                   disabled={!token}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={!token ? "Login to save" : "Save Project"}
                 >
                   Save Project
@@ -672,7 +672,7 @@ export default function SharePage() {
                 <button
                   onClick={handleShare}
                   disabled={!token}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                   title={!token ? "Login to share" : "Share"}
                 >
                   Share
@@ -686,7 +686,7 @@ export default function SharePage() {
                     setActiveModal("uploadPlan");
                     setActiveMobilePanel(null);
                   }}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100"
                   title="Upload Planning Sketch"
                 >
                   {planningSketch
@@ -702,7 +702,7 @@ export default function SharePage() {
                         canvasRef.current?.editSketch();
                         setActiveMobilePanel(null);
                       }}
-                      className="flex items-center w-full text-left p-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100"
+                      className="flex items-center w-full text-left p-2 text-sm text-[#4b5563] rounded-lg hover:bg-gray-100"
                       title="Edit Sketch Position"
                     >
                       <Edit className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -713,7 +713,7 @@ export default function SharePage() {
                         canvasRef.current?.toggleSketchLayer();
                         setActiveMobilePanel(null);
                       }}
-                      className="flex items-center w-full text-left p-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100"
+                      className="flex items-center w-full text-left p-2 text-sm text-[#4b5563] rounded-lg hover:bg-gray-100"
                       title="Bring to Front / Send to Back"
                     >
                       <Layers className="w-4 h-4 mr-2 flex-shrink-0" />
@@ -741,14 +741,14 @@ export default function SharePage() {
                     setActiveModal("selectTemplate");
                     setActiveMobilePanel(null);
                   }}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100"
                   title="Load a Template"
                 >
                   Use a Template
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100"
                   title="Print Page"
                 >
                   Print Page
@@ -759,14 +759,14 @@ export default function SharePage() {
                 {/* --- History and Delete --- */}
                 <button
                   onClick={handleUndo}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100"
                   title="Undo"
                 >
                   Undo
                 </button>
                 <button
                   onClick={handleRedo}
-                  className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
+                  className="w-full text-left p-3 text-[#374151] rounded-lg hover:bg-gray-100"
                   title="Redo"
                 >
                   Redo
@@ -941,7 +941,7 @@ export default function SharePage() {
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 ></path>{" "}
               </svg>{" "}
-              <p className="mt-4 text-gray-600">Processing PDF...</p>{" "}
+              <p className="mt-4 text-[#4b5563]">Processing PDF...</p>{" "}
             </div>
           ) : (
             <UploadPlanStep
@@ -1029,7 +1029,7 @@ export default function SharePage() {
           {" "}
           <div className="p-4">
             {" "}
-            <p className="text-gray-600 mb-3">
+            <p className="text-[#4b5563] mb-3">
               {" "}
               Anyone with this link can view and edit a copy of your garden.{" "}
             </p>{" "}
@@ -1057,7 +1057,7 @@ export default function SharePage() {
               {" "}
               <button
                 onClick={closeShareModal}
-                className="px-4 py-2 text-sm font-semibold text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-[#374151] bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 {" "}
                 Close{" "}

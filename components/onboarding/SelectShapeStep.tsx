@@ -18,7 +18,7 @@ const ShapeCard = ({
     className="flex flex-col items-center justify-center p-4 border rounded-lg text-center hover:border-green-500 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
   >
     <div className="mb-2">{children}</div>
-    <span className="font-semibold text-gray-700">{label}</span>
+    <span className="font-semibold text-[#374151]">{label}</span>
   </button>
 );
 
@@ -37,7 +37,7 @@ const SelectShapeStep: React.FC<SelectShapeStepProps> = ({
 }) => {
   return (
     <div>
-      <p className="text-gray-600 mt-1 mb-6">
+      <p className="text-[#4b5563] mt-1 mb-6">
         How would you like to start your garden plan?
       </p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -53,7 +53,7 @@ const SelectShapeStep: React.FC<SelectShapeStepProps> = ({
         </ShapeCard>
         <ShapeCard onClick={onUploadPlan} label="Upload planning sketch">
           <div className="w-24 h-24 flex items-center justify-center">
-            <Upload className="w-12 h-12 text-gray-500" />
+            <Upload className="w-12 h-12 text-[#6b7280]" />
           </div>
         </ShapeCard>
         <ShapeCard onClick={onShowTemplates} label="Use garden template">
