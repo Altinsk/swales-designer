@@ -50,7 +50,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
     `block px-4 py-3 text-base font-medium border-b border-gray-100 last:border-0 ${
       isActive
         ? "bg-green-50 text-green-700"
-        : "text-[#374151] hover:bg-gray-50 hover:text-[#111827]"
+        : "text-[#404040] hover:bg-gray-50 hover:text-[#171717]"
     }`;
 
   return (
@@ -76,7 +76,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
           <div className="flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-2 -mr-2 text-[#4b5563] hover:bg-gray-100 rounded-md transition-colors"
+              className="p-2 -mr-2 text-[#525252] hover:bg-gray-100 rounded-md transition-colors"
               aria-label="Toggle menu"
             >
               {isMenuOpen ? (
@@ -152,10 +152,10 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-[#111827]">
+                      <p className="font-semibold text-[#171717]">
                         Hello, {user.firstName}
                       </p>
-                      <p className="text-xs text-[#6b7280]">Logged in</p>
+                      <p className="text-xs text-[#737373]">Logged in</p>
                     </div>
                   </div>
 
@@ -165,7 +165,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                       setIsMenuOpen(false); // Close menu
                       setIsAccountModalOpen(true); // Open Modal
                     }}
-                    className="w-full flex items-center px-4 py-2 text-sm text-[#374151] bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="w-full flex items-center px-4 py-2 text-sm text-[#404040] bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Account Details
@@ -176,7 +176,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                       setIsMenuOpen(false);
                       // Future subscription logic
                     }}
-                    className="w-full flex items-center px-4 py-2 text-sm text-[#374151] bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                    className="w-full flex items-center px-4 py-2 text-sm text-[#404040] bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
                     Subscription
@@ -200,7 +200,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                       onLoginClick();
                       setIsMenuOpen(false);
                     }}
-                    className="w-full flex justify-center px-4 py-3 border border-gray-300 rounded-lg text-[#374151] bg-white font-medium hover:bg-gray-50"
+                    className="w-full flex justify-center px-4 py-3 border border-gray-300 rounded-lg text-[#404040] bg-white font-medium hover:bg-gray-50"
                   >
                     Login
                   </button>

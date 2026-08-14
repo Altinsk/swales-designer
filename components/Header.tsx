@@ -34,7 +34,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
     : "px-4 py-2 rounded-md text-sm font-medium transition-colors";
 
   const activeClass = "bg-green-100";
-  const inactiveClass = "text-black hover:bg-gray-100 hover:text-[#111827]";
+  const inactiveClass = "text-black hover:bg-gray-100 hover:text-[#171717]";
 
   return (
     <>
@@ -180,8 +180,8 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)} // Use renamed state setter
                   className="flex items-center space-x-2 p-2 rounded-lg hover:bg-slate-100 transition-colors"
                 >
-                  <UserCircle className="h-6 w-6 text-[#475569]" />
-                  <span className="font-medium text-[#334155] ">
+                  <UserCircle className="h-6 w-6 text-[#525252]" />
+                  <span className="font-medium text-[#404040] ">
                     Hello, {user.firstName}
                   </span>
                 </button>
@@ -198,14 +198,14 @@ const Header: React.FC<HeaderProps> = ({
                       setIsUserMenuOpen(false);
                       setIsAccountModalOpen(true);
                     }}
-                    className="w-full text-left flex items-center px-4 py-2 text-sm text-[#374151] hover:bg-gray-50"
+                    className="w-full text-left flex items-center px-4 py-2 text-sm text-[#404040] hover:bg-gray-50"
                   >
                     <Settings className="w-4 h-4 mr-2" />
                     Account Details
                   </button>
                   <button
                     onClick={() => setIsUserMenuOpen(false)} // Just closes menu for now
-                    className="w-full text-left flex items-center px-4 py-2 text-sm text-[#374151] hover:bg-gray-50"
+                    className="w-full text-left flex items-center px-4 py-2 text-sm text-[#404040] hover:bg-gray-50"
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
                     Subscription
@@ -249,7 +249,7 @@ const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center lg:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} // Use new mobile state
-              className="inline-flex items-center justify-center p-2 rounded-md text-[#4b5563] hover:text-[#111827] hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-[#525252] hover:text-[#171717] hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-green-500"
               aria-expanded={isMobileMenuOpen}
             >
               <span className="sr-only">Open main menu</span>
@@ -278,8 +278,8 @@ const Header: React.FC<HeaderProps> = ({
                 // Mobile version of the user menu
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <UserCircle className="h-6 w-6 text-[#475569]" />
-                    <span className="font-medium text-[#334155]">
+                    <UserCircle className="h-6 w-6 text-[#525252]" />
+                    <span className="font-medium text-[#404040]">
                       Hello, {user.firstName}
                     </span>
                   </div>
@@ -298,7 +298,7 @@ const Header: React.FC<HeaderProps> = ({
                     <>
                       <button
                         onClick={onLoginClick} // Use prop
-                        className="w-full flex justify-center px-4 py-2 border border-slate-300 rounded-lg text-[#475569] hover:bg-slate-100 font-medium"
+                        className="w-full flex justify-center px-4 py-2 border border-slate-300 rounded-lg text-[#525252] hover:bg-slate-100 font-medium"
                       >
                         Login
                       </button>

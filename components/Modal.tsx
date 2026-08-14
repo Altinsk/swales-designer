@@ -32,7 +32,7 @@ const Modal: React.FC<ModalProps> = ({
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[#9ca3af] hover:text-[#1f2937] transition-colors"
+          className="absolute top-4 right-4 text-[#a3a3a3] hover:text-[#262626] transition-colors"
           aria-label="Close modal"
         >
           <svg
@@ -49,7 +49,7 @@ const Modal: React.FC<ModalProps> = ({
             />
           </svg>
         </button>
-        <h2 className="text-3xl font-bold text-[#1f2937] mb-2">{title}</h2>
+        <h2 className="text-3xl font-bold text-[#262626] mb-2">{title}</h2>
         <div>{children}</div>
       </div>
     </div>

@@ -318,7 +318,7 @@ export default function SignupPage() {
           <div className="w-full">
             {successMessage ? (
               <div className="text-center space-y-4">
-                <h2 className="text-3xl font-bold text-[#1f2937]">
+                <h2 className="text-3xl font-bold text-[#262626]">
                   You&apos;re all set
                 </h2>
                 <p className="text-green-600">{successMessage}</p>

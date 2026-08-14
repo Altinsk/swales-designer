@@ -20,7 +20,7 @@ const SaveProjectStep: React.FC<SaveProjectStepProps> = ({ onSave }) => {
       <div>
         <label
           htmlFor="projectName"
-          className="block text-sm font-medium text-[#374151]"
+          className="block text-sm font-medium text-[#404040]"
         >
           Garden Name
         </label>

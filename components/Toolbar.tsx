@@ -119,7 +119,7 @@ const ObjectMenuItem: React.FC<{
     return (
       <button
         onClick={() => onSelectPreset(item)}
-        className="w-full flex items-center p-2 rounded-md hover:bg-green-100 text-[#374151] transition-colors duration-150"
+        className="w-full flex items-center p-2 rounded-md hover:bg-green-100 text-[#404040] transition-colors duration-150"
         title={`Add ${item.name} to canvas`}
       >
         {" "}
@@ -156,14 +156,14 @@ const ObjectMenuItem: React.FC<{
       {" "}
       <div
         onClick={handleInteraction}
-        className="flex items-center justify-between p-2 rounded-md hover:bg-green-100 text-[#374151] cursor-pointer"
+        className="flex items-center justify-between p-2 rounded-md hover:bg-green-100 text-[#404040] cursor-pointer"
       >
         {" "}
         <span className="text-sm font-medium whitespace-nowrap">
           {item.name}
         </span>{" "}
         <svg
-          className={`w-4 h-4 text-[#9ca3af] transition-transform duration-200 ${
+          className={`w-4 h-4 text-[#a3a3a3] transition-transform duration-200 ${
             isSubMenuOpen && !prefersHover ? "rotate-90" : ""
           }`}
           fill="none"
@@ -271,7 +271,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       {" "}
       <div className="space-y-2">
         {" "}
-        <h3 className="font-semibold text-[#6b7280] text-xs uppercase tracking-wider px-2">
+        <h3 className="font-semibold text-[#737373] text-xs uppercase tracking-wider px-2">
           Tools
         </h3>{" "}
         <button
@@ -279,7 +279,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           className={`w-full flex items-center p-2 rounded-lg text-left transition-all duration-200 ${
             activeTool.type === "select"
               ? "bg-green-600 text-white shadow"
-              : "hover:bg-gray-100 text-[#374151]"
+              : "hover:bg-gray-100 text-[#404040]"
           }`}
         >
           {" "}
@@ -318,7 +318,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all duration-200 cursor-pointer ${
                 activeTool.type === "plot"
                   ? "bg-green-600 text-white shadow"
-                  : "hover:bg-gray-100 text-[#374151]"
+                  : "hover:bg-gray-100 text-[#404040]"
               }`}
             >
               {" "}
@@ -343,7 +343,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 </span>{" "}
               </div>{" "}
               <svg
-                className={`w-4 h-4 text-[#9ca3af] transition-transform duration-200 ${
+                className={`w-4 h-4 text-[#a3a3a3] transition-transform duration-200 ${
                   isPlotMenuOpen && !prefersHover ? "rotate-90" : ""
                 }`}
                 fill="none"
@@ -439,7 +439,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all duration-200 cursor-pointer ${
                 activeTool.type === "zone"
                   ? "bg-green-600 text-white shadow"
-                  : "hover:bg-gray-100 text-[#374151]"
+                  : "hover:bg-gray-100 text-[#404040]"
               }`}
             >
               {" "}
@@ -452,7 +452,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                 </span>{" "}
               </div>{" "}
               <svg
-                className={`w-4 h-4 text-[#9ca3af] transition-transform duration-200 ${
+                className={`w-4 h-4 text-[#a3a3a3] transition-transform duration-200 ${
                   isZoneMenuOpen && !prefersHover ? "rotate-90" : ""
                 }`}
                 fill="none"
@@ -530,7 +530,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </div>{" "}
       <div className="space-y-1">
         {" "}
-        <h3 className="font-semibold text-[#6b7280] text-xs uppercase tracking-wider px-2">
+        <h3 className="font-semibold text-[#737373] text-xs uppercase tracking-wider px-2">
           Objects
         </h3>{" "}
         {config.objects.map((item) => (
@@ -544,7 +544,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
       </div>{" "}
       <div className="space-y-1 pt-2 border-t border-gray-200">
         {" "}
-        <h3 className="font-semibold text-[#6b7280] text-xs uppercase tracking-wider px-2">
+        <h3 className="font-semibold text-[#737373] text-xs uppercase tracking-wider px-2">
           Notes
         </h3>{" "}
         <ObjectMenuItem

@@ -61,7 +61,7 @@ const PrintAuthGatePopup: React.FC<PrintAuthGatePopupProps> = ({
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3.5 right-3.5 text-[#9ca3af] hover:text-[#1f2937] transition-colors"
+          className="absolute top-3.5 right-3.5 text-[#a3a3a3] hover:text-[#262626] transition-colors"
         >
           <X className="w-[18px] h-[18px]" />
         </button>
@@ -76,14 +76,14 @@ const PrintAuthGatePopup: React.FC<PrintAuthGatePopupProps> = ({
           />
         </div>
 
-        <p className="text-[17px] italic text-[#1f2937] leading-relaxed">
+        <p className="text-[17px] italic text-[#262626] leading-relaxed">
           &ldquo;{quote.text}&rdquo;
         </p>
-        <p className="text-[13px] text-[#6b7280] mt-2.5 mb-4">
+        <p className="text-[13px] text-[#737373] mt-2.5 mb-4">
           — {quote.author}
         </p>
 
-        <p className="text-sm text-[#4b5563] mb-5">
+        <p className="text-sm text-[#525252] mb-5">
           Create a free account to print your garden plan.
         </p>
 
@@ -95,7 +95,7 @@ const PrintAuthGatePopup: React.FC<PrintAuthGatePopupProps> = ({
         </button>
         <button
           onClick={onLogin}
-          className="text-sm text-[#6b7280] hover:text-[#374151] py-1"
+          className="text-sm text-[#737373] hover:text-[#404040] py-1"
         >
           Already have an account?{" "}
           <span className="text-green-600 font-medium">Log in</span>

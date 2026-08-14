@@ -68,7 +68,7 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
               style={{ width: "100%" }}
             ></div>
 
-            <span className="text-[14px] font-semibold text-[#4b5563] -mt-0.5">
+            <span className="text-[14px] font-semibold text-[#525252] -mt-0.5">
               {meter}m
             </span>
           </div>

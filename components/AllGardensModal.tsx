@@ -115,7 +115,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
     if (isLoading) {
       return (
         <div className="flex justify-center items-center h-full">
-          <Loader2 className="w-8 h-8 text-[#6b7280] animate-spin" />
+          <Loader2 className="w-8 h-8 text-[#737373] animate-spin" />
         </div>
       );
     }
@@ -124,7 +124,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
     }
     if (projects.length === 0) {
       return (
-        <p className="text-center text-[#6b7280] p-8">
+        <p className="text-center text-[#737373] p-8">
           No gardens found matching your criteria.
         </p>
       );
@@ -145,18 +145,18 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
               />
             ) : (
               <div className="w-16 h-12 flex items-center justify-center bg-gray-100 rounded-md mr-4 flex-shrink-0">
-                <ImageIcon className="w-6 h-6 text-[#9ca3af]" />
+                <ImageIcon className="w-6 h-6 text-[#a3a3a3]" />
               </div>
             )}
             <div className="flex-grow text-left min-w-0">
               <p className="font-semibold truncate">{garden.Name}</p>
-              <p className="text-xs text-[#6b7280]">
+              <p className="text-xs text-[#737373]">
                 Updated: {new Date(garden.DateLastUpdated).toLocaleDateString()}
               </p>
             </div>
             <button
               onClick={(e) => handleLocalDelete(e, garden.ProjectId)}
-              className="p-1 rounded-full text-[#9ca3af] hover:bg-red-100 hover:text-red-600 ml-2 flex-shrink-0"
+              className="p-1 rounded-full text-[#a3a3a3] hover:bg-red-100 hover:text-red-600 ml-2 flex-shrink-0"
               title="Delete Garden"
             >
               <Trash2 className="w-4 h-4" />
@@ -178,7 +178,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
         <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-3 bg-gray-50 rounded-lg">
           <div className="flex flex-col md:flex-row items-center gap-3 w-full lg:w-auto lg:flex-grow">
             <div className="relative w-full md:flex-grow">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9ca3af]" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a3a3a3]" />
               <input
                 type="text"
                 placeholder="Search gardens..."
@@ -211,10 +211,10 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
                   setDateRange({ ...dateRange, from: e.target.value });
                   setCurrentPage(1);
                 }}
-                className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm text-[#6b7280]"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm text-[#737373]"
                 title="Filter by start date"
               />
-              <span className="text-[#9ca3af] hidden sm:block">-</span>
+              <span className="text-[#a3a3a3] hidden sm:block">-</span>
               <input
                 type="date"
                 value={dateRange.to}
@@ -223,13 +223,13 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
                   setDateRange({ ...dateRange, to: e.target.value });
                   setCurrentPage(1);
                 }}
-                className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm text-[#6b7280]"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md text-sm text-[#737373]"
                 title="Filter by end date"
               />
             </div>
             <button
               onClick={handleClearFilters}
-              className="p-2 text-[#6b7280] bg-gray-200 hover:bg-gray-300 rounded-md self-end sm:self-center"
+              className="p-2 text-[#737373] bg-gray-200 hover:bg-gray-300 rounded-md self-end sm:self-center"
               title="Clear all filters"
             >
               <FilterX className="w-5 h-5" />
@@ -250,7 +250,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
             >
               <ArrowLeft size={16} /> Previous
             </button>
-            <span className="text-sm text-[#4b5563]">
+            <span className="text-sm text-[#525252]">
               Page {currentPage} of {totalPages}
             </span>
             <button
