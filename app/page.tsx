@@ -39,7 +39,6 @@ import SelectTemplateStep from "@/components/onboarding/SelectTemplateStep";
 import SelectPdfPageStep from "@/components/onboarding/SelectPdfPageStep";
 
 // --- Auth Imports ---
-import LoginModal from "@/components/auth/LoginModal";
 import { useAuth } from "@/context/AuthContext";
 import { AllGardensModal } from "@/components/AllGardensModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
@@ -138,7 +137,6 @@ export default function Home() {
     | "alignMeasure"
     | "selectTemplate"
     | "selectPdfPage"
-    | "login"
     | "share"
     | "saveAs"
     | "allGardens"
@@ -489,7 +487,7 @@ export default function Home() {
       <div className="fixed inset-0 h-full w-full bg-gray-200 font-sans flex flex-col overflow-hidden z-0">
         <div className="hidden lg:block">
           <Header
-            onLoginClick={() => setActiveModal("login")}
+            onLoginClick={() => router.push("/login")}
             onSignupClick={() => router.push("/signup")}
           />
         </div>
@@ -497,7 +495,7 @@ export default function Home() {
         {/* MOBILE HEADER (Visible on mobile, optimized for landscape) */}
         <div className="block lg:hidden">
           <MobileHeader
-            onLoginClick={() => setActiveModal("login")}
+            onLoginClick={() => router.push("/login")}
             onSignupClick={() => router.push("/signup")}
           />
         </div>
@@ -843,7 +841,7 @@ export default function Home() {
                   if (token) {
                     setActiveModal("allGardens");
                   } else {
-                    setActiveModal("login");
+                    router.push("/login");
                   }
                 }}
                 className="
@@ -877,7 +875,7 @@ export default function Home() {
         >
           <ForgotPasswordModal
             onClose={handleCloseModal}
-            onSwitchToLogin={() => setActiveModal("login")}
+            onSwitchToLogin={() => router.push("/login")}
           />
         </Modal>
       )}
@@ -885,21 +883,8 @@ export default function Home() {
         <PrintAuthGatePopup
           onClose={handleCloseModal}
           onSignup={() => router.push("/signup")}
-          onLogin={() => setActiveModal("login")}
+          onLogin={() => router.push("/login")}
         />
-      )}
-      {activeModal === "login" && (
-        <Modal
-          isOpen={true}
-          onClose={handleCloseModal}
-          title="Login to Your Account"
-        >
-          <LoginModal
-            onClose={handleCloseModal}
-            onSwitchToSignup={() => router.push("/signup")}
-            onSwitchToForgot={() => setActiveModal("forgot")}
-          />
-        </Modal>
       )}
       {activeModal === "welcome" && (
         <Modal
@@ -943,7 +928,7 @@ export default function Home() {
             onDiscard={handlePositionLawn}
             onSave={() => {
               if (!token) {
-                setActiveModal("login");
+                router.push("/login");
                 return;
               }
 

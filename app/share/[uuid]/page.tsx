@@ -38,7 +38,6 @@ import SelectTemplateStep from "@/components/onboarding/SelectTemplateStep";
 import SelectPdfPageStep from "@/components/onboarding/SelectPdfPageStep";
 
 // --- Auth Imports ---
-import LoginModal from "@/components/auth/LoginModal";
 import { useAuth } from "@/context/AuthContext";
 import { AllGardensModal } from "@/components/AllGardensModal";
 import { useParams, useRouter } from "next/navigation";
@@ -138,7 +137,6 @@ export default function SharePage() {
     | "alignMeasure"
     | "selectTemplate"
     | "selectPdfPage"
-    | "login"
     | "share"
     | "saveAs"
     | "allGardens"
@@ -535,7 +533,7 @@ export default function SharePage() {
       {/* ✅ MODIFIED: Changed to a flexbox column layout */}
       <div className="h-dvh w-screen bg-gray-200 font-sans flex flex-col overflow-hidden">
         <Header
-          onLoginClick={() => setActiveModal("login")}
+          onLoginClick={() => router.push("/login")}
           onSignupClick={() => router.push("/signup")}
         />
 
@@ -826,7 +824,7 @@ export default function SharePage() {
                   if (token) {
                     setActiveModal("allGardens");
                   } else {
-                    setActiveModal("login");
+                    router.push("/login");
                   }
                 }}
                 className="p-4 rounded-full hover:bg-gray-200"
@@ -854,21 +852,8 @@ export default function SharePage() {
         <PrintAuthGatePopup
           onClose={handleCloseModal}
           onSignup={() => router.push("/signup")}
-          onLogin={() => setActiveModal("login")}
+          onLogin={() => router.push("/login")}
         />
-      )}
-      {activeModal === "login" && (
-        <Modal
-          isOpen={true}
-          onClose={handleCloseModal}
-          title="Login to Your Account"
-        >
-          {" "}
-          <LoginModal
-            onClose={handleCloseModal}
-            onSwitchToSignup={() => router.push("/signup")}
-          />{" "}
-        </Modal>
       )}
       {activeModal === "welcome" && (
         <Modal
@@ -916,7 +901,7 @@ export default function SharePage() {
             onDiscard={handlePositionLawn}
             onSave={() => {
               if (!token) {
-                setActiveModal("login");
+                router.push("/login");
                 return;
               }
 
