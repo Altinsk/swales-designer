@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { isValid } from "date-fns";
+import "../../styles/pages/auth.css";
 import GoogleLogin from "@/components/auth/GoogleLogin";
 import {
   getApiErrorMessage,
@@ -32,6 +33,25 @@ const validatePassword = (password = "") => {
   return re.test(password);
 };
 
+const CalendarIcon = () => (
+  <svg
+    className="svg-icon"
+    width="24"
+    height="25"
+    viewBox="0 0 24 25"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M21 10.3281H3M16 2.32812V6.32812M8 2.32812V6.32812M7.8 22.3281H16.2C17.8802 22.3281 18.7202 22.3281 19.362 22.0011C19.9265 21.7135 20.3854 21.2546 20.673 20.6901C21 20.0484 21 19.2083 21 17.5281V9.12813C21 7.44797 21 6.60789 20.673 5.96615C20.3854 5.40167 19.9265 4.94273 19.362 4.65511C18.7202 4.32812 17.8802 4.32812 16.2 4.32812H7.8C6.11984 4.32812 5.27976 4.32812 4.63803 4.65511C4.07354 4.94273 3.6146 5.40167 3.32698 5.96615C3 6.60789 3 7.44797 3 9.12812V17.5281C3 19.2083 3 20.0484 3.32698 20.6901C3.6146 21.2546 4.07354 21.7135 4.63803 22.0011C5.27976 22.3281 6.11984 22.3281 7.8 22.3281Z"
+      stroke="#232323"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const PasswordIcon = ({
   onClick,
   showPassword,
@@ -46,7 +66,7 @@ const PasswordIcon = ({
     viewBox="0 0 24 24"
     strokeWidth={1.5}
     stroke="currentColor"
-    className={`w-5 h-5 cursor-pointer ${
+    className={`svg-icon w-5 h-5 cursor-pointer ${
       showPassword ? "text-green-600" : "text-gray-400"
     }`}
   >
@@ -62,6 +82,14 @@ const PasswordIcon = ({
     />
   </svg>
 );
+
+type FieldName =
+  | "firstName"
+  | "lastName"
+  | "dateOfBirth"
+  | "email"
+  | "password"
+  | "confirmPassword";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -85,6 +113,15 @@ export default function SignupPage() {
     form: "",
   });
 
+  const [isFocused, setIsFocused] = useState<Record<FieldName, boolean>>({
+    firstName: false,
+    lastName: false,
+    dateOfBirth: false,
+    email: false,
+    password: false,
+    confirmPassword: false,
+  });
+
   const [showPassword, setShowPassword] = useState({
     password: false,
     confirmPassword: false,
@@ -92,6 +129,56 @@ export default function SignupPage() {
 
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Floating labels must stay floated when a browser autofills the inputs,
+  // since autofill doesn't fire the focus/change events we track in state.
+  useEffect(() => {
+    const fieldNames: FieldName[] = [
+      "firstName",
+      "lastName",
+      "email",
+      "password",
+      "confirmPassword",
+    ];
+    const inputs = document.querySelectorAll<HTMLInputElement>("input[name]");
+
+    const handleAutoFillAnimation = (event: AnimationEvent) => {
+      if (event.animationName !== "onAutoFillStart") return;
+      const target = event.target as HTMLInputElement;
+      const name = target.name as FieldName;
+      if (!fieldNames.includes(name)) return;
+      setFormData((prev) => ({ ...prev, [name]: target.value }));
+    };
+
+    inputs.forEach((input) => {
+      input.addEventListener("animationstart", handleAutoFillAnimation);
+    });
+
+    return () => {
+      inputs.forEach((input) => {
+        input.removeEventListener("animationstart", handleAutoFillAnimation);
+      });
+    };
+  }, []);
+
+  const isFloated = (field: FieldName) =>
+    isFocused[field] || Boolean(formData[field]);
+
+  const borderClass = (field: FieldName) =>
+    formErrors[field]
+      ? "danger-control"
+      : formData[field]
+      ? "success-control"
+      : "";
+
+  const labelClass = (field: FieldName) =>
+    formErrors[field] ? "danger-label" : formData[field] ? "success-label" : "";
+
+  const handleFocus = (field: FieldName) =>
+    setIsFocused((prev) => ({ ...prev, [field]: true }));
+
+  const handleBlur = (field: FieldName) =>
+    setIsFocused((prev) => ({ ...prev, [field]: false }));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -196,22 +283,23 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen flex bg-white p-3">
-      {/* Left: form */}
-      <div className="w-full lg:w-[591px] lg:max-w-[591px] flex flex-col p-4 sm:p-8">
-        <Link href="/" className="inline-block">
-          <Image
-            src="/logo.png"
-            alt="Swales"
-            width={160}
-            height={48}
-            style={{ width: "160px", height: "auto" }}
-            priority
-          />
-        </Link>
+    <main className="auth-wrapper flex">
+      <div className="auth-left flex flex-col">
+        <figure className="logo">
+          <Link href="/">
+            <Image
+              src="/logo.png"
+              alt="Swales"
+              width={200}
+              height={60}
+              style={{ width: "200px", height: "auto", marginLeft: "18px" }}
+              priority
+            />
+          </Link>
+        </figure>
 
-        <div className="flex-grow flex items-center">
-          <div className="w-full max-w-[400px] mx-auto py-8">
+        <div className="items-center auth-form flex flex-grow m-auto flex-wrap">
+          <div className="w-full">
             {successMessage ? (
               <div className="text-center space-y-4">
                 <h2 className="text-3xl font-bold text-gray-800">
@@ -220,250 +308,254 @@ export default function SignupPage() {
                 <p className="text-green-600">{successMessage}</p>
                 <button
                   onClick={() => router.push("/")}
-                  className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-white bg-green-600 hover:bg-green-700 transition-colors"
+                  className="btn btn-signup-theme btn-login"
                 >
                   Go to homepage to log in
                 </button>
               </div>
             ) : (
               <>
-                <h4 className="text-gray-500 text-lg font-bold mb-6">
-                  Sign up to start designing your garden
-                </h4>
+                <h4>Sign up to start designing your garden</h4>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <div className="w-full">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        First Name
-                      </label>
-                      <input
-                        name="firstName"
-                        placeholder="First Name"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        disabled={isLoading}
-                        className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
-                          formErrors.firstName
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
-                      {formErrors.firstName && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {formErrors.firstName}
-                        </p>
-                      )}
-                    </div>
-                    <div className="w-full">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Last Name
-                      </label>
-                      <input
-                        name="lastName"
-                        placeholder="Last Name"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        disabled={isLoading}
-                        className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
-                          formErrors.lastName
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
-                      {formErrors.lastName && (
-                        <p className="text-xs text-red-600 mt-1">
-                          {formErrors.lastName}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Date of Birth
-                    </label>
-                    <DatePicker
-                      selected={formData.dateOfBirth}
-                      onChange={handleDateChange}
-                      dateFormat="dd/MM/yyyy"
-                      showYearDropdown
-                      showMonthDropdown
-                      scrollableYearDropdown
-                      yearDropdownItemNumber={100}
-                      placeholderText="DD/MM/YYYY"
-                      disabled={isLoading}
-                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
-                        formErrors.dateOfBirth
-                          ? "border-red-500"
-                          : "border-gray-300"
+                <form onSubmit={handleSubmit}>
+                  <div className="auth-form-inner floating-form-label flex flex-col">
+                    <div
+                      className={`form-group ${
+                        isFloated("firstName") ? "label-floated" : ""
                       }`}
-                      wrapperClassName="w-full"
-                    />
-                    {formErrors.dateOfBirth && (
-                      <p className="text-xs text-red-600 mt-1">
-                        {formErrors.dateOfBirth}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email
-                    </label>
-                    <input
-                      name="email"
-                      type="email"
-                      placeholder="Email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      disabled={isLoading}
-                      className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
-                        formErrors.email ? "border-red-500" : "border-gray-300"
-                      }`}
-                    />
-                    {formErrors.email && (
-                      <p className="text-xs text-red-600 mt-1">
-                        {formErrors.email}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        name="password"
-                        type={showPassword.password ? "text" : "password"}
-                        placeholder="Password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        disabled={isLoading}
-                        className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
-                          formErrors.password
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                        <PasswordIcon
-                          onClick={() =>
-                            setShowPassword({
-                              ...showPassword,
-                              password: !showPassword.password,
-                            })
-                          }
-                          showPassword={showPassword.password}
-                        />
-                      </div>
-                    </div>
-                    {formErrors.password && (
-                      <p className="text-xs text-red-600 mt-1">
-                        {formErrors.password}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Confirm Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        name="confirmPassword"
-                        type={
-                          showPassword.confirmPassword ? "text" : "password"
-                        }
-                        placeholder="Confirm Password"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        disabled={isLoading}
-                        className={`block w-full px-3 py-2.5 border rounded-lg shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 disabled:bg-gray-100 ${
-                          formErrors.confirmPassword
-                            ? "border-red-500"
-                            : "border-gray-300"
-                        }`}
-                      />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                        <PasswordIcon
-                          onClick={() =>
-                            setShowPassword({
-                              ...showPassword,
-                              confirmPassword: !showPassword.confirmPassword,
-                            })
-                          }
-                          showPassword={showPassword.confirmPassword}
-                        />
-                      </div>
-                    </div>
-                    {formErrors.confirmPassword && (
-                      <p className="text-xs text-red-600 mt-1">
-                        {formErrors.confirmPassword}
-                      </p>
-                    )}
-                  </div>
-
-                  {formErrors.form && (
-                    <p
-                      role="alert"
-                      className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2"
                     >
-                      {formErrors.form}
-                    </p>
-                  )}
+                      <div className="form-relative">
+                        <label className={labelClass("firstName")}>
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          onFocus={() => handleFocus("firstName")}
+                          onBlur={() => handleBlur("firstName")}
+                          className={`form-control ${borderClass(
+                            "firstName"
+                          )}`}
+                        />
+                      </div>
+                      {formErrors.firstName && (
+                        <p className="validation">{formErrors.firstName}</p>
+                      )}
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-bold text-white bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {isLoading && <Spinner />}
-                    {isLoading ? "Signing Up..." : "Sign Up"}
-                  </button>
+                    <div
+                      className={`form-group ${
+                        isFloated("lastName") ? "label-floated" : ""
+                      }`}
+                    >
+                      <div className="form-relative">
+                        <label className={labelClass("lastName")}>
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          name="lastName"
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          onFocus={() => handleFocus("lastName")}
+                          onBlur={() => handleBlur("lastName")}
+                          className={`form-control ${borderClass(
+                            "lastName"
+                          )}`}
+                        />
+                      </div>
+                      {formErrors.lastName && (
+                        <p className="validation">{formErrors.lastName}</p>
+                      )}
+                    </div>
+
+                    <div
+                      className={`form-group ${
+                        isFloated("dateOfBirth") ? "label-floated" : ""
+                      }`}
+                    >
+                      <div className="form-relative">
+                        <label
+                          className={labelClass("dateOfBirth")}
+                          style={{ zIndex: 1000 }}
+                        >
+                          Date of Birth
+                        </label>
+                        <div className="input-group date-picker-modern">
+                          <span className="input-group-icon">
+                            <CalendarIcon />
+                          </span>
+                          <DatePicker
+                            selected={formData.dateOfBirth}
+                            onChange={handleDateChange}
+                            dateFormat="dd/MM/yyyy"
+                            showYearDropdown
+                            showMonthDropdown
+                            scrollableYearDropdown
+                            yearDropdownItemNumber={100}
+                            placeholderText="DD/MM/YYYY"
+                            disabled={isLoading}
+                            onFocus={() => handleFocus("dateOfBirth")}
+                            onBlur={() => handleBlur("dateOfBirth")}
+                            className={`form-control modern-date-input ${borderClass(
+                              "dateOfBirth"
+                            )}`}
+                            wrapperClassName="w-full"
+                          />
+                        </div>
+                        {formErrors.dateOfBirth && (
+                          <p className="validation">
+                            {formErrors.dateOfBirth}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`form-group ${
+                        isFloated("email") ? "label-floated" : ""
+                      }`}
+                    >
+                      <div className="form-relative">
+                        <label className={labelClass("email")}>Email</label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          disabled={isLoading}
+                          onFocus={() => handleFocus("email")}
+                          onBlur={() => handleBlur("email")}
+                          className={`form-control ${borderClass("email")}`}
+                        />
+                      </div>
+                      {formErrors.email && (
+                        <p className="validation">{formErrors.email}</p>
+                      )}
+                    </div>
+
+                    <div
+                      className={`form-group ${
+                        isFloated("password") ? "label-floated" : ""
+                      }`}
+                    >
+                      <div className="form-relative">
+                        <label className={labelClass("password")}>
+                          Password
+                        </label>
+                        <div className="input-icon icon-back">
+                          <PasswordIcon
+                            onClick={() =>
+                              setShowPassword({
+                                ...showPassword,
+                                password: !showPassword.password,
+                              })
+                            }
+                            showPassword={showPassword.password}
+                          />
+                          <input
+                            type={showPassword.password ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                            onFocus={() => handleFocus("password")}
+                            onBlur={() => handleBlur("password")}
+                            className={`form-control ${borderClass(
+                              "password"
+                            )}`}
+                          />
+                        </div>
+                      </div>
+                      {formErrors.password && (
+                        <p className="validation">{formErrors.password}</p>
+                      )}
+                    </div>
+
+                    <div
+                      className={`form-group ${
+                        isFloated("confirmPassword") ? "label-floated" : ""
+                      }`}
+                    >
+                      <div className="form-relative">
+                        <label className={labelClass("confirmPassword")}>
+                          Confirm Password
+                        </label>
+                        <div className="input-icon icon-back">
+                          <PasswordIcon
+                            onClick={() =>
+                              setShowPassword({
+                                ...showPassword,
+                                confirmPassword: !showPassword.confirmPassword,
+                              })
+                            }
+                            showPassword={showPassword.confirmPassword}
+                          />
+                          <input
+                            type={
+                              showPassword.confirmPassword
+                                ? "text"
+                                : "password"
+                            }
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            disabled={isLoading}
+                            onFocus={() => handleFocus("confirmPassword")}
+                            onBlur={() => handleBlur("confirmPassword")}
+                            className={`form-control ${borderClass(
+                              "confirmPassword"
+                            )}`}
+                          />
+                        </div>
+                      </div>
+                      {formErrors.confirmPassword && (
+                        <p className="validation">
+                          {formErrors.confirmPassword}
+                        </p>
+                      )}
+                    </div>
+
+                    {formErrors.form && (
+                      <p role="alert" className="validation">
+                        {formErrors.form}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isLoading}
+                      className="btn btn-signup-theme btn-login"
+                    >
+                      {isLoading && <Spinner />}
+                      {isLoading ? "Signing Up..." : "Sign Up"}
+                    </button>
+                  </div>
                 </form>
 
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-white text-gray-500">or</span>
-                  </div>
+                <div className="or-separator">
+                  <span>or</span>
                 </div>
 
-                <GoogleLogin onClose={() => router.push("/")} />
+                <div className="social-button">
+                  <GoogleLogin onClose={() => router.push("/")} />
+                </div>
 
-                <p className="text-center font-bold text-gray-500 mt-8">
+                <div className="already-account">
                   Already have an account?{" "}
-                  <Link href="/" className="text-green-600 hover:text-green-500">
-                    Login
-                  </Link>
-                </p>
+                  <Link href="/">Login</Link>
+                </div>
               </>
             )}
           </div>
         </div>
       </div>
 
-      {/* Right: decorative panel */}
-      <div className="hidden lg:block flex-1 relative">
-        <div
-          className="absolute inset-0 rounded-3xl bg-cover bg-center"
-          style={{ backgroundImage: "url('/template1.jpg')" }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/0 to-black/0 rounded-3xl" />
-          <div className="absolute bottom-8 left-8 right-8 text-white">
-            <p className="text-2xl font-bold drop-shadow">
-              Design your garden with Swales
-            </p>
-            <p className="text-white/80 mt-1 drop-shadow">
-              Plan, plot and print your permaculture layout in minutes.
-            </p>
-          </div>
-        </div>
-      </div>
+      <div className="auth-right auth-image"></div>
     </main>
   );
 }
