@@ -61,7 +61,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         <div className="flex justify-between items-center px-4 transition-all duration-300 h-14 landscape:h-10">
           {/* Logo (Shrinks in landscape) */}
           <Link
-            href="/"
+            href="https://www.swales.app"
             className="flex items-center"
             onClick={() => setIsMenuOpen(false)}
           >

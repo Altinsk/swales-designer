@@ -302,7 +302,7 @@ export default function SignupPage() {
     <main className="auth-wrapper flex">
       <div className="auth-left flex flex-col">
         <figure className="logo">
-          <Link href="/">
+          <Link href="https://www.swales.app">
             <Image
               src="/logo.png"
               alt="Swales"

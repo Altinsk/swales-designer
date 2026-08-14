@@ -279,7 +279,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           className={`w-full flex items-center p-2 rounded-lg text-left transition-all duration-200 ${
             activeTool.type === "select"
               ? "bg-green-600 text-white shadow"
-              : "hover:bg-gray-100 text-gray-700"
+              : "hover:bg-gray-100 text-[#374151]"
           }`}
         >
           {" "}
