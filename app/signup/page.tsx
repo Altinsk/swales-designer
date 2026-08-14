@@ -227,9 +227,6 @@ export default function SignupPage() {
               </div>
             ) : (
               <>
-                <h2 className="text-4xl font-bold text-gray-800 mb-1">
-                  Sign up
-                </h2>
                 <h4 className="text-gray-500 text-lg font-bold mb-6">
                   Sign up to start designing your garden
                 </h4>
