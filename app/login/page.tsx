@@ -117,7 +117,6 @@ export default function LoginPage() {
 
         <div className="items-center auth-form flex flex-grow m-auto flex-wrap">
           <div className="w-full">
-            <h2>Sign in</h2>
             <h4>Please login to continue to your account.</h4>
 
             <form onSubmit={handleSubmit}>
