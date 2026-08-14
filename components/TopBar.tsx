@@ -13,6 +13,8 @@ import {
   Layers,
   Edit,
   ImageIcon,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 // ✅ ADDED: Import the new modal component
@@ -36,15 +38,18 @@ interface TopBarProps {
   onUploadPlan: () => void;
   onToggleSketchLayer: () => void;
   onEditSketch: () => void;
+  onToggleSketchLock: () => void;
   onDeleteSketch: () => void;
   onPrint: () => void;
   onShare: () => void;
   isSketchVisible: boolean;
+  isSketchLocked: boolean;
   templates: Template[];
   className?: string;
   onSave: () => void;
   onSaveAs: () => void;
   onLoadProject: (projectId: number) => void;
+  isSaving?: boolean;
 }
 
 const Icon = ({
@@ -77,15 +82,18 @@ const TopBar: React.FC<TopBarProps> = ({
   onUploadPlan,
   onToggleSketchLayer,
   onEditSketch,
+  onToggleSketchLock,
   onDeleteSketch,
   onPrint,
   onShare,
   isSketchVisible,
+  isSketchLocked,
   templates,
   className = "",
   onSave,
   onSaveAs,
   onLoadProject,
+  isSaving = false,
 }) => {
   const { user, token } = useAuth();
   const [myGardens, setMyGardens] = useState<Project[]>([]);
@@ -147,15 +155,15 @@ const TopBar: React.FC<TopBarProps> = ({
           <div className="flex items-center gap-1">
             <Icon
               icon={Save}
-              title={user ? "Save" : "Log in to save"}
+              title={!user ? "Log in to save" : isSaving ? "Saving..." : "Save"}
               onClick={onSave}
-              disabled={!user}
+              disabled={!user || isSaving}
             />
             <Icon
               icon={PenBox}
-              title={user ? "Save As" : "Log in to save"}
+              title={!user ? "Log in to save" : isSaving ? "Saving..." : "Save As"}
               onClick={onSaveAs}
-              disabled={!user}
+              disabled={!user || isSaving}
             />
             <Icon icon={Trash2} title="Delete Selected" onClick={onDelete} />
             <Icon icon={Share2} title="Share" onClick={onShare} />
@@ -186,6 +194,11 @@ const TopBar: React.FC<TopBarProps> = ({
                     icon={Edit}
                     title="Edit Sketch Position"
                     onClick={onEditSketch}
+                  />
+                  <Icon
+                    icon={isSketchLocked ? Unlock : Lock}
+                    title={isSketchLocked ? "Unlock Sketch" : "Lock Sketch"}
+                    onClick={onToggleSketchLock}
                   />
                   <Icon
                     icon={Trash2}

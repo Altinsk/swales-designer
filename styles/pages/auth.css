@@ -147,7 +147,7 @@ input:-webkit-autofill {
 .date-width {
   width: 100%;
 }
-body .react-datepicker__current-month {
+.auth-wrapper .react-datepicker__current-month {
   font-size: 12px;
 }
 .input-icon {
@@ -200,7 +200,7 @@ body .react-datepicker__current-month {
   font-weight: 700;
   border-radius: 10px;
 }
-body .react-datepicker-popper {
+.auth-wrapper .react-datepicker-popper {
   z-index: 9;
 }
 .or-separator {
@@ -297,7 +297,7 @@ body .react-datepicker-popper {
 }
 
 /* Date picker design */
-.react-datepicker__current-month {
+.auth-wrapper .react-datepicker__current-month {
   display: none;
 }
 
@@ -398,11 +398,11 @@ body .react-datepicker-popper {
   margin: 0 4px;
   font-size: 12px;
 }
-span.react-datepicker__navigation-icon.react-datepicker__navigation-icon--previous {
+.auth-wrapper span.react-datepicker__navigation-icon.react-datepicker__navigation-icon--previous {
   right: 8px;
   top: 5px;
 }
-button.react-datepicker__navigation.react-datepicker__navigation--next {
+.auth-wrapper button.react-datepicker__navigation.react-datepicker__navigation--next {
   right: -8px;
   top: 6px;
 }
@@ -422,11 +422,11 @@ button.react-datepicker__navigation.react-datepicker__navigation--next {
 .success-label {
   color: #7fcc4d !important;
 }
-body .react-datepicker__year-option--selected_year span {
+.auth-wrapper .react-datepicker__year-option--selected_year span {
   left: inherit;
   right: 15px;
 }
-body .react-datepicker__month-dropdown {
+.auth-wrapper .react-datepicker__month-dropdown {
   max-height: 140px;
   overflow-y: auto;
 }

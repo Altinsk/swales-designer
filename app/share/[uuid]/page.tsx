@@ -97,6 +97,7 @@ export default function SharePage() {
   const { user, token } = useAuth();
   const canvasRef = useRef<CanvasHandles>(null);
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
 
   const params = useParams();
   const uuid = params.uuid as string;
@@ -172,11 +173,9 @@ export default function SharePage() {
             if (project && project.ProjectData) {
               const projectData = JSON.parse(project.ProjectData);
               canvasRef.current?.loadCanvasState(projectData);
-              if (activeMobilePanel) {
-                setTimeout(() => {
-                  canvasRef.current?.center();
-                }, 200);
-              }
+              setTimeout(() => {
+                canvasRef.current?.center();
+              }, 200);
               setNotification(
                 `Viewing shared garden. Any changes you make here won't affect the original.`
               );
@@ -318,11 +317,9 @@ export default function SharePage() {
       .then((data) => {
         if (data) {
           canvasRef.current?.loadCanvasState(data);
-          if (activeMobilePanel) {
-            setTimeout(() => {
-              canvasRef.current?.center();
-            }, 200);
-          }
+          setTimeout(() => {
+            canvasRef.current?.center();
+          }, 200);
           setCurrentProject(null);
           handleCloseModal();
         }
@@ -388,8 +385,10 @@ export default function SharePage() {
       setNotification("You must be logged in to save.");
       return;
     }
+    if (isSaving) return;
     const canvasData = getCanvasData();
     if (!canvasData) return;
+    setIsSaving(true);
     try {
       const res = await axios.post(
         `${API_URL}/projects`,
@@ -418,13 +417,16 @@ export default function SharePage() {
         postSaveCallback.current();
         postSaveCallback.current = null;
       }
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleSave = async (options?: { onSuccess?: () => void }) => {
     const canvasData = getCanvasData();
     const { onSuccess } = options || {};
-    if (!canvasData || !token) return;
+    if (!canvasData || !token || isSaving) return;
     if (currentProject) {
+      setIsSaving(true);
       try {
         await axios.put(
           `${API_URL}/projects/${currentProject.id}`,
@@ -439,6 +441,8 @@ export default function SharePage() {
         if (onSuccess) onSuccess();
       } catch (err) {
         setNotification("Error: Could not update garden.");
+      } finally {
+        setIsSaving(false);
       }
     } else {
       postSaveCallback.current = onSuccess || null;
@@ -448,6 +452,12 @@ export default function SharePage() {
   };
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      const state = canvasRef.current?.getCanvasState();
+      if (!state) return;
+      const { polygons, placedObjects, notes } = JSON.parse(state);
+      const hasContent =
+        polygons?.length > 0 || placedObjects?.length > 0 || notes?.length > 0;
+      if (!hasContent) return;
       event.preventDefault();
       event.returnValue = "";
     };
@@ -466,11 +476,9 @@ export default function SharePage() {
       if (project && project.ProjectData) {
         const projectData = JSON.parse(project.ProjectData);
         canvasRef.current?.loadCanvasState(projectData);
-        if (activeMobilePanel) {
-          setTimeout(() => {
-            canvasRef.current?.center();
-          }, 200);
-        }
+        setTimeout(() => {
+          canvasRef.current?.center();
+        }, 200);
         setCurrentProject({ id: project.ProjectId, name: project.Name });
         setNotification(`Loaded "${project.Name}"`);
       }
@@ -578,9 +586,11 @@ export default function SharePage() {
             onDeleteSketch={() => canvasRef.current?.deleteSketch()}
             onEditSketch={() => canvasRef.current?.editSketch()}
             isSketchVisible={!!planningSketch}
+            isSketchLocked={!!planningSketch?.locked}
             onSave={() => handleSave()}
             onSaveAs={handleSaveAs}
             onLoadProject={handleLoadProject}
+            isSaving={isSaving}
           />
 
           <Toolbar
@@ -844,7 +854,7 @@ export default function SharePage() {
           onClose={handleCloseModal}
           title="Save Your Garden"
         >
-          <SaveProjectStep onSave={executeSaveAs} />
+          <SaveProjectStep onSave={executeSaveAs} isSaving={isSaving} />
         </Modal>
       )}
       {/* ... all other modals ... */}

@@ -3,14 +3,18 @@ import React, { useState } from "react";
 
 interface SaveProjectStepProps {
   onSave: (projectName: string) => void;
+  isSaving?: boolean;
 }
 
-const SaveProjectStep: React.FC<SaveProjectStepProps> = ({ onSave }) => {
+const SaveProjectStep: React.FC<SaveProjectStepProps> = ({
+  onSave,
+  isSaving = false,
+}) => {
   const [name, setName] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
+    if (name.trim() && !isSaving) {
       onSave(name.trim());
     }
   };
@@ -38,10 +42,10 @@ const SaveProjectStep: React.FC<SaveProjectStepProps> = ({ onSave }) => {
       <div className="flex justify-end">
         <button
           type="submit"
-          disabled={!name.trim()}
+          disabled={!name.trim() || isSaving}
           className="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-colors"
         >
-          Save Garden
+          {isSaving ? "Saving..." : "Save Garden"}
         </button>
       </div>
     </form>

@@ -99,6 +99,7 @@ export default function Home() {
   const { user, token } = useAuth();
   const router = useRouter();
   const canvasRef = useRef<CanvasHandles>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // --- State Management ---
   const [activeTool, setActiveTool] = useState<ActiveTool>({ type: "select" });
@@ -347,8 +348,10 @@ export default function Home() {
       setNotification("You must be logged in to save.");
       return;
     }
+    if (isSaving) return;
     const canvasData = getCanvasData();
     if (!canvasData) return;
+    setIsSaving(true);
     try {
       const res = await axios.post(
         `${API_URL}/projects`,
@@ -373,13 +376,16 @@ export default function Home() {
       }
     } catch (err) {
       setNotification("Error: Could not save garden.");
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleSave = async (options?: { onSuccess?: () => void }) => {
     const canvasData = getCanvasData();
     const { onSuccess } = options || {};
-    if (!canvasData || !token) return;
+    if (!canvasData || !token || isSaving) return;
     if (currentProject) {
+      setIsSaving(true);
       try {
         await axios.put(
           `${API_URL}/projects/${currentProject.id}`,
@@ -394,6 +400,8 @@ export default function Home() {
         if (onSuccess) onSuccess();
       } catch (err) {
         setNotification("Error: Could not update garden.");
+      } finally {
+        setIsSaving(false);
       }
     } else {
       postSaveCallback.current = onSuccess || null;
@@ -403,6 +411,12 @@ export default function Home() {
   };
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      const state = canvasRef.current?.getCanvasState();
+      if (!state) return;
+      const { polygons, placedObjects, notes } = JSON.parse(state);
+      const hasContent =
+        polygons?.length > 0 || placedObjects?.length > 0 || notes?.length > 0;
+      if (!hasContent) return;
       event.preventDefault();
       event.returnValue = "";
     };
@@ -539,9 +553,11 @@ export default function Home() {
             onDeleteSketch={() => canvasRef.current?.deleteSketch()}
             onEditSketch={() => canvasRef.current?.editSketch()}
             isSketchVisible={!!planningSketch}
+            isSketchLocked={!!planningSketch?.locked}
             onSave={() => handleSave()}
             onSaveAs={handleSaveAs}
             onLoadProject={handleLoadProject}
+            isSaving={isSaving}
           />
 
           <Toolbar
@@ -864,7 +880,7 @@ export default function Home() {
           onClose={handleCloseModal}
           title="Save Your Garden"
         >
-          <SaveProjectStep onSave={executeSaveAs} />
+          <SaveProjectStep onSave={executeSaveAs} isSaving={isSaving} />
         </Modal>
       )}
       {activeModal === "forgot" && (

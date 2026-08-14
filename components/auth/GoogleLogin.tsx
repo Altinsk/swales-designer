@@ -1,6 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import axios from "axios";
-import React, { useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import GoogleIcon from "./GoogleIcon";
 
 function GoogleLogin({ onClose }) {
@@ -8,6 +8,15 @@ function GoogleLogin({ onClose }) {
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
   const { login } = useAuth();
   const pendingListenerRef = useRef<((event: any) => void) | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pendingListenerRef.current) {
+        window.removeEventListener("message", pendingListenerRef.current);
+        pendingListenerRef.current = null;
+      }
+    };
+  }, []);
   const googleSignin = async (firstName, email, authToken) => {
     try {
       const response = await axios.post(API_URL + "/auth/google-signin", {
@@ -44,6 +53,7 @@ function GoogleLogin({ onClose }) {
 
       const handleMessage = async (event) => {
         if (event.origin !== window.origin) return;
+        if (!event.data) return;
 
         if (event.data.type === "google-auth-success") {
           window.removeEventListener("message", handleMessage);

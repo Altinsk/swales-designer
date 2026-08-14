@@ -426,7 +426,19 @@ const GardenCanvas = forwardRef<
 
 
     useEffect(() => {
+      const isTypingTarget = (target: EventTarget | null) => {
+        if (!(target instanceof HTMLElement)) return false;
+        return (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable
+        );
+      };
+
       const handleKeyDown = (e: KeyboardEvent) => {
+        if (isTypingTarget(e.target)) return;
+
         if ((e.ctrlKey || e.metaKey) && e.key === "z") {
           e.preventDefault();
           handleUndo();
@@ -445,7 +457,7 @@ const GardenCanvas = forwardRef<
         }
         if (
           e.key === "Escape" &&
-          activeTool.type === "plot" &&
+          (activeTool.type === "plot" || activeTool.type === "zone") &&
           currentPoints.length > 0
         ) {
           e.preventDefault();
@@ -839,16 +851,33 @@ const GardenCanvas = forwardRef<
       );
     };
 
-    const handleStageMouseUp = (e: KonvaEventObject<MouseEvent>) => {
-      if (isDrawing) {
-        setIsDrawing(false);
-        const drawnNoteId = notes[notes.length - 1]?.id;
-        setActiveTool({ type: "select" });
-        if (drawnNoteId) {
-          selectShape(drawnNoteId);
+    const finishDrawingNote = useCallback(() => {
+      setIsDrawing((wasDrawing) => {
+        if (wasDrawing) {
+          setActiveTool({ type: "select" });
+          setNotes((current) => {
+            const drawnNoteId = current[current.length - 1]?.id;
+            if (drawnNoteId) {
+              selectShape(drawnNoteId);
+            }
+            return current;
+          });
         }
-      }
+        return false;
+      });
+    }, [setActiveTool, selectShape]);
+
+    const handleStageMouseUp = (e: KonvaEventObject<MouseEvent>) => {
+      finishDrawingNote();
     };
+
+    // Fallback for note drawing: if the mouse is released outside the Konva
+    // container (e.g. a fast drag past the canvas edge), the Stage's own
+    // onMouseUp never fires and isDrawing would otherwise get stuck "true".
+    useEffect(() => {
+      window.addEventListener("mouseup", finishDrawingNote);
+      return () => window.removeEventListener("mouseup", finishDrawingNote);
+    }, [finishDrawingNote]);
 
     const handleWheel = (e: KonvaEventObject<WheelEvent>) => {
       e.evt.preventDefault();
@@ -1203,6 +1232,14 @@ const GardenCanvas = forwardRef<
         if (planningSketch) {
           selectShape(planningSketch.id);
           onSketchChange({ ...planningSketch, locked: false });
+        }
+      },
+      toggleSketchLock: () => {
+        if (planningSketch) {
+          if (!planningSketch.locked && selectedId === planningSketch.id) {
+            selectShape(null);
+          }
+          onSketchChange({ ...planningSketch, locked: !planningSketch.locked });
         }
       },
       deleteSketch: () => {
@@ -2236,6 +2273,19 @@ const GardenCanvas = forwardRef<
               borderStrokeWidth={2.5 / stage.scale}
               rotateAnchorOffset={35 / stage.scale}
               keepRatio={placedObjects.some((o) => o.id === selectedId)}
+              boundBoxFunc={(oldBox, newBox) => {
+                // Stop live-resizing below a usable minimum so text/callout
+                // notes never end up with a near-zero correctionScale (which
+                // produces NaN/Infinity edit-overlay dimensions).
+                const MIN_DIMENSION = 10;
+                if (
+                  Math.abs(newBox.width) < MIN_DIMENSION ||
+                  Math.abs(newBox.height) < MIN_DIMENSION
+                ) {
+                  return oldBox;
+                }
+                return newBox;
+              }}
               onTransformStart={handleInteractionStart}
               onTransformEnd={handleTransformEnd}
               onTransform={() => setTransformCounter((c) => c + 1)}
