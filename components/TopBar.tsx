@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import axios from "axios";
 import {
   Save,
@@ -95,12 +95,16 @@ const TopBar: React.FC<TopBarProps> = ({
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
+  const fetchRequestIdRef = useRef(0);
   const fetchMyGardens = async () => {
     if (!token) return;
+    const requestId = ++fetchRequestIdRef.current;
     try {
       const res = await axios.get(`${API_URL}/projects?limit=5`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      // Ignore this response if a newer fetchMyGardens call has since started.
+      if (requestId !== fetchRequestIdRef.current) return;
       // ✅ MODIFIED: Handle both data structures (array or object with projects)
       if (res.data.success) {
         const projectsData = Array.isArray(res.data.data)

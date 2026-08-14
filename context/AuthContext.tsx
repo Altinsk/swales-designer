@@ -55,10 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch user profile:", error);
-      // Optional: If fetching profile fails (e.g., 401), you might want to logout
-      // logout();
+      // The server rejected the token (expired/revoked server-side even though
+      // it looked valid locally) - clear it so the app doesn't sit half-authed
+      // with a token but no user.
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        logout();
+      }
     }
   };
 

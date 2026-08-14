@@ -129,11 +129,11 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     fetchUserData();
   }, [isOpen]);
 
+  const { login } = useAuth();
+
   if (!isOpen) return null;
 
   // --- Handlers ---
-
-  const { login } = useAuth();
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });

@@ -17,7 +17,7 @@ export const authOptions = {
     async jwt({ token, account }) {
       if (token.email) {
         token.accessToken = crypto
-          .createHash("sha256")
+          .createHmac("sha256", process.env.NEXTAUTH_SECRET)
           .update(token.email)
           .digest("hex");
       }

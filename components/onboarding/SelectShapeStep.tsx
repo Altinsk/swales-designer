@@ -1,5 +1,5 @@
 // components/onboarding/SelectShapeStep.tsx
-import { Upload, LayoutTemplate, HìnhVuông, PenTool } from "lucide-react"; // Using lucide-react for icons
+import { Upload, LayoutTemplate, PenTool } from "lucide-react"; // Using lucide-react for icons
 import React from "react";
 
 // A reusable card component for this step

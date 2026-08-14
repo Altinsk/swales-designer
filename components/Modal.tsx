@@ -6,9 +6,16 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  modalClassName?: string;
 }
 
-const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
+const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  children,
+  modalClassName,
+}) => {
   if (!isOpen) {
     return null;
   }
@@ -19,8 +26,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
     >
       <div
-        className="bg-white rounded-lg shadow-2xl w-full max-w-2xl p-6 relative animate-fade-in-up"
-        style={{ maxHeight: "90%", overflow: "auto" }}
+        className={`bg-white rounded-lg shadow-2xl p-6 relative animate-fade-in-up ${
+          modalClassName ?? "w-full max-w-2xl max-h-[90%] overflow-auto"
+        }`}
       >
         <button
           onClick={onClose}

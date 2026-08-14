@@ -20,10 +20,16 @@ const PresetObject: React.FC<PresetObjectProps> = ({
 
   useEffect(() => {
     if (!shapeProps.src) return;
+    let cancelled = false;
     const img = new window.Image();
     img.src = shapeProps.src;
     img.crossOrigin = "Anonymous";
-    img.onload = () => setImage(img);
+    img.onload = () => {
+      if (!cancelled) setImage(img);
+    };
+    return () => {
+      cancelled = true;
+    };
   }, [shapeProps.src]);
 
   if (!image) {

@@ -187,6 +187,7 @@ export default function Home() {
   const handlePositionLawn = () => {
     canvasRef.current?.clearCanvas();
     setCurrentProject(null);
+    setPlanningSketch(null);
     setActiveModal("selectShape");
   };
   const handleSelectRectangle = () => setActiveModal("enterSize");
@@ -272,11 +273,10 @@ export default function Home() {
         if (data) {
           canvasRef.current?.loadCanvasState(data);
           setCurrentProject(null);
-          if (activeMobilePanel) {
-            setTimeout(() => {
-              canvasRef.current?.center();
-            }, 200);
-          }
+          setPlanningSketch(null);
+          setTimeout(() => {
+            canvasRef.current?.center();
+          }, 200);
 
           handleCloseModal();
         }
@@ -306,13 +306,13 @@ export default function Home() {
         });
         setPdfPageImages(res.data.data.imageUrls);
         setActiveModal("selectPdfPage");
+        setNotification(null);
       } catch (error) {
         console.error("PDF processing failed", error);
         setNotification("Error: Could not process the PDF file.");
         setActiveModal("uploadPlan");
       } finally {
         setIsProcessingPdf(false);
-        setNotification(null);
       }
     }
     setActiveMobilePanel(null);
@@ -368,10 +368,6 @@ export default function Home() {
       }
     } catch (err) {
       setNotification("Error: Could not save garden.");
-      if (postSaveCallback.current) {
-        postSaveCallback.current();
-        postSaveCallback.current = null;
-      }
     }
   };
   const handleSave = async (options?: { onSuccess?: () => void }) => {
@@ -420,11 +416,10 @@ export default function Home() {
       if (project && project.ProjectData) {
         const projectData = JSON.parse(project.ProjectData);
         canvasRef.current?.loadCanvasState(projectData);
-        if (activeMobilePanel) {
-          setTimeout(() => {
-            canvasRef.current?.center();
-          }, 200);
-        }
+        setPlanningSketch(null);
+        setTimeout(() => {
+          canvasRef.current?.center();
+        }, 200);
         setCurrentProject({ id: project.ProjectId, name: project.Name });
         setNotification(`Loaded "${project.Name}"`);
       }
@@ -867,7 +862,7 @@ export default function Home() {
           <SaveProjectStep onSave={executeSaveAs} />
         </Modal>
       )}
-      {activeModal === "frogot" && (
+      {activeModal === "forgot" && (
         <Modal
           isOpen={true}
           onClose={handleCloseModal}
@@ -888,7 +883,7 @@ export default function Home() {
           <LoginModal
             onClose={handleCloseModal}
             onSwitchToSignup={() => setActiveModal("signup")}
-            onSwitchToForgot={() => setActiveModal("frogot")}
+            onSwitchToForgot={() => setActiveModal("forgot")}
           />
         </Modal>
       )}

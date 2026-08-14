@@ -63,7 +63,9 @@ const NavLinks: React.FC<NavLinksProps> = ({
       <Link
         style={{ marginRight: "0px" }}
         href="/"
-        className={`${baseClass} ${activeClass}`}
+        className={`${baseClass} ${
+          pathName === "/" ? activeClass : inactiveClass
+        }`}
       >
         Designer
       </Link>

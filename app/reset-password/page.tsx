@@ -78,7 +78,7 @@ const ResetPasswordForm = () => {
           "Password reset successfully! Redirecting to login..."
         );
         setTimeout(() => {
-          router.push("/login"); // Or your main login page
+          router.push("/");
         }, 3000);
       }
     } catch (err: any) {

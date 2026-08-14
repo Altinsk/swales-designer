@@ -1,7 +1,7 @@
 // components/Notification.tsx
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface NotificationProps {
   message: string;
@@ -14,17 +14,24 @@ const Notification: React.FC<NotificationProps> = ({
   duration = 3000,
   onDismiss,
 }) => {
+  const onDismissRef = useRef(onDismiss);
   useEffect(() => {
-    // Set a timer to dismiss the notification
+    onDismissRef.current = onDismiss;
+  }, [onDismiss]);
+
+  useEffect(() => {
+    // Set a timer to dismiss the notification. Only depends on message/duration
+    // so an unrelated parent re-render (e.g. while dragging on the canvas)
+    // doesn't restart the countdown via a fresh inline onDismiss reference.
     const timer = setTimeout(() => {
-      onDismiss();
+      onDismissRef.current();
     }, duration);
 
     // Clean up the timer if the component is unmounted
     return () => {
       clearTimeout(timer);
     };
-  }, [duration, onDismiss]);
+  }, [duration, message]);
 
   return (
     <div

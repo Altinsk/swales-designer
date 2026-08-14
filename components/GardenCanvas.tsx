@@ -651,8 +651,11 @@ const GardenCanvas = forwardRef<
       if (touch1 && touch2) {
         if (stageNode.isDragging()) stageNode.stopDrag();
 
-        const p1 = { x: touch1.clientX, y: touch1.clientY };
-        const p2 = { x: touch2.clientX, y: touch2.clientY };
+        const containerRect = containerRef.current?.getBoundingClientRect();
+        const offsetX = containerRect?.left ?? 0;
+        const offsetY = containerRect?.top ?? 0;
+        const p1 = { x: touch1.clientX - offsetX, y: touch1.clientY - offsetY };
+        const p2 = { x: touch2.clientX - offsetX, y: touch2.clientY - offsetY };
 
         if (!lastCenter) {
           setLastCenter({ x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 });
@@ -691,6 +694,11 @@ const GardenCanvas = forwardRef<
 
         setLastDist(dist);
       } else if (e.evt.touches.length === 1) {
+        // A finger was lifted mid-gesture without a touchend firing for the
+        // pinch itself - reset so a subsequent 2-finger move re-primes
+        // instead of computing scale/pan against stale values.
+        if (lastDist !== 0) setLastDist(0);
+        if (lastCenter) setLastCenter(null);
         handleStageMouseMove(e as any);
       }
     };
@@ -854,8 +862,10 @@ const GardenCanvas = forwardRef<
         x: (pointer.x - stageNode.x()) / oldScale,
         y: (pointer.y - stageNode.y()) / oldScale,
       };
-      const newScale =
-        e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+      const newScale = Math.max(
+        0.5,
+        Math.min(4, e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy),
+      );
       setStage({
         scale: newScale,
         x: pointer.x - mousePointTo.x * newScale,
@@ -986,7 +996,7 @@ const GardenCanvas = forwardRef<
         if (!stageNode) return;
 
         const oldScale = stageNode.scaleX();
-        const newScale = oldScale * 1.2;
+        const newScale = Math.min(4, oldScale * 1.2);
 
         // Get the center of the viewport
         const center = {
@@ -1012,7 +1022,7 @@ const GardenCanvas = forwardRef<
         if (!stageNode) return;
 
         const oldScale = stageNode.scaleX();
-        const newScale = oldScale / 1.2;
+        const newScale = Math.max(0.5, oldScale / 1.2);
 
         // Get the center of the viewport
         const center = {
@@ -1493,8 +1503,9 @@ const GardenCanvas = forwardRef<
       const objToCopy = placedObjects.find((o) => o.id === objectId);
 
       const boundingBox = node.getClientRect({ skipTransform: false });
-      const unscaledWidth = boundingBox.width;
-      const unscaledHeight = boundingBox.height;
+      const stageScale = stageRef.current?.scaleX() || 1;
+      const unscaledWidth = boundingBox.width / stageScale;
+      const unscaledHeight = boundingBox.height / stageScale;
 
       if (polyToCopy) {
         const newPoly: Polygon = {
@@ -1515,7 +1526,7 @@ const GardenCanvas = forwardRef<
       } else if (objToCopy) {
         const newObj: PlacedObject = {
           ...objToCopy,
-          id: `${objToCopy.id.split("_")[0]}_${Date.now()}`,
+          id: `${objToCopy.id.replace(/_\d+$/, "")}_${Date.now()}`,
           x:
             direction === "horizontal"
               ? objToCopy.x + unscaledWidth
@@ -1804,22 +1815,21 @@ const GardenCanvas = forwardRef<
                   edgeNormal = vScale(edgeNormal, -1);
                 }
                 const normalizedNormal = vNormalize(edgeNormal);
+                // p1_abs/p2_abs are already in absolute screen-pixel space,
+                // and this whole tree is rendered inside a Group that
+                // counter-scales the stage transform (see the
+                // `scaleX={1 / stage.scale}` wrapper below), so offsets,
+                // stroke width, and font size here must be expressed in
+                // constant screen pixels rather than re-divided by scale.
                 const offsetDist = 20;
-                const effectiveScale = Math.max(
-                  stageRef.current?.scaleX() || 1,
-                  MIN_EFFECTIVE_SCALE,
-                );
-                const offsetVector = vScale(
-                  normalizedNormal,
-                  offsetDist / effectiveScale,
-                );
+                const offsetVector = vScale(normalizedNormal, offsetDist);
                 return (
                   <LengthGuide
                     key={`float-len-${selectedId}-${i}`}
                     p1={p1_abs}
                     p2={p2_abs}
                     measurementInPixels={trueLengthInPixels}
-                    scale={stageRef.current?.scaleX() || 1}
+                    scale={1}
                     showLabel={true}
                     color="black"
                     strokeWidth={1.5}
@@ -1843,8 +1853,8 @@ const GardenCanvas = forwardRef<
 
           const scale = stageRef.current?.scaleX() || 1;
 
-          const preferredMargin = -25; // The close distance you like when zoomed in.
-          const zoomedOutMargin = 25; // A safe distance to clear the text when zoomed out.
+          const preferredMargin = 25; // The close distance you like when zoomed in.
+          const zoomedOutMargin = -25; // A safe distance to clear the text when zoomed out.
           const scaleThreshold = 0.7; // The zoom level (e.g., 70%) where the switch happens.
 
           // If the view is zoomed in past the threshold, use your preferred margin.
@@ -1852,11 +1862,11 @@ const GardenCanvas = forwardRef<
           const margin =
             scale > scaleThreshold ? preferredMargin : zoomedOutMargin;
 
-          const stagePos = stageRef.current?.position() || { x: 0, y: 0 };
-
-          // Convert this precise world position to a screen position
-          const iconScreenX = iconAnchorX * scale + stagePos.x;
-          const iconScreenY = iconAnchorY * scale + stagePos.y;
+          // absolutePoints (and therefore iconAnchorX/Y) are already in
+          // absolute screen-pixel space via getAbsoluteTransform(), so no
+          // further scale/position transform should be applied here.
+          const iconScreenX = iconAnchorX;
+          const iconScreenY = iconAnchorY;
 
           const allObjects = [
             ...polygons,
@@ -2885,7 +2895,13 @@ const FinalPolygon = memo(
       let closestSegmentIndex = -1;
       let minDistance = Infinity;
 
-      for (let i = 0; i < vertices.length; i++) {
+      // Open (non-closed) shapes like zones don't render or hit-test the
+      // last->first segment, so don't consider it here either - otherwise a
+      // click near the first/last vertex can insert a point on a phantom edge.
+      const isClosed = poly.closed ?? true;
+      const segmentCount = isClosed ? vertices.length : vertices.length - 1;
+
+      for (let i = 0; i < segmentCount; i++) {
         const p1 = vertices[i];
         const p2 = vertices[(i + 1) % vertices.length];
 
