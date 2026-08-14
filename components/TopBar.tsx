@@ -164,7 +164,11 @@ const TopBar: React.FC<TopBarProps> = ({
           <div className="flex items-center gap-1">
             <Icon icon={Undo2} title="Undo (Ctrl+Z)" onClick={onUndo} />
             <Icon icon={Redo2} title="Redo (Ctrl+Y)" onClick={onRedo} />
-            <Icon icon={Printer} title="Print" onClick={onPrint} />
+            <Icon
+              icon={Printer}
+              title={user ? "Print" : "Log in to print"}
+              onClick={onPrint}
+            />
             <div className="relative group">
               <Icon
                 icon={ImageUp}

@@ -39,10 +39,10 @@ import SelectPdfPageStep from "@/components/onboarding/SelectPdfPageStep";
 
 // --- Auth Imports ---
 import LoginModal from "@/components/auth/LoginModal";
-import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
 import { AllGardensModal } from "@/components/AllGardensModal";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import PrintAuthGatePopup from "@/components/PrintAuthGatePopup";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -97,6 +97,7 @@ const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
 export default function SharePage() {
   const { user, token } = useAuth();
   const canvasRef = useRef<CanvasHandles>(null);
+  const router = useRouter();
 
   const params = useParams();
   const uuid = params.uuid as string;
@@ -138,10 +139,10 @@ export default function SharePage() {
     | "selectTemplate"
     | "selectPdfPage"
     | "login"
-    | "signup"
     | "share"
     | "saveAs"
     | "allGardens"
+    | "printGate"
     | null
   >("welcome");
 
@@ -252,6 +253,11 @@ export default function SharePage() {
     setActiveMobilePanel(null);
   };
   const handlePrint = () => {
+    if (!token) {
+      setActiveMobilePanel(null);
+      setActiveModal("printGate");
+      return;
+    }
     const stage = canvasRef.current?.getStageNode();
     if (!stage) {
       setNotification("Canvas is not ready to print.");
@@ -530,7 +536,7 @@ export default function SharePage() {
       <div className="h-dvh w-screen bg-gray-200 font-sans flex flex-col overflow-hidden">
         <Header
           onLoginClick={() => setActiveModal("login")}
-          onSignupClick={() => setActiveModal("signup")}
+          onSignupClick={() => router.push("/signup")}
         />
 
         {/* ✅ MODIFIED: Main content area that grows to fill space */}
@@ -844,6 +850,13 @@ export default function SharePage() {
         </Modal>
       )}
       {/* ... all other modals ... */}
+      {activeModal === "printGate" && (
+        <PrintAuthGatePopup
+          onClose={handleCloseModal}
+          onSignup={() => router.push("/signup")}
+          onLogin={() => setActiveModal("login")}
+        />
+      )}
       {activeModal === "login" && (
         <Modal
           isOpen={true}
@@ -853,20 +866,7 @@ export default function SharePage() {
           {" "}
           <LoginModal
             onClose={handleCloseModal}
-            onSwitchToSignup={() => setActiveModal("signup")}
-          />{" "}
-        </Modal>
-      )}
-      {activeModal === "signup" && (
-        <Modal
-          isOpen={true}
-          onClose={handleCloseModal}
-          title="Create an Account"
-        >
-          {" "}
-          <SignupModal
-            onClose={handleCloseModal}
-            onSwitchToLogin={() => setActiveModal("login")}
+            onSwitchToSignup={() => router.push("/signup")}
           />{" "}
         </Modal>
       )}

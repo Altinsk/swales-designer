@@ -4,6 +4,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import {
   Brush,
@@ -39,11 +40,11 @@ import SelectPdfPageStep from "@/components/onboarding/SelectPdfPageStep";
 
 // --- Auth Imports ---
 import LoginModal from "@/components/auth/LoginModal";
-import SignupModal from "@/components/auth/SignupModal";
 import { useAuth } from "@/context/AuthContext";
 import { AllGardensModal } from "@/components/AllGardensModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 import MobileHeader from "@/components/MobileHeader";
+import PrintAuthGatePopup from "@/components/PrintAuthGatePopup";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -97,6 +98,7 @@ const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
 
 export default function Home() {
   const { user, token } = useAuth();
+  const router = useRouter();
   const canvasRef = useRef<CanvasHandles>(null);
 
   // --- State Management ---
@@ -137,11 +139,11 @@ export default function Home() {
     | "selectTemplate"
     | "selectPdfPage"
     | "login"
-    | "signup"
     | "share"
     | "saveAs"
     | "allGardens"
     | "forgot"
+    | "printGate"
     | null
   >("welcome");
 
@@ -210,6 +212,11 @@ export default function Home() {
     setActiveMobilePanel(null);
   };
   const handlePrint = () => {
+    if (!token) {
+      setActiveMobilePanel(null);
+      setActiveModal("printGate");
+      return;
+    }
     const stage = canvasRef.current?.getStageNode();
     if (!stage) {
       setNotification("Canvas is not ready to print.");
@@ -483,7 +490,7 @@ export default function Home() {
         <div className="hidden lg:block">
           <Header
             onLoginClick={() => setActiveModal("login")}
-            onSignupClick={() => setActiveModal("signup")}
+            onSignupClick={() => router.push("/signup")}
           />
         </div>
 
@@ -491,7 +498,7 @@ export default function Home() {
         <div className="block lg:hidden">
           <MobileHeader
             onLoginClick={() => setActiveModal("login")}
-            onSignupClick={() => setActiveModal("signup")}
+            onSignupClick={() => router.push("/signup")}
           />
         </div>
 
@@ -735,7 +742,7 @@ export default function Home() {
                 <button
                   onClick={handlePrint}
                   className="w-full text-left p-3 text-gray-700 rounded-lg hover:bg-gray-100"
-                  title="Print Page"
+                  title={token ? "Print Page" : "Log in to print"}
                 >
                   Print Page
                 </button>
@@ -874,6 +881,13 @@ export default function Home() {
           />
         </Modal>
       )}
+      {activeModal === "printGate" && (
+        <PrintAuthGatePopup
+          onClose={handleCloseModal}
+          onSignup={() => router.push("/signup")}
+          onLogin={() => setActiveModal("login")}
+        />
+      )}
       {activeModal === "login" && (
         <Modal
           isOpen={true}
@@ -882,20 +896,8 @@ export default function Home() {
         >
           <LoginModal
             onClose={handleCloseModal}
-            onSwitchToSignup={() => setActiveModal("signup")}
+            onSwitchToSignup={() => router.push("/signup")}
             onSwitchToForgot={() => setActiveModal("forgot")}
-          />
-        </Modal>
-      )}
-      {activeModal === "signup" && (
-        <Modal
-          isOpen={true}
-          onClose={handleCloseModal}
-          title="Create an Account"
-        >
-          <SignupModal
-            onClose={handleCloseModal}
-            onSwitchToLogin={() => setActiveModal("login")}
           />
         </Modal>
       )}
