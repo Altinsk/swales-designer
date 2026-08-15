@@ -187,13 +187,13 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       );
 
       if (res.data.success) {
+        if (res.data.data.accessToken) {
+          await login(res.data.data.accessToken);
+        }
         setMessages({
           error: "",
           success: "Profile details updated successfully.",
         });
-        if (res.data.data.accessToken) {
-          login(res.data.data.accessToken);
-        }
       }
     } catch (err: any) {
       setMessages({

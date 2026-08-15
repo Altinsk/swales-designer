@@ -171,16 +171,33 @@ const AlignMeasureStep: React.FC<AlignMeasureStepProps> = ({
                 setImageLayerPos(e.target.position());
               }}
             >
-              <KonvaImage
-                image={bgImage}
-                width={imageNode.width}
-                height={imageNode.height}
-                rotation={bgRotation}
-                offsetX={imageNode.width / 2}
-                offsetY={imageNode.height / 2}
-                x={imageNode.x + imageNode.width / 2}
-                y={imageNode.y + imageNode.height / 2}
-              />
+              {(() => {
+                // imageNode.width/height hold the desired FINAL on-screen
+                // size (already computed against the rotation-swapped
+                // source dimensions in the effect above). Konva's
+                // width/height/offsetX/offsetY on an Image are LOCAL,
+                // pre-rotation values that the `rotation` prop below then
+                // rotates — feeding it the already-swapped final size
+                // rotates it a second time, stretching/mis-sizing the
+                // image. Swap back to local space here so the single
+                // rotation Konva applies produces exactly imageNode's
+                // target visual size.
+                const isSideways = bgRotation % 180 !== 0;
+                const localWidth = isSideways ? imageNode.height : imageNode.width;
+                const localHeight = isSideways ? imageNode.width : imageNode.height;
+                return (
+                  <KonvaImage
+                    image={bgImage}
+                    width={localWidth}
+                    height={localHeight}
+                    rotation={bgRotation}
+                    offsetX={localWidth / 2}
+                    offsetY={localHeight / 2}
+                    x={imageNode.x + imageNode.width / 2}
+                    y={imageNode.y + imageNode.height / 2}
+                  />
+                );
+              })()}
             </Layer>
 
             {/* Layer 2: Static Ruler/UI Layer */}

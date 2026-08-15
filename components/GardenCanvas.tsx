@@ -400,6 +400,7 @@ const GardenCanvas = forwardRef<
     }, [selectedId]);
 
     useEffect(() => {
+      let cancelled = false;
       const allTextures = config?.tools.find((t: any) => t.id === "plot")
         ?.textures as Texture[];
       if (allTextures) {
@@ -408,10 +409,14 @@ const GardenCanvas = forwardRef<
           image.src = tex.src;
           image.crossOrigin = "Anonymous";
           image.onload = () => {
+            if (cancelled) return;
             setTextures((prev) => ({ ...prev, [tex.id]: image }));
           };
         });
       }
+      return () => {
+        cancelled = true;
+      };
     }, [config]);
 
     useEffect(() => {
@@ -529,14 +534,11 @@ const GardenCanvas = forwardRef<
         setLastAddedId(newObject.id);
         onObjectAdd();
       }
-    }, [
-      selectedPreset,
-      dimensions,
-      onObjectAdd,
-      stage.x,
-      stage.y,
-      stage.scale,
-    ]);
+    // stage.x/y/scale deliberately excluded: the effect reads live position
+    // via stageRef.current (not the stage state object), so including them
+    // here only meant a pan or zoom mid-add could re-fire this effect while
+    // selectedPreset was still set, duplicating the just-added object.
+    }, [selectedPreset, dimensions, onObjectAdd]);
 
     // This layout effect runs AFTER the new object is rendered but BEFORE the screen updates.
     // This is the key to reliably selecting it.

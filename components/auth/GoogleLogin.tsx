@@ -52,7 +52,7 @@ function GoogleLogin({ onClose }) {
       );
 
       const handleMessage = async (event) => {
-        if (event.origin !== window.origin) return;
+        if (event.origin !== window.location.origin) return;
         if (!event.data) return;
 
         if (event.data.type === "google-auth-success") {
@@ -67,7 +67,7 @@ function GoogleLogin({ onClose }) {
             const res = await googleSignin(name, email, token);
 
             if (res.success) {
-              login(res.data.accessToken);
+              await login(res.data.accessToken);
               onClose();
               localStorage.setItem("accessToken", res.data.accessToken);
               localStorage.setItem("userName", res.data.userName);

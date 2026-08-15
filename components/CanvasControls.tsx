@@ -23,8 +23,11 @@ const CanvasControls: React.FC<CanvasControlsProps> = ({
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Prevent lines from growing on mobile
-  const effectiveScalePixels = isMobile ? 40 : scaleIndicatorPixels; // 40px constant on mobile
+  // Track the real zoom-derived scale, but clamp it on mobile so the ruler
+  // stays legible on small screens instead of growing/shrinking unbounded.
+  const effectiveScalePixels = isMobile
+    ? Math.min(Math.max(scaleIndicatorPixels, 20), 60)
+    : scaleIndicatorPixels;
 
   const meters = [1, 2, 3, 4, 5];
 
