@@ -170,11 +170,110 @@
           ]
         },
         {
+          "id": "groundcover",
+          "name": "Groundcover",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 20c0-6 1-10 1-10'/%3E%3Cpath d='M12 20c0-8 0-14 0-14'/%3E%3Cpath d='M18 20c0-6-1-10-1-10'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "dense-fern-foliage-mat", "name": "Dense Fern Foliage Mat", "type": "item", "src": "/objects/plants/groundcover/dense-fern-foliage-mat.png" },
+            { "id": "lush-green-groundcover-mound", "name": "Lush Green Groundcover Mound", "type": "item", "src": "/objects/plants/groundcover/lush-green-groundcover-mound.png" },
+            { "id": "pale-leaf-groundcover-mound", "name": "Pale Leaf Groundcover Mound", "type": "item", "src": "/objects/plants/groundcover/pale-leaf-groundcover-mound.png" },
+            { "id": "mossy-ivy-hedge-mat", "name": "Mossy Ivy Hedge Mat", "type": "item", "src": "/objects/plants/groundcover/mossy-ivy-hedge-mat.png" },
+            { "id": "monstera-leaf-groundcover-mass", "name": "Monstera Leaf Groundcover Mass", "type": "item", "src": "/objects/plants/groundcover/monstera-leaf-groundcover-mass.png" },
+            { "id": "rounded-pale-foliage-mound", "name": "Rounded Pale Foliage Mound", "type": "item", "src": "/objects/plants/groundcover/rounded-pale-foliage-mound.png" },
+            { "id": "mixed-red-green-foliage-patch", "name": "Mixed Red Green Foliage Patch", "type": "item", "src": "/objects/plants/groundcover/mixed-red-green-foliage-patch.png" },
+            { "id": "dense-ivy-groundcover-mat", "name": "Dense Ivy Groundcover Mat", "type": "item", "src": "/objects/plants/groundcover/dense-ivy-groundcover-mat.png" },
+            { "id": "round-leaf-hedge-mat", "name": "Round Leaf Hedge Mat", "type": "item", "src": "/objects/plants/groundcover/round-leaf-hedge-mat.png" },
+            { "id": "fern-groundcover-panel", "name": "Fern Groundcover Panel", "type": "item", "src": "/objects/plants/groundcover/fern-groundcover-panel.png" },
+            { "id": "golden-fern-foliage-panel", "name": "Golden Fern Foliage Panel", "type": "item", "src": "/objects/plants/groundcover/golden-fern-foliage-panel.png" },
+            { "id": "tropical-monstera-groundcover-panel", "name": "Tropical Monstera Groundcover Panel", "type": "item", "src": "/objects/plants/groundcover/tropical-monstera-groundcover-panel.png" },
+            { "id": "striped-fern-foliage-panel", "name": "Striped Fern Foliage Panel", "type": "item", "src": "/objects/plants/groundcover/striped-fern-foliage-panel.png" },
+            { "id": "light-fern-broadleaf-panel", "name": "Light Fern Broadleaf Panel", "type": "item", "src": "/objects/plants/groundcover/light-fern-broadleaf-panel.png" },
+            { "id": "mixed-tropical-foliage-panel", "name": "Mixed Tropical Foliage Panel", "type": "item", "src": "/objects/plants/groundcover/mixed-tropical-foliage-panel.png" },
+            { "id": "broadleaf-monstera-foliage-panel", "name": "Broadleaf Monstera Foliage Panel", "type": "item", "src": "/objects/plants/groundcover/broadleaf-monstera-foliage-panel.png" },
+            { "id": "grass-fringed-foliage-panel", "name": "Grass Fringed Foliage Panel", "type": "item", "src": "/objects/plants/groundcover/grass-fringed-foliage-panel.png" }
+          ]
+        },
+        {
           "id": "plant",
           "name": "Potted Plant",
           "type": "item",
           "src": "/plant.svg"
         }
+      ]
+    },
+    {
+      "id": "animals",
+      "name": "Animals & Livestock",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='15' r='4'/%3E%3Ccircle cx='5' cy='9' r='2'/%3E%3Ccircle cx='9' cy='4.5' r='2'/%3E%3Ccircle cx='15' cy='4.5' r='2'/%3E%3Ccircle cx='19' cy='9' r='2'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "holstein-cow", "name": "Holstein Cow", "type": "item", "src": "/objects/animals/holstein-cow.png" },
+        { "id": "guernsey-cow", "name": "Guernsey Cow", "type": "item", "src": "/objects/animals/guernsey-cow.png" },
+        { "id": "angus-cow", "name": "Angus Cow", "type": "item", "src": "/objects/animals/angus-cow.png" },
+        { "id": "horse", "name": "Horse", "type": "item", "src": "/objects/animals/horse.png" },
+        { "id": "farm-dog", "name": "Farm Dog", "type": "item", "src": "/objects/animals/farm-dog.png" },
+        { "id": "beagle", "name": "Beagle", "type": "item", "src": "/objects/animals/beagle.png" },
+        { "id": "border-collie", "name": "Border Collie", "type": "item", "src": "/objects/animals/border-collie.png" },
+        { "id": "golden-retriever", "name": "Golden Retriever", "type": "item", "src": "/objects/animals/golden-retriever.png" },
+        { "id": "terrier", "name": "Terrier", "type": "item", "src": "/objects/animals/terrier.png" },
+        { "id": "calico-cat", "name": "Calico Cat", "type": "item", "src": "/objects/animals/calico-cat.png" },
+        { "id": "grey-rabbit", "name": "Grey Rabbit", "type": "item", "src": "/objects/animals/grey-rabbit.png" },
+        { "id": "lop-eared-rabbit", "name": "Lop-Eared Rabbit", "type": "item", "src": "/objects/animals/lop-eared-rabbit.png" },
+        { "id": "brown-rabbit", "name": "Brown Rabbit", "type": "item", "src": "/objects/animals/brown-rabbit.png" },
+        { "id": "beehive", "name": "Beehive", "type": "item", "src": "/objects/animals/beehive.png" },
+        { "id": "apiary", "name": "Apiary", "type": "item", "src": "/objects/animals/apiary.png" }
+      ]
+    },
+    {
+      "id": "water-earthworks",
+      "name": "Water & Earthworks",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "lush-tropical-pond", "name": "Lush Tropical Pond", "type": "item", "src": "/objects/water-earthworks/lush-tropical-pond.png" },
+        { "id": "rain-barrel-tank", "name": "Rain Barrel Tank", "type": "item", "src": "/objects/water-earthworks/rain-barrel-tank.png" },
+        { "id": "cistern-storage-tank", "name": "Cistern Storage Tank", "type": "item", "src": "/objects/water-earthworks/cistern-storage-tank.png" },
+        { "id": "rainwater-catchment-drop", "name": "Rainwater Catchment Drop", "type": "item", "src": "/objects/water-earthworks/rainwater-catchment-drop.png" },
+        { "id": "hydro-energy-point", "name": "Hydro Energy Point", "type": "item", "src": "/objects/water-earthworks/hydro-energy-point.png" },
+        { "id": "soil-moisture-indicator", "name": "Soil Moisture Indicator", "type": "item", "src": "/objects/water-earthworks/soil-moisture-indicator.png" },
+        { "id": "infiltration-basin", "name": "Infiltration Basin", "type": "item", "src": "/objects/water-earthworks/infiltration-basin.png" }
+      ]
+    },
+    {
+      "id": "kitchen-garden",
+      "name": "Kitchen Garden",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 10h18l-2 9H5L3 10Z'/%3E%3Cpath d='M3 10l3-6h12l3 6'/%3E%3Cpath d='M9 10V7'/%3E%3Cpath d='M15 10V7'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "basil-plant", "name": "Basil Plant", "type": "item", "src": "/objects/kitchen-garden/basil-plant.png" },
+        { "id": "purple-basil", "name": "Purple Basil", "type": "item", "src": "/objects/kitchen-garden/purple-basil.png" },
+        { "id": "chives", "name": "Chives", "type": "item", "src": "/objects/kitchen-garden/chives.png" },
+        { "id": "parsley", "name": "Parsley", "type": "item", "src": "/objects/kitchen-garden/parsley.png" },
+        { "id": "bok-choy-seedling", "name": "Bok Choy Seedling", "type": "item", "src": "/objects/kitchen-garden/bok-choy-seedling.png" },
+        { "id": "swiss-chard-seedling", "name": "Swiss Chard Seedling", "type": "item", "src": "/objects/kitchen-garden/swiss-chard-seedling.png" },
+        { "id": "spinach-seedling", "name": "Spinach Seedling", "type": "item", "src": "/objects/kitchen-garden/spinach-seedling.png" },
+        { "id": "kale-seedling", "name": "Kale Seedling", "type": "item", "src": "/objects/kitchen-garden/kale-seedling.png" },
+        { "id": "lettuce-seedling-flat", "name": "Lettuce Seedling Flat", "type": "item", "src": "/objects/kitchen-garden/lettuce-seedling-flat.png" },
+        { "id": "seedling-purple-pot", "name": "Seedling (Purple Pot)", "type": "item", "src": "/objects/kitchen-garden/seedling-purple-pot.png" },
+        { "id": "seedling-blue-pot", "name": "Seedling (Blue Pot)", "type": "item", "src": "/objects/kitchen-garden/seedling-blue-pot.png" },
+        { "id": "seedling-sky-blue-pot", "name": "Seedling (Sky Blue Pot)", "type": "item", "src": "/objects/kitchen-garden/seedling-sky-blue-pot.png" },
+        { "id": "sweet-potato-vine", "name": "Sweet Potato Vine", "type": "item", "src": "/objects/kitchen-garden/sweet-potato-vine.png" },
+        { "id": "flowering-herb-planter-box", "name": "Flowering Herb Planter Box", "type": "item", "src": "/objects/kitchen-garden/flowering-herb-planter-box.png" }
+      ]
+    },
+    {
+      "id": "land-systems",
+      "name": "Land & Energy Systems",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6l1-8Z'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "wooden-footbridge", "name": "Wooden Footbridge", "type": "item", "src": "/objects/land-systems/wooden-footbridge.png" },
+        { "id": "solar-panel", "name": "Solar Panel", "type": "item", "src": "/objects/land-systems/solar-panel.png" },
+        { "id": "solar-panel-array", "name": "Solar Panel Array", "type": "item", "src": "/objects/land-systems/solar-panel-array.png" },
+        { "id": "compost-bin", "name": "Compost Bin", "type": "item", "src": "/objects/land-systems/compost-bin.png" },
+        { "id": "dark-soil-pile", "name": "Dark Soil Pile", "type": "item", "src": "/objects/land-systems/dark-soil-pile.png" },
+        { "id": "leaf-mulch-mound", "name": "Leaf Mulch Mound", "type": "item", "src": "/objects/land-systems/leaf-mulch-mound.png" }
       ]
     }
   ],
