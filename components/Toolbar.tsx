@@ -39,6 +39,7 @@ export interface PresetCategory {
   id: string;
   name: string;
   type: "category";
+  icon?: string;
   children?: (PresetItem | PresetCategory)[];
 }
 export type Preset = PresetItem | PresetCategory;
@@ -159,11 +160,21 @@ const ObjectMenuItem: React.FC<{
         className="flex items-center justify-between p-2 rounded-md hover:bg-green-100 text-[#404040] cursor-pointer"
       >
         {" "}
-        <span className="text-sm font-medium whitespace-nowrap">
-          {item.name}
-        </span>{" "}
+        <div className="flex items-center min-w-0">
+          {" "}
+          {item.icon && (
+            <img
+              src={item.icon}
+              alt=""
+              className="h-4 w-4 mr-2 shrink-0 text-[#404040]"
+            />
+          )}
+          <span className="text-sm font-medium whitespace-nowrap">
+            {item.name}
+          </span>{" "}
+        </div>{" "}
         <svg
-          className={`w-4 h-4 text-[#a3a3a3] transition-transform duration-200 ${
+          className={`w-4 h-4 text-[#a3a3a3] transition-transform duration-200 shrink-0 ${
             isSubMenuOpen && !prefersHover ? "rotate-90" : ""
           }`}
           fill="none"

@@ -853,21 +853,23 @@ const GardenCanvas = forwardRef<
       );
     };
 
+    // isDrawing/notes are read directly from the closure (not via a
+    // functional setState updater) so the setActiveTool/selectShape calls
+    // below run as a normal callback invocation, not nested inside another
+    // state updater — React logs "Cannot update a component while rendering
+    // a different component" when a parent's setState (setActiveTool, owned
+    // by the page component) is called from inside a child's updater
+    // function, since updaters are expected to stay pure with no sideeffects.
     const finishDrawingNote = useCallback(() => {
-      setIsDrawing((wasDrawing) => {
-        if (wasDrawing) {
-          setActiveTool({ type: "select" });
-          setNotes((current) => {
-            const drawnNoteId = current[current.length - 1]?.id;
-            if (drawnNoteId) {
-              selectShape(drawnNoteId);
-            }
-            return current;
-          });
+      if (isDrawing) {
+        setActiveTool({ type: "select" });
+        const drawnNoteId = notes[notes.length - 1]?.id;
+        if (drawnNoteId) {
+          selectShape(drawnNoteId);
         }
-        return false;
-      });
-    }, [setActiveTool, selectShape]);
+      }
+      setIsDrawing(false);
+    }, [isDrawing, notes, setActiveTool, selectShape]);
 
     const handleStageMouseUp = (e: KonvaEventObject<MouseEvent>) => {
       finishDrawingNote();
@@ -2609,7 +2611,7 @@ const NoteObjectRenderer = memo(
         case "arrow":
           return (
             <Arrow
-              points={note.points}
+              points={note.points ?? []}
               pointerLength={10 / stageScale}
               pointerWidth={10 / stageScale}
               fill={NOTE_COLORS[note.fill]}

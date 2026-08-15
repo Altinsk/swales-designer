@@ -19,7 +19,7 @@ import {
 
 // --- Component Imports ---
 import TopBar from "@/components/TopBar";
-import Toolbar, { PresetItem, Texture } from "@/components/Toolbar";
+import Toolbar, { PresetItem, Texture, ZoneOption } from "@/components/Toolbar";
 import CanvasControls from "@/components/CanvasControls";
 import Header from "@/components/Header";
 import RightToolbar from "@/components/RightToolbar";
@@ -50,7 +50,7 @@ interface AppConfig {
   templates: any[];
 }
 export type NoteShape = "text" | "rectangle" | "oval" | "callout" | "arrow";
-export type ActiveToolType = "select" | "plot" | "note";
+export type ActiveToolType = "select" | "plot" | "note" | "zone";
 export interface ActiveTool {
   type: ActiveToolType;
   shape?: NoteShape;
@@ -106,6 +106,7 @@ export default function SharePage() {
   const [activeTool, setActiveTool] = useState<ActiveTool>({ type: "select" });
   const [selectedPreset, setSelectedPreset] = useState<PresetItem | null>(null);
   const [plotTexture, setPlotTexture] = useState<Texture | null>(null);
+  const [activeZone, setActiveZone] = useState<ZoneOption | null>(null);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [planningSketch, setPlanningSketch] = useState<any | null>(null);
@@ -561,6 +562,7 @@ export default function SharePage() {
             onObjectAdd={handleObjectAdded}
             setActiveTool={setActiveTool}
             plotTexture={plotTexture}
+            activeZone={activeZone}
             config={config}
             planningSketch={planningSketch}
             onSketchChange={setPlanningSketch}
@@ -600,6 +602,11 @@ export default function SharePage() {
             onSelectTexture={(texture) => {
               setPlotTexture(texture);
               setActiveTool({ type: "plot" });
+              setActiveMobilePanel(null);
+            }}
+            onSelectZone={(zone) => {
+              setActiveZone(zone);
+              setActiveTool({ type: "zone" });
               setActiveMobilePanel(null);
             }}
             onSelectNoteTool={(shape) => {
@@ -645,6 +652,11 @@ export default function SharePage() {
                   onSelectTexture={(texture) => {
                     setPlotTexture(texture);
                     setActiveTool({ type: "plot" });
+                    setActiveMobilePanel(null);
+                  }}
+                  onSelectZone={(zone) => {
+                    setActiveZone(zone);
+                    setActiveTool({ type: "zone" });
                     setActiveMobilePanel(null);
                   }}
                   onSelectNoteTool={(shape) => {
