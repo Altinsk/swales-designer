@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { ActiveTool, NoteShape } from "@/app/page";
 
 // --- Type Definitions (no changes) ---
@@ -238,6 +239,34 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const [prefersHover, setPrefersHover] = useState(true);
   const plotMenuRef = useRef<HTMLDivElement>(null);
   const zoneMenuRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState(false);
+  const [canScrollDown, setCanScrollDown] = useState(false);
+
+  const updateScrollButtons = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > 4);
+    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 4);
+  };
+
+  useEffect(() => {
+    updateScrollButtons();
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(updateScrollButtons);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const scrollToTop = () => {
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const scrollToBottom = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -277,8 +306,23 @@ const Toolbar: React.FC<ToolbarProps> = ({
 
   return (
     <div
+      ref={scrollContainerRef}
+      onScroll={updateScrollButtons}
+      style={{ maxHeight: "70vh", overflowY: "auto" }}
       className={`bg-white/90 backdrop-blur-sm p-3 w-60 rounded-xl shadow-lg flex flex-col space-y-4 z-10 transition-all duration-300 ${className}`}
     >
+      {canScrollUp && (
+        <div className="sticky top-0 -mx-3 -mt-3 px-3 pt-2 pb-3 flex justify-center bg-gradient-to-b from-white/95 to-white/0 z-20">
+          <button
+            type="button"
+            onClick={scrollToTop}
+            title="Scroll to top"
+            className="p-1 rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
+        </div>
+      )}
       {" "}
       <div className="space-y-2">
         {" "}
@@ -564,6 +608,18 @@ const Toolbar: React.FC<ToolbarProps> = ({
           prefersHover={prefersHover}
         />{" "}
       </div>{" "}
+      {canScrollDown && (
+        <div className="sticky bottom-0 -mx-3 -mb-3 px-3 pb-2 pt-3 flex justify-center bg-gradient-to-t from-white/95 to-white/0 z-20">
+          <button
+            type="button"
+            onClick={scrollToBottom}
+            title="Scroll to bottom"
+            className="p-1 rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 };
