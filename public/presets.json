@@ -99,7 +99,7 @@
     },
     {
       "id": "plants",
-      "name": "Plants",
+      "name": "Plant Systems",
       "type": "category",
       "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 21V9'/%3E%3Cpath d='M12 13c0-4 3-7 7-7 0 4-3 7-7 7Z'/%3E%3Cpath d='M12 17c0-3-2.5-5-6-5 0 3 2.5 5 6 5Z'/%3E%3C/svg%3E",
       "children": [
@@ -125,7 +125,23 @@
             { "id": "autumn-maple", "name": "Autumn Maple", "type": "item", "src": "/objects/plants/trees/autumn-maple.png" },
             { "id": "parlor-palm", "name": "Parlor Palm", "type": "item", "src": "/objects/plants/trees/parlor-palm.png" },
             { "id": "norfolk-pine", "name": "Norfolk Pine", "type": "item", "src": "/objects/plants/trees/norfolk-pine.png" },
-            { "id": "dwarf-mountain-pine", "name": "Dwarf Mountain Pine", "type": "item", "src": "/objects/plants/trees/dwarf-mountain-pine.png" }
+            { "id": "dwarf-mountain-pine", "name": "Dwarf Mountain Pine", "type": "item", "src": "/objects/plants/trees/dwarf-mountain-pine.png" },
+            { "id": "cycad-palm", "name": "Cycad Palm", "type": "item", "src": "/objects/plants/trees/cycad-palm.png" },
+            { "id": "traveler-palm", "name": "Traveler's Palm", "type": "item", "src": "/objects/plants/trees/traveler-palm.png" },
+            { "id": "blue-juniper", "name": "Blue Juniper", "type": "item", "src": "/objects/plants/trees/blue-juniper.png" },
+            { "id": "cedar-tree", "name": "Cedar Tree", "type": "item", "src": "/objects/plants/trees/cedar-tree.png" },
+            { "id": "bare-branch-tree", "name": "Bare Branch Tree", "type": "item", "src": "/objects/plants/trees/bare-branch-tree.png" },
+            { "id": "sugar-maple", "name": "Sugar Maple", "type": "item", "src": "/objects/plants/trees/sugar-maple.png" },
+            { "id": "golden-elm", "name": "Golden Elm", "type": "item", "src": "/objects/plants/trees/golden-elm.png" },
+            { "id": "jacaranda-tree", "name": "Jacaranda Tree", "type": "item", "src": "/objects/plants/trees/jacaranda-tree.png" },
+            { "id": "crepe-myrtle", "name": "Crepe Myrtle", "type": "item", "src": "/objects/plants/trees/crepe-myrtle.png" },
+            { "id": "holly-tree", "name": "Holly Tree", "type": "item", "src": "/objects/plants/trees/holly-tree.png" },
+            { "id": "boxwood-tree", "name": "Boxwood Tree", "type": "item", "src": "/objects/plants/trees/boxwood-tree.png" },
+            { "id": "magnolia-tree", "name": "Magnolia Tree", "type": "item", "src": "/objects/plants/trees/magnolia-tree.png" },
+            { "id": "viburnum-tree", "name": "Viburnum Tree", "type": "item", "src": "/objects/plants/trees/viburnum-tree.png" },
+            { "id": "spruce-tree", "name": "Spruce Tree", "type": "item", "src": "/objects/plants/trees/spruce-tree.png" },
+            { "id": "topiary-hedge", "name": "Topiary Hedge", "type": "item", "src": "/objects/plants/trees/topiary-hedge.png" },
+            { "id": "lilac-tree", "name": "Lilac Tree", "type": "item", "src": "/objects/plants/trees/lilac-tree.png" }
           ]
         },
         {
@@ -195,6 +211,98 @@
           ]
         },
         {
+          "id": "shade-plants",
+          "name": "Shade Plants",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 10a9 9 0 0 1 18 0'/%3E%3Cpath d='M3 10h18'/%3E%3Cpath d='M12 10v8'/%3E%3Cpath d='M9 18h6'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "philodendron", "name": "Philodendron", "type": "item", "src": "/objects/plants/shade/philodendron.png" },
+            { "id": "monstera", "name": "Monstera", "type": "item", "src": "/objects/plants/shade/monstera.png" },
+            { "id": "elephant-ear", "name": "Elephant Ear", "type": "item", "src": "/objects/plants/shade/elephant-ear.png" },
+            { "id": "japanese-aralia", "name": "Japanese Aralia", "type": "item", "src": "/objects/plants/shade/japanese-aralia.png" },
+            { "id": "prayer-plant", "name": "Prayer Plant", "type": "item", "src": "/objects/plants/shade/prayer-plant.png" },
+            { "id": "calathea-orbifolia", "name": "Calathea Orbifolia", "type": "item", "src": "/objects/plants/shade/calathea-orbifolia.png" },
+            { "id": "pothos", "name": "Pothos", "type": "item", "src": "/objects/plants/shade/pothos.png" },
+            { "id": "blushing-bromeliad", "name": "Blushing Bromeliad", "type": "item", "src": "/objects/plants/shade/blushing-bromeliad.png" }
+          ]
+        },
+        {
+          "id": "perennial-plants",
+          "name": "Perennial Plants",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12a8 8 0 0 1 14-5'/%3E%3Cpath d='M18 3v4h-4'/%3E%3Cpath d='M20 12a8 8 0 0 1-14 5'/%3E%3Cpath d='M6 21v-4h4'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "chicory", "name": "Chicory", "type": "item", "src": "/objects/plants/perennial/chicory.png" },
+            { "id": "croton", "name": "Croton", "type": "item", "src": "/objects/plants/perennial/croton.png" },
+            { "id": "scilla", "name": "Scilla", "type": "item", "src": "/objects/plants/perennial/scilla.png" },
+            { "id": "snowdrop", "name": "Snowdrop", "type": "item", "src": "/objects/plants/perennial/snowdrop.png" }
+          ]
+        },
+        {
+          "id": "annual-plants",
+          "name": "Annual Plants",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='17' rx='2'/%3E%3Cpath d='M3 9h18'/%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "pink-tulip", "name": "Pink Tulip", "type": "item", "src": "/objects/plants/annual/pink-tulip.png" },
+            { "id": "yellow-tulip", "name": "Yellow Tulip", "type": "item", "src": "/objects/plants/annual/yellow-tulip.png" },
+            { "id": "white-tulip", "name": "White Tulip", "type": "item", "src": "/objects/plants/annual/white-tulip.png" },
+            { "id": "violet-tulip", "name": "Violet Tulip", "type": "item", "src": "/objects/plants/annual/violet-tulip.png" },
+            { "id": "white-posy", "name": "White Posy", "type": "item", "src": "/objects/plants/annual/white-posy.png" },
+            { "id": "rose-posy", "name": "Rose Posy", "type": "item", "src": "/objects/plants/annual/rose-posy.png" }
+          ]
+        },
+        {
+          "id": "pollinator-plants",
+          "name": "Pollinator Plants",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cellipse cx='12' cy='13' rx='3' ry='4'/%3E%3Cpath d='M12 9v-3'/%3E%3Cpath d='M9 6c0-1.5 1-2 3-2s3 .5 3 2'/%3E%3Cpath d='M9 12h6'/%3E%3Cpath d='M9 14h6'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "red-rose-cluster", "name": "Red Rose Cluster", "type": "item", "src": "/objects/plants/pollinator/red-rose-cluster.png" },
+            { "id": "small-roses", "name": "Small Roses", "type": "item", "src": "/objects/plants/pollinator/small-roses.png" },
+            { "id": "jasmine", "name": "Jasmine", "type": "item", "src": "/objects/plants/pollinator/jasmine.png" },
+            { "id": "arabian-jasmine", "name": "Arabian Jasmine", "type": "item", "src": "/objects/plants/pollinator/arabian-jasmine.png" },
+            { "id": "pink-bouvardia", "name": "Pink Bouvardia", "type": "item", "src": "/objects/plants/pollinator/pink-bouvardia.png" },
+            { "id": "blue-bouvardia", "name": "Blue Bouvardia", "type": "item", "src": "/objects/plants/pollinator/blue-bouvardia.png" }
+          ]
+        },
+        {
+          "id": "windbreak-plants",
+          "name": "Windbreak Plants",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20v-8a4 4 0 0 1 8 0v8'/%3E%3Cpath d='M12 20v-11a4 4 0 0 1 8 0v11'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "pittosporum-hedge", "name": "Pittosporum Hedge", "type": "item", "src": "/objects/plants/windbreak/pittosporum-hedge.png" },
+            { "id": "pittosporum-cluster", "name": "Pittosporum Cluster", "type": "item", "src": "/objects/plants/windbreak/pittosporum-cluster.png" },
+            { "id": "pittosporum-dense", "name": "Pittosporum Dense", "type": "item", "src": "/objects/plants/windbreak/pittosporum-dense.png" },
+            { "id": "pittosporum-compact", "name": "Pittosporum Compact", "type": "item", "src": "/objects/plants/windbreak/pittosporum-compact.png" }
+          ]
+        },
+        {
+          "id": "herb-spiral",
+          "name": "Herb Spiral",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 20a8 8 0 1 1 8-8'/%3E%3Cpath d='M20 12a5 5 0 1 0-5 5'/%3E%3Cpath d='M15 17a2 2 0 1 1 2-2'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "oregano", "name": "Oregano", "type": "item", "src": "/objects/plants/herb-spiral/oregano.png" },
+            { "id": "gotu-kola", "name": "Gotu Kola", "type": "item", "src": "/objects/plants/herb-spiral/gotu-kola.png" }
+          ]
+        },
+        {
+          "id": "food-forest-layers",
+          "name": "Food Forest Layers",
+          "type": "category",
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3l6 6H6Z'/%3E%3Cline x1='4' y1='14' x2='20' y2='14'/%3E%3Cline x1='6' y1='17' x2='18' y2='17'/%3E%3Cline x1='8' y1='20' x2='16' y2='20'/%3E%3C/svg%3E",
+          "children": [
+            { "id": "fig-tree", "name": "Fig Tree", "type": "item", "src": "/objects/plants/food-forest/fig-tree.png" },
+            { "id": "banana-plant", "name": "Banana Plant", "type": "item", "src": "/objects/plants/food-forest/banana-plant.png" },
+            { "id": "guiana-chestnut", "name": "Guiana Chestnut", "type": "item", "src": "/objects/plants/food-forest/guiana-chestnut.png" },
+            { "id": "coconut-palm", "name": "Coconut Palm", "type": "item", "src": "/objects/plants/food-forest/coconut-palm.png" },
+            { "id": "footstool-palm", "name": "Footstool Palm", "type": "item", "src": "/objects/plants/food-forest/footstool-palm.png" },
+            { "id": "date-palm", "name": "Date Palm", "type": "item", "src": "/objects/plants/food-forest/date-palm.png" }
+          ]
+        },
+        {
           "id": "plant",
           "name": "Potted Plant",
           "type": "item",
@@ -222,12 +330,24 @@
         { "id": "lop-eared-rabbit", "name": "Lop-Eared Rabbit", "type": "item", "src": "/objects/animals/lop-eared-rabbit.png" },
         { "id": "brown-rabbit", "name": "Brown Rabbit", "type": "item", "src": "/objects/animals/brown-rabbit.png" },
         { "id": "beehive", "name": "Beehive", "type": "item", "src": "/objects/animals/beehive.png" },
-        { "id": "apiary", "name": "Apiary", "type": "item", "src": "/objects/animals/apiary.png" }
+        { "id": "apiary", "name": "Apiary", "type": "item", "src": "/objects/animals/apiary.png" },
+        { "id": "jersey-cow", "name": "Jersey Cow", "type": "item", "src": "/objects/animals/jersey-cow.png" },
+        { "id": "hereford-cow", "name": "Hereford Cow", "type": "item", "src": "/objects/animals/hereford-cow.png" },
+        { "id": "ayrshire-cow", "name": "Ayrshire Cow", "type": "item", "src": "/objects/animals/ayrshire-cow.png" },
+        { "id": "water-buffalo", "name": "Water Buffalo", "type": "item", "src": "/objects/animals/water-buffalo.png" },
+        { "id": "black-horse", "name": "Black Horse", "type": "item", "src": "/objects/animals/black-horse.png" },
+        { "id": "labrador-dog", "name": "Labrador", "type": "item", "src": "/objects/animals/labrador-dog.png" },
+        { "id": "hound-dog", "name": "Hound Dog", "type": "item", "src": "/objects/animals/hound-dog.png" },
+        { "id": "husky-dog", "name": "Husky", "type": "item", "src": "/objects/animals/husky-dog.png" },
+        { "id": "vizsla-dog", "name": "Vizsla", "type": "item", "src": "/objects/animals/vizsla-dog.png" },
+        { "id": "jack-russell-dog", "name": "Jack Russell Terrier", "type": "item", "src": "/objects/animals/jack-russell-dog.png" },
+        { "id": "whippet-dog", "name": "Whippet", "type": "item", "src": "/objects/animals/whippet-dog.png" },
+        { "id": "dutch-rabbit", "name": "Dutch Rabbit", "type": "item", "src": "/objects/animals/dutch-rabbit.png" }
       ]
     },
     {
       "id": "water-earthworks",
-      "name": "Water & Earthworks",
+      "name": "Water Systems",
       "type": "category",
       "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z'/%3E%3C/svg%3E",
       "children": [
@@ -263,17 +383,154 @@
       ]
     },
     {
-      "id": "land-systems",
-      "name": "Land & Energy Systems",
+      "id": "access-paths",
+      "name": "Access & Paths",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v4'/%3E%3Cpath d='M12 11v4'/%3E%3Cpath d='M12 19v2'/%3E%3Cpath d='M6 3 4 21'/%3E%3Cpath d='M18 3l2 18'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "wooden-footbridge", "name": "Wooden Footbridge", "type": "item", "src": "/objects/land-systems/wooden-footbridge.png" }
+      ]
+    },
+    {
+      "id": "energy-systems",
+      "name": "Energy Systems",
       "type": "category",
       "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6l1-8Z'/%3E%3C/svg%3E",
       "children": [
-        { "id": "wooden-footbridge", "name": "Wooden Footbridge", "type": "item", "src": "/objects/land-systems/wooden-footbridge.png" },
         { "id": "solar-panel", "name": "Solar Panel", "type": "item", "src": "/objects/land-systems/solar-panel.png" },
-        { "id": "solar-panel-array", "name": "Solar Panel Array", "type": "item", "src": "/objects/land-systems/solar-panel-array.png" },
+        { "id": "solar-panel-array", "name": "Solar Panel Array", "type": "item", "src": "/objects/land-systems/solar-panel-array.png" }
+      ]
+    },
+    {
+      "id": "soil-fertility",
+      "name": "Soil & Fertility",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 20c2-5 16-5 18 0'/%3E%3Cpath d='M12 20v-4'/%3E%3Cpath d='M12 16c-2 0-3-1.5-3-3'/%3E%3Cpath d='M12 16c2 0 3-1.5 3-3'/%3E%3C/svg%3E",
+      "children": [
         { "id": "compost-bin", "name": "Compost Bin", "type": "item", "src": "/objects/land-systems/compost-bin.png" },
         { "id": "dark-soil-pile", "name": "Dark Soil Pile", "type": "item", "src": "/objects/land-systems/dark-soil-pile.png" },
         { "id": "leaf-mulch-mound", "name": "Leaf Mulch Mound", "type": "item", "src": "/objects/land-systems/leaf-mulch-mound.png" }
+      ]
+    },
+    {
+      "id": "wind-path-symbols",
+      "name": "Wind Path Symbols",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8h9a3 3 0 1 0-3-3'/%3E%3Cpath d='M3 16h13a3 3 0 1 1-3 3'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "wind-arrow", "name": "Prevailing Wind Arrow", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cline x1='4' y1='12' x2='17' y2='12' stroke='%232563eb' stroke-width='2.5'/%3E%3Cpath d='M13 6l6 6-6 6' fill='none' stroke='%232563eb' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" },
+        { "id": "wind-rose", "name": "Wind Rose", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cg stroke='%232563eb' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='12' y1='2' x2='12' y2='22'/%3E%3Cline x1='2' y1='12' x2='22' y2='12'/%3E%3Cline x1='5' y1='5' x2='19' y2='19'/%3E%3Cline x1='19' y1='5' x2='5' y2='19'/%3E%3C/g%3E%3Ccircle cx='12' cy='12' r='3' fill='%232563eb'/%3E%3C/svg%3E" },
+        { "id": "wind-gust", "name": "Gust / Turbulence", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M3 7c3-3 6 3 9 0s6-3 9 0' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M3 13c3-3 6 3 9 0s6-3 9 0' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M3 19c3-3 6 3 9 0s6-3 9 0' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "smell-symbols",
+      "name": "Smell Symbols",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='6' cy='18' r='1'/%3E%3Cpath d='M9 16c2-2 2-5 0-7'/%3E%3Cpath d='M13 14c3-3 3-7 0-10'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "smell-radius", "name": "Fragrance Radius", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='4' cy='19' r='1.5' fill='%239333ea'/%3E%3Cpath d='M8 17c2.5-4 2.5-9 0-13' fill='none' stroke='%239333ea' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M13 17c4-5 4-11 0-15' fill='none' stroke='%239333ea' stroke-width='2' stroke-linecap='round' opacity='0.6'/%3E%3C/svg%3E" },
+        { "id": "smell-pleasant", "name": "Pleasant Aroma Zone", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='7' cy='8' r='2' fill='%239333ea'/%3E%3Ccircle cx='4' cy='10' r='1.6' fill='%239333ea'/%3E%3Ccircle cx='10' cy='10' r='1.6' fill='%239333ea'/%3E%3Ccircle cx='7' cy='12' r='1.6' fill='%239333ea'/%3E%3Cpath d='M14 10c2-2 2-5 0-7' fill='none' stroke='%239333ea' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M18 12c3-3 3-8 0-11' fill='none' stroke='%239333ea' stroke-width='2' stroke-linecap='round' opacity='0.6'/%3E%3C/svg%3E" },
+        { "id": "smell-unpleasant", "name": "Unpleasant Odor Zone", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M5 15a3 3 0 0 1 0-6 4 4 0 0 1 7.8-1A3.5 3.5 0 0 1 17.5 12 3 3 0 0 1 17 15Z' fill='none' stroke='%2378716c' stroke-width='2'/%3E%3Cpath d='M4 19l2-2 2 2 2-2 2 2' fill='none' stroke='%2378716c' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "sun-path-symbols",
+      "name": "Sun Path Symbols",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M12 2v2'/%3E%3Cpath d='M12 20v2'/%3E%3Cpath d='M2 12h2'/%3E%3Cpath d='M20 12h2'/%3E%3Cpath d='M4.9 4.9l1.4 1.4'/%3E%3Cpath d='M17.7 17.7l1.4 1.4'/%3E%3Cpath d='M19.1 4.9l-1.4 1.4'/%3E%3Cpath d='M6.3 17.7l-1.4 1.4'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "sun-summer-arc", "name": "Summer Sun Arc", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M2 18c5-14 15-14 20 0' fill='none' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-dasharray='3 2'/%3E%3Ccircle cx='12' cy='5.5' r='2.3' fill='%23f59e0b'/%3E%3Cline x1='2' y1='18' x2='22' y2='18' stroke='%23a8a29e' stroke-width='1.5'/%3E%3C/svg%3E" },
+        { "id": "sun-winter-arc", "name": "Winter Sun Arc", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M2 16c4-6 16-6 20 0' fill='none' stroke='%23f59e0b' stroke-width='2' stroke-linecap='round' stroke-dasharray='3 2'/%3E%3Ccircle cx='12' cy='11' r='2.3' fill='%23f59e0b'/%3E%3Cline x1='2' y1='18' x2='22' y2='18' stroke='%23a8a29e' stroke-width='1.5'/%3E%3C/svg%3E" },
+        { "id": "sun-position-marker", "name": "Sun Position Marker", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='4.5' fill='%23f59e0b'/%3E%3Cg stroke='%23f59e0b' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='12' y1='2' x2='12' y2='5'/%3E%3Cline x1='12' y1='19' x2='12' y2='22'/%3E%3Cline x1='2' y1='12' x2='5' y2='12'/%3E%3Cline x1='19' y1='12' x2='22' y2='12'/%3E%3Cline x1='4.9' y1='4.9' x2='7' y2='7'/%3E%3Cline x1='17' y1='17' x2='19.1' y2='19.1'/%3E%3Cline x1='19.1' y1='4.9' x2='17' y2='7'/%3E%3Cline x1='7' y1='17' x2='4.9' y2='19.1'/%3E%3C/g%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "garden-symbols",
+      "name": "Garden",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='1'/%3E%3Cpath d='M3 12h18'/%3E%3Cpath d='M9 5v7'/%3E%3Cpath d='M15 5v7'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "raised-garden-bed-symbol", "name": "Raised Garden Bed", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Crect x='3' y='6' width='18' height='12' rx='1' fill='none' stroke='%237c5c3e' stroke-width='2'/%3E%3Cline x1='3' y1='10' x2='21' y2='10' stroke='%2316a34a' stroke-width='1.5'/%3E%3Cline x1='3' y1='14' x2='21' y2='14' stroke='%2316a34a' stroke-width='1.5'/%3E%3C/svg%3E" },
+        { "id": "garden-plot-outline", "name": "Garden Plot Outline", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Crect x='3' y='4' width='18' height='16' rx='1' fill='none' stroke='%2316a34a' stroke-width='2' stroke-dasharray='4 2'/%3E%3C/svg%3E" },
+        { "id": "row-crop-marker", "name": "Row Crop Marker", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cg stroke='%2316a34a' stroke-width='2' stroke-linecap='round'%3E%3Cline x1='4' y1='4' x2='4' y2='20'/%3E%3Cline x1='9' y1='4' x2='9' y2='20'/%3E%3Cline x1='14' y1='4' x2='14' y2='20'/%3E%3Cline x1='19' y1='4' x2='19' y2='20'/%3E%3C/g%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "contour-symbols",
+      "name": "Contour Symbols",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 8c3-3 6 3 9 0s6-3 9 0'/%3E%3Cpath d='M2 14c3-3 6 3 9 0s6-3 9 0'/%3E%3Cpath d='M2 20c3-3 6 3 9 0s6-3 9 0'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "contour-line", "name": "Contour Line", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M2 12c3-4 6 4 9 0s6-4 9 0s2 4 2 4' fill='none' stroke='%2392400e' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" },
+        { "id": "slope-direction-arrow", "name": "Slope Direction Arrow", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='3' x2='12' y2='19' stroke='%2392400e' stroke-width='2' stroke-linecap='round'/%3E%3Cpath d='M8 15l4 4 4-4' fill='none' stroke='%2392400e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" },
+        { "id": "elevation-point-marker", "name": "Elevation Point Marker", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M12 3l7 12H5Z' fill='none' stroke='%2392400e' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='12' cy='19' r='1.5' fill='%2392400e'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "social-culture",
+      "name": "Social & Culture Spaces",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='7' cy='9' r='2'/%3E%3Ccircle cx='17' cy='9' r='2'/%3E%3Cpath d='M3 19c0-3 2-5 4-5s4 2 4 5'/%3E%3Cpath d='M13 19c0-3 2-5 4-5s4 2 4 5'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "social-fire-pit-seating", "name": "Fire Pit With Seating", "type": "item", "src": "/objects/structures/outdoor-features/fire-pit-with-seating.png" },
+        { "id": "social-outdoor-dining", "name": "Outdoor Dining Set", "type": "item", "src": "/objects/structures/outdoor-features/round-patio-dining-set.png" },
+        { "id": "market-stall", "name": "Market Stall", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M4 8l8-5 8 5' fill='none' stroke='%23b45309' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='5' y='8' width='14' height='9' fill='none' stroke='%23b45309' stroke-width='2'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "climate-edge",
+      "name": "Climate & Edge Strategies",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3v3'/%3E%3Cpath d='M5 8l2 1.5'/%3E%3Cpath d='M19 8l-2 1.5'/%3E%3Cpath d='M4 16h16'/%3E%3Cpath d='M7 16v4'/%3E%3Cpath d='M17 16v4'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "climate-living-fence", "name": "Living Fence / Windbreak Hedge", "type": "item", "src": "/objects/plants/hedges/linear-hedge-border.png" },
+        { "id": "climate-pond-edge", "name": "Pond Edge", "type": "item", "src": "/objects/water-earthworks/lush-tropical-pond.png" },
+        { "id": "trellis-arbor", "name": "Trellis / Arbor", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cg stroke='%2378350f' stroke-width='1.4'%3E%3Cline x1='3' y1='3' x2='21' y2='21'/%3E%3Cline x1='3' y1='9' x2='15' y2='21'/%3E%3Cline x1='3' y1='15' x2='9' y2='21'/%3E%3Cline x1='9' y1='3' x2='21' y2='15'/%3E%3Cline x1='15' y1='3' x2='21' y2='9'/%3E%3C/g%3E%3Crect x='3' y='3' width='18' height='18' fill='none' stroke='%2378350f' stroke-width='2'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "food-storage",
+      "name": "Food Storage",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 20a8 5 0 0 1 16 0Z'/%3E%3Cpath d='M10 16h4v4h-4z'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "root-cellar", "name": "Root Cellar", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M3 18a9 6 0 0 1 18 0Z' fill='none' stroke='%237c5c3e' stroke-width='2'/%3E%3Crect x='10' y='14' width='4' height='4' fill='%237c5c3e'/%3E%3C/svg%3E" },
+        { "id": "canning-station", "name": "Canning & Preserving Station", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='7' fill='none' stroke='%23b45309' stroke-width='2'/%3E%3Ccircle cx='12' cy='12' r='3' fill='none' stroke='%23b45309' stroke-width='1.5'/%3E%3C/svg%3E" },
+        { "id": "solar-dehydrator", "name": "Solar Dehydrator", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='9' r='3' fill='%23f59e0b'/%3E%3Cg stroke='%23f59e0b' stroke-width='1.6'%3E%3Cline x1='12' y1='2' x2='12' y2='4.5'/%3E%3Cline x1='5' y1='9' x2='7.5' y2='9'/%3E%3Cline x1='16.5' y1='9' x2='19' y2='9'/%3E%3Cline x1='7' y1='4' x2='8.7' y2='5.7'/%3E%3Cline x1='17' y1='4' x2='15.3' y2='5.7'/%3E%3C/g%3E%3Crect x='6' y='16' width='12' height='2.5' fill='none' stroke='%2378350f' stroke-width='1.5'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "observation",
+      "name": "Observation",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='7' width='14' height='10' rx='2'/%3E%3Cpath d='M17 10l4-2v8l-4-2'/%3E%3Ccircle cx='10' cy='12' r='3'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "weather-station", "name": "Weather Station", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='4' x2='12' y2='20' stroke='%23475569' stroke-width='2'/%3E%3Ccircle cx='8' cy='7' r='1.8' fill='none' stroke='%23475569' stroke-width='1.5'/%3E%3Ccircle cx='16' cy='7' r='1.8' fill='none' stroke='%23475569' stroke-width='1.5'/%3E%3Cline x1='8' y1='7' x2='12' y2='9' stroke='%23475569' stroke-width='1.5'/%3E%3Cline x1='16' y1='7' x2='12' y2='9' stroke='%23475569' stroke-width='1.5'/%3E%3C/svg%3E" },
+        { "id": "soil-sensor-probe", "name": "Soil Sensor Probe", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='10' x2='12' y2='21' stroke='%23475569' stroke-width='2' stroke-linecap='round'/%3E%3Ccircle cx='12' cy='6' r='3' fill='none' stroke='%23475569' stroke-width='2'/%3E%3Ccircle cx='12' cy='6' r='1' fill='%23475569'/%3E%3C/svg%3E" },
+        { "id": "water-level-gauge", "name": "Water Level Gauge", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Crect x='10' y='2' width='4' height='18' fill='none' stroke='%232563eb' stroke-width='2'/%3E%3Cline x1='10' y1='7' x2='14' y2='7' stroke='%232563eb' stroke-width='1.2'/%3E%3Cline x1='10' y1='12' x2='14' y2='12' stroke='%232563eb' stroke-width='1.2'/%3E%3Cline x1='10' y1='17' x2='14' y2='17' stroke='%232563eb' stroke-width='1.2'/%3E%3Cpath d='M3 21c3-2 6 2 9 0s6-2 9 0' fill='none' stroke='%232563eb' stroke-width='1.5'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "materials",
+      "name": "Materials",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='14' width='7' height='6'/%3E%3Crect x='11' y='10' width='7' height='10'/%3E%3Crect x='5' y='9' width='4' height='5'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "materials-rain-barrel", "name": "Rain Barrel Stand", "type": "item", "src": "/objects/water-earthworks/rain-barrel-tank.png" },
+        { "id": "materials-leaf-mulch", "name": "Leaf Mulch Depot", "type": "item", "src": "/objects/land-systems/leaf-mulch-mound.png" },
+        { "id": "straw-bale", "name": "Straw Bale", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='none' stroke='%23ca8a04' stroke-width='2'/%3E%3Cpath d='M12 4v16M6 6l12 12M18 6L6 18' stroke='%23ca8a04' stroke-width='1' opacity='0.5'/%3E%3C/svg%3E" }
+      ]
+    },
+    {
+      "id": "wildlife-habitat",
+      "name": "Wildlife & Habitat Support",
+      "type": "category",
+      "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 4c-3 2-3 5 0 7 3-2 3-5 0-7Z'/%3E%3Cpath d='M12 11v9'/%3E%3Cpath d='M12 15c-3-1-5 1-6 3'/%3E%3Cpath d='M12 15c3-1 5 1 6 3'/%3E%3C/svg%3E",
+      "children": [
+        { "id": "wildlife-frog-pond", "name": "Frog Pond", "type": "item", "src": "/objects/water-earthworks/lush-tropical-pond.png" },
+        { "id": "bird-house", "name": "Bird House", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Cpath d='M8 10l4-4 4 4' fill='none' stroke='%237c5c3e' stroke-width='2' stroke-linejoin='round'/%3E%3Crect x='8' y='10' width='8' height='6' fill='none' stroke='%237c5c3e' stroke-width='2'/%3E%3Ccircle cx='12' cy='13' r='1.2' fill='%237c5c3e'/%3E%3C/svg%3E" },
+        { "id": "wildflower-meadow", "name": "Wildflower Meadow", "type": "item", "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 24 24'%3E%3Ccircle cx='6' cy='6' r='1.5' fill='%23ec4899'/%3E%3Ccircle cx='14' cy='5' r='1.5' fill='%23f59e0b'/%3E%3Ccircle cx='19' cy='10' r='1.5' fill='%239333ea'/%3E%3Ccircle cx='5' cy='14' r='1.5' fill='%23f59e0b'/%3E%3Ccircle cx='11' cy='12' r='1.5' fill='%23ec4899'/%3E%3Ccircle cx='17' cy='16' r='1.5' fill='%239333ea'/%3E%3Ccircle cx='9' cy='19' r='1.5' fill='%23f59e0b'/%3E%3Ccircle cx='15' cy='20' r='1.5' fill='%23ec4899'/%3E%3C/svg%3E" }
       ]
     }
   ],
