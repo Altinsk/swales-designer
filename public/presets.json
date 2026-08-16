@@ -44,23 +44,12 @@
       "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 11l9-7 9 7'/%3E%3Cpath d='M5 10v10h14V10'/%3E%3Cpath d='M9 20v-6h6v6'/%3E%3C/svg%3E",
       "children": [
         {
-          "id": "house",
-          "name": "House",
-          "type": "item",
-          "src": "/house.png"
-        },
-        {
-          "id": "shed",
-          "name": "Shed",
-          "type": "item",
-          "src": "/shed.png"
-        },
-        {
           "id": "buildings",
           "name": "Buildings",
           "type": "category",
           "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 11l9-7 9 7'/%3E%3Cpath d='M5 10v10h14V10'/%3E%3Cpath d='M9 20v-6h6v6'/%3E%3C/svg%3E",
           "children": [
+            { "id": "house", "name": "House", "type": "item", "src": "/house.png" },
             { "id": "l-shaped-hip-roof-house", "name": "L-Shaped Hip Roof House", "type": "item", "src": "/objects/structures/buildings/l-shaped-hip-roof-house.png" },
             { "id": "t-shaped-roof-with-dormer", "name": "T-Shaped Roof With Dormer", "type": "item", "src": "/objects/structures/buildings/t-shaped-roof-with-dormer.png" },
             { "id": "multi-wing-complex-building", "name": "Multi-Wing Complex Building", "type": "item", "src": "/objects/structures/buildings/multi-wing-complex-building.png" },
@@ -109,8 +98,6 @@
           "type": "category",
           "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22v-6'/%3E%3Cpath d='M12 16c-4 0-7-3-7-7 4 0 7 2 7 7Z'/%3E%3Cpath d='M12 16c4 0 7-3 7-7-4 0-7 2-7 7Z'/%3E%3Cpath d='M12 10c-3 0-5-2.5-5-5.5C10 4.5 12 7 12 10Z'/%3E%3C/svg%3E",
           "children": [
-            { "id": "oak", "name": "Oak", "type": "item", "src": "/oak.png" },
-            { "id": "acorn", "name": "Acorn", "type": "item", "src": "/acorn.png" },
             { "id": "green-ash", "name": "Green Ash", "type": "item", "src": "/objects/plants/trees/green-ash.png" },
             { "id": "fir-conifer", "name": "Fir Conifer", "type": "item", "src": "/objects/plants/trees/fir-conifer.png" },
             { "id": "acacia-tree", "name": "Acacia Tree", "type": "item", "src": "/objects/plants/trees/acacia-tree.png" },
@@ -295,12 +282,6 @@
             { "id": "footstool-palm", "name": "Footstool Palm", "type": "item", "src": "/objects/plants/food-forest/footstool-palm.png" },
             { "id": "date-palm", "name": "Date Palm", "type": "item", "src": "/objects/plants/food-forest/date-palm.png" }
           ]
-        },
-        {
-          "id": "plant",
-          "name": "Potted Plant",
-          "type": "item",
-          "src": "/plant.svg"
         }
       ]
     },

@@ -2,7 +2,8 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { ActiveTool, NoteShape } from "@/app/page";
 
@@ -87,6 +88,94 @@ const noteTools: PresetCategory = {
     { id: "note-callout", name: "Callout", type: "item", src: icons.callout },
     { id: "note-arrow", name: "Arrow", type: "item", src: icons.arrow },
   ],
+};
+
+// --- Flyout positioning helper ---
+// Flyouts are switched to `position: fixed` with a JS-computed, viewport-aware
+// position instead of CSS `absolute left-full`. This keeps them out of the
+// scrollable-overflow calculation of the panel that hosts them (which is what
+// was causing a phantom horizontal scrollbar, and a large phantom vertical gap
+// for panels with many items, since `overflow-y: auto` implicitly resolves
+// `overflow-x` to `auto` too per the CSS spec) and guarantees the flyout is
+// always fully visible on hover instead of opening off-screen.
+const FLYOUT_MARGIN = 8;
+
+function computeFlyoutPosition(anchorRect: DOMRect, panelRect: DOMRect) {
+  let left = anchorRect.right + 4;
+  if (left + panelRect.width > window.innerWidth - FLYOUT_MARGIN) {
+    left = anchorRect.left - panelRect.width - 4;
+  }
+  left = Math.max(
+    FLYOUT_MARGIN,
+    Math.min(left, window.innerWidth - panelRect.width - FLYOUT_MARGIN)
+  );
+
+  let top = anchorRect.top;
+  if (top + panelRect.height > window.innerHeight - FLYOUT_MARGIN) {
+    top = window.innerHeight - panelRect.height - FLYOUT_MARGIN;
+  }
+  top = Math.max(FLYOUT_MARGIN, top);
+
+  return { top, left };
+}
+
+// Renders the flyout panel through a portal to document.body. This is
+// required (not just nice-to-have): the toolbar panel uses `backdrop-blur-sm`
+// (backdrop-filter), and per the CSS spec an ancestor with a filter/backdrop-
+// filter/transform becomes the containing block for `position: fixed`
+// descendants. Without the portal, "fixed" flyouts end up positioned relative
+// to the small toolbar box instead of the real viewport.
+const FlyoutPortal: React.FC<{
+  anchorRef: React.RefObject<HTMLElement | null>;
+  open: boolean;
+  children: React.ReactNode;
+}> = ({ anchorRef, open, children }) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [style, setStyle] = useState<React.CSSProperties>({
+    position: "fixed",
+    top: -9999,
+    left: -9999,
+    visibility: "hidden",
+    pointerEvents: "none",
+  });
+
+  useEffect(() => setMounted(true), []);
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setStyle((s) => ({ ...s, visibility: "hidden", pointerEvents: "none" }));
+      return;
+    }
+    const anchor = anchorRef.current;
+    const panel = panelRef.current;
+    if (!anchor || !panel) return;
+    const { top, left } = computeFlyoutPosition(
+      anchor.getBoundingClientRect(),
+      panel.getBoundingClientRect()
+    );
+    setStyle({
+      position: "fixed",
+      top,
+      left,
+      visibility: "visible",
+      pointerEvents: "auto",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      ref={panelRef}
+      style={style}
+      className="p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg w-max max-h-[calc(100vh-16px)] overflow-y-auto z-[999]"
+    >
+      {children}
+    </div>,
+    document.body
+  );
 };
 
 const ObjectMenuItem: React.FC<{
@@ -191,21 +280,15 @@ const ObjectMenuItem: React.FC<{
           />{" "}
         </svg>{" "}
       </div>{" "}
-      {/* ✅ MODIFIED: This logic now correctly separates desktop and mobile views without affecting desktop layout */}{" "}
       {prefersHover ? (
-        // --- DESKTOP (HOVER): This is the original, unchanged fly-out menu ---
-        <div
-          style={{ left: "95%" }}
-          className={`absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg transition-opacity duration-200 w-max ${
-            isSubMenuOpen
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none"
-          }`}
-        >
-          {subMenuItems}{" "}
-        </div>
+        // --- DESKTOP (HOVER): fly-out menu, positioned via JS so it always
+        // opens fully on-screen (flips left/up instead of running off the
+        // viewport) and never contributes to the parent panel's scroll area ---
+        <FlyoutPortal anchorRef={itemRef} open={isSubMenuOpen}>
+          {subMenuItems}
+        </FlyoutPortal>
       ) : (
-        // --- MOBILE (CLICK): This is the new accordion menu for touch devices ---
+        // --- MOBILE (CLICK): accordion menu for touch devices ---
         <div
           className={`pl-4 transition-all duration-300 ease-in-out ${
             isSubMenuOpen ? "max-h-60 overflow-y-auto" : "max-h-0 overflow-hidden"
@@ -308,7 +391,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
     <div
       ref={scrollContainerRef}
       onScroll={updateScrollButtons}
-      style={{ maxHeight: "70vh", overflowY: "auto" }}
+      style={{ maxHeight: "70vh", overflowY: "auto", overflowX: "hidden" }}
       className={`bg-white/90 backdrop-blur-sm p-3 w-60 rounded-xl shadow-lg flex flex-col space-y-4 z-10 transition-all duration-300 ${className}`}
     >
       {canScrollUp && (
@@ -415,15 +498,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               </svg>{" "}
             </div>{" "}
             {prefersHover ? (
-              <div
-                style={{ left: "98%" }}
-                className={`absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-200 w-max ${
-                  isPlotMenuOpen
-                    ? "opacity-100 pointer-events-auto"
-                    : "opacity-0 pointer-events-none"
-                }`}
-              >
-                {" "}
+              <FlyoutPortal anchorRef={plotMenuRef} open={isPlotMenuOpen}>
                 {plotToolConfig.textures.map((texture) => (
                   <button
                     key={texture.id}
@@ -441,8 +516,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
                     />{" "}
                     <span className="text-sm">{texture.name}</span>{" "}
                   </button>
-                ))}{" "}
-              </div>
+                ))}
+              </FlyoutPortal>
             ) : (
               <div
                 className={`pl-4 transition-all duration-300 ease-in-out ${
@@ -524,15 +599,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
               </svg>{" "}
             </div>{" "}
             {prefersHover ? (
-              <div
-                style={{ left: "98%" }}
-                className={`absolute left-full top-0 ml-1 p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg transition-all duration-200 w-max ${
-                  isZoneMenuOpen
-                    ? "opacity-100 pointer-events-auto"
-                    : "opacity-0 pointer-events-none"
-                }`}
-              >
-                {" "}
+              <FlyoutPortal anchorRef={zoneMenuRef} open={isZoneMenuOpen}>
                 {zoneToolConfig.options.map((option) => (
                   <button
                     key={option.id}
@@ -549,8 +616,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
                     />{" "}
                     <span className="text-sm">{option.name}</span>{" "}
                   </button>
-                ))}{" "}
-              </div>
+                ))}
+              </FlyoutPortal>
             ) : (
               <div
                 className={`pl-4 transition-all duration-300 ease-in-out ${
