@@ -2,9 +2,15 @@
 
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { createPortal } from "react-dom";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Search, X } from "lucide-react";
 import { ActiveTool, NoteShape } from "@/app/page";
 
 // --- Type Definitions (no changes) ---
@@ -90,6 +96,31 @@ const noteTools: PresetCategory = {
   ],
 };
 
+// --- Search helper: flattens the (possibly nested) preset tree into a
+// list of leaf items, each tagged with the category path it lives under,
+// so the search results can show items regardless of nesting depth. ---
+interface FlatPresetItem {
+  item: PresetItem;
+  path: string[];
+}
+
+function flattenPresets(
+  presets: Preset[],
+  path: string[] = []
+): FlatPresetItem[] {
+  const results: FlatPresetItem[] = [];
+  for (const preset of presets) {
+    if (preset.type === "item") {
+      results.push({ item: preset, path });
+    } else {
+      results.push(
+        ...flattenPresets(preset.children ?? [], [...path, preset.name])
+      );
+    }
+  }
+  return results;
+}
+
 // --- Flyout positioning helper ---
 // Flyouts are switched to `position: fixed` with a JS-computed, viewport-aware
 // position instead of CSS `absolute left-full`. This keeps them out of the
@@ -129,7 +160,9 @@ const FlyoutPortal: React.FC<{
   anchorRef: React.RefObject<HTMLElement | null>;
   open: boolean;
   children: React.ReactNode;
-}> = ({ anchorRef, open, children }) => {
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+}> = ({ anchorRef, open, children, onMouseEnter, onMouseLeave }) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
   const [style, setStyle] = useState<React.CSSProperties>({
@@ -170,6 +203,8 @@ const FlyoutPortal: React.FC<{
     <div
       ref={panelRef}
       style={style}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className="p-2 space-y-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg w-max max-h-[calc(100vh-16px)] overflow-y-auto z-[999]"
     >
       {children}
@@ -178,12 +213,54 @@ const FlyoutPortal: React.FC<{
   );
 };
 
+// Small delay before a hover-opened flyout actually closes, so moving the
+// cursor from the trigger into the (portal-rendered, physically separate)
+// flyout panel doesn't get read as "left the menu" and slam it shut before
+// the user arrives.
+const FLYOUT_CLOSE_DELAY = 250;
+
+function useHoverFlyout(prefersHover: boolean) {
+  const [open, setOpen] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => clearCloseTimer, []);
+
+  const openNow = () => {
+    if (!prefersHover) return;
+    clearCloseTimer();
+    setOpen(true);
+  };
+
+  const scheduleClose = () => {
+    if (!prefersHover) return;
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(
+      () => setOpen(false),
+      FLYOUT_CLOSE_DELAY
+    );
+  };
+
+  return { open, setOpen, openNow, scheduleClose };
+}
+
 const ObjectMenuItem: React.FC<{
   item: Preset;
   onSelectPreset: (preset: PresetItem) => void;
   prefersHover: boolean;
 }> = ({ item, onSelectPreset, prefersHover }) => {
-  const [isSubMenuOpen, setIsSubMenuOpen] = useState(false);
+  const {
+    open: isSubMenuOpen,
+    setOpen: setIsSubMenuOpen,
+    openNow: openSubMenu,
+    scheduleClose: scheduleSubMenuClose,
+  } = useHoverFlyout(prefersHover);
   const itemRef = useRef<HTMLDivElement>(null);
 
   const handleInteraction = (e: React.MouseEvent) => {
@@ -237,12 +314,8 @@ const ObjectMenuItem: React.FC<{
     <div
       ref={itemRef}
       className="relative"
-      onMouseEnter={() => {
-        if (prefersHover) setIsSubMenuOpen(true);
-      }}
-      onMouseLeave={() => {
-        if (prefersHover) setIsSubMenuOpen(false);
-      }}
+      onMouseEnter={openSubMenu}
+      onMouseLeave={scheduleSubMenuClose}
     >
       {" "}
       <div
@@ -284,7 +357,12 @@ const ObjectMenuItem: React.FC<{
         // --- DESKTOP (HOVER): fly-out menu, positioned via JS so it always
         // opens fully on-screen (flips left/up instead of running off the
         // viewport) and never contributes to the parent panel's scroll area ---
-        <FlyoutPortal anchorRef={itemRef} open={isSubMenuOpen}>
+        <FlyoutPortal
+          anchorRef={itemRef}
+          open={isSubMenuOpen}
+          onMouseEnter={openSubMenu}
+          onMouseLeave={scheduleSubMenuClose}
+        >
           {subMenuItems}
         </FlyoutPortal>
       ) : (
@@ -317,14 +395,33 @@ const Toolbar: React.FC<ToolbarProps> = ({
   const zoneToolConfig = config.tools.find((t) => t.id === "zone") as
     | ZoneToolConfig
     | undefined;
-  const [isPlotMenuOpen, setIsPlotMenuOpen] = useState(false);
-  const [isZoneMenuOpen, setIsZoneMenuOpen] = useState(false);
   const [prefersHover, setPrefersHover] = useState(true);
+  const {
+    open: isPlotMenuOpen,
+    setOpen: setIsPlotMenuOpen,
+    openNow: openPlotMenu,
+    scheduleClose: schedulePlotMenuClose,
+  } = useHoverFlyout(prefersHover);
+  const {
+    open: isZoneMenuOpen,
+    setOpen: setIsZoneMenuOpen,
+    openNow: openZoneMenu,
+    scheduleClose: scheduleZoneMenuClose,
+  } = useHoverFlyout(prefersHover);
   const plotMenuRef = useRef<HTMLDivElement>(null);
   const zoneMenuRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+    return flattenPresets(config.objects).filter(({ item }) =>
+      item.name.toLowerCase().includes(query)
+    );
+  }, [searchQuery, config.objects]);
 
   const updateScrollButtons = () => {
     const el = scrollContainerRef.current;
@@ -394,18 +491,79 @@ const Toolbar: React.FC<ToolbarProps> = ({
       style={{ maxHeight: "70vh", overflowY: "auto", overflowX: "hidden" }}
       className={`bg-white/90 backdrop-blur-sm p-3 w-60 rounded-xl shadow-lg flex flex-col space-y-4 z-10 transition-all duration-300 ${className}`}
     >
-      {canScrollUp && (
-        <div className="sticky top-0 -mx-3 -mt-3 px-3 pt-2 pb-3 flex justify-center bg-gradient-to-b from-white/95 to-white/0 z-20">
-          <button
-            type="button"
-            onClick={scrollToTop}
-            title="Scroll to top"
-            className="p-1 rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </button>
+      <div className="sticky top-0 -mx-3 -mt-3 px-3 pt-3 pb-2 bg-white/95 backdrop-blur-sm z-20 space-y-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a3a3a3] pointer-events-none" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search items..."
+            className="w-full pl-8 pr-7 py-1.5 text-sm rounded-md border border-gray-200 bg-white text-[#404040] focus:outline-none focus:ring-2 focus:ring-green-500"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              title="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#a3a3a3] hover:text-[#404040]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-      )}
+        {canScrollUp && !searchQuery && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={scrollToTop}
+              title="Scroll to top"
+              className="p-1 rounded-full bg-white shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+      {searchQuery.trim() ? (
+        <div className="space-y-1">
+          <h3 className="font-semibold text-[#737373] text-xs uppercase tracking-wider px-2">
+            {searchResults.length} result
+            {searchResults.length !== 1 ? "s" : ""}
+          </h3>
+          {searchResults.length === 0 ? (
+            <p className="text-sm text-[#a3a3a3] px-2 py-4 text-center">
+              No items found
+            </p>
+          ) : (
+            searchResults.map(({ item, path }) => (
+              <button
+                key={item.id}
+                onClick={() => onSelectPreset(item)}
+                className="w-full flex items-center p-2 rounded-md hover:bg-green-100 text-[#404040] transition-colors duration-150"
+                title={`Add ${item.name} to canvas`}
+              >
+                <img
+                  src={item.src}
+                  alt={item.name}
+                  className="h-5 w-5 mr-3 object-contain shrink-0"
+                />
+                <span className="flex flex-col items-start min-w-0">
+                  <span className="text-sm truncate w-full text-left">
+                    {item.name}
+                  </span>
+                  {path.length > 0 && (
+                    <span className="text-[10px] text-[#a3a3a3] truncate w-full text-left">
+                      {path.join(" / ")}
+                    </span>
+                  )}
+                </span>
+              </button>
+            ))
+          )}
+        </div>
+      ) : (
+        <>
       {" "}
       <div className="space-y-2">
         {" "}
@@ -441,12 +599,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <div
             className="relative"
             ref={plotMenuRef}
-            onMouseEnter={() => {
-              if (prefersHover) setIsPlotMenuOpen(true);
-            }}
-            onMouseLeave={() => {
-              if (prefersHover) setIsPlotMenuOpen(false);
-            }}
+            onMouseEnter={openPlotMenu}
+            onMouseLeave={schedulePlotMenuClose}
           >
             {" "}
             <div
@@ -498,7 +652,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
               </svg>{" "}
             </div>{" "}
             {prefersHover ? (
-              <FlyoutPortal anchorRef={plotMenuRef} open={isPlotMenuOpen}>
+              <FlyoutPortal
+                anchorRef={plotMenuRef}
+                open={isPlotMenuOpen}
+                onMouseEnter={openPlotMenu}
+                onMouseLeave={schedulePlotMenuClose}
+              >
                 {plotToolConfig.textures.map((texture) => (
                   <button
                     key={texture.id}
@@ -554,12 +713,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
           <div
             className="relative"
             ref={zoneMenuRef}
-            onMouseEnter={() => {
-              if (prefersHover) setIsZoneMenuOpen(true);
-            }}
-            onMouseLeave={() => {
-              if (prefersHover) setIsZoneMenuOpen(false);
-            }}
+            onMouseEnter={openZoneMenu}
+            onMouseLeave={scheduleZoneMenuClose}
           >
             {" "}
             <div
@@ -599,7 +754,12 @@ const Toolbar: React.FC<ToolbarProps> = ({
               </svg>{" "}
             </div>{" "}
             {prefersHover ? (
-              <FlyoutPortal anchorRef={zoneMenuRef} open={isZoneMenuOpen}>
+              <FlyoutPortal
+                anchorRef={zoneMenuRef}
+                open={isZoneMenuOpen}
+                onMouseEnter={openZoneMenu}
+                onMouseLeave={scheduleZoneMenuClose}
+              >
                 {zoneToolConfig.options.map((option) => (
                   <button
                     key={option.id}
@@ -675,6 +835,8 @@ const Toolbar: React.FC<ToolbarProps> = ({
           prefersHover={prefersHover}
         />{" "}
       </div>{" "}
+        </>
+      )}
       {canScrollDown && (
         <div className="sticky bottom-0 -mx-3 -mb-3 px-3 pb-2 pt-3 flex justify-center bg-gradient-to-t from-white/95 to-white/0 z-20">
           <button

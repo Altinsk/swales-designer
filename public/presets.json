@@ -3161,6 +3161,60 @@
       "name": "Big Garden",
       "src": "/template2.jpg",
       "json": "/template2.json"
+    },
+    {
+      "id": "template-food-forest-guild",
+      "name": "Food Forest Guild",
+      "src": "/template-food-forest-guild.jpg",
+      "json": "/template-food-forest-guild.json"
+    },
+    {
+      "id": "template-kidney-garden",
+      "name": "Kidney Garden",
+      "src": "/template-kidney-garden.jpg",
+      "json": "/template-kidney-garden.json"
+    },
+    {
+      "id": "template-mandala-garden",
+      "name": "Mandala Garden",
+      "src": "/template-mandala-garden.jpg",
+      "json": "/template-mandala-garden.json"
+    },
+    {
+      "id": "template-rural-homestead",
+      "name": "Rural Homestead",
+      "src": "/template-rural-homestead.jpg",
+      "json": "/template-rural-homestead.json"
+    },
+    {
+      "id": "template-rural-water-wise",
+      "name": "Rural Water-Wise",
+      "src": "/template-rural-water-wise.jpg",
+      "json": "/template-rural-water-wise.json"
+    },
+    {
+      "id": "template-suburban-start",
+      "name": "Suburban Start",
+      "src": "/template-suburban-start.jpg",
+      "json": "/template-suburban-start.json"
+    },
+    {
+      "id": "template-urban-micro",
+      "name": "Urban Micro",
+      "src": "/template-urban-micro.jpg",
+      "json": "/template-urban-micro.json"
+    },
+    {
+      "id": "template-zone-homestead",
+      "name": "Zone Homestead",
+      "src": "/template-zone-homestead.jpg",
+      "json": "/template-zone-homestead.json"
+    },
+    {
+      "id": "template-zone-map",
+      "name": "Zone Map",
+      "src": "/template-zone-map.jpg",
+      "json": "/template-zone-map.json"
     }
   ]
 }
