@@ -50,6 +50,7 @@ import { AllGardensModal } from "@/components/AllGardensModal";
 import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 import MobileHeader from "@/components/MobileHeader";
 import PrintAuthGatePopup from "@/components/PrintAuthGatePopup";
+import CoffeePopup from "@/components/CoffeePopup";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -147,6 +148,7 @@ export default function Home() {
   };
   // ✨ NEW: State to manage which mobile panel is open
   const [activeMobilePanel, setActiveMobilePanel] = useState<MobilePanel>(null);
+  const [showCoffeePopup, setShowCoffeePopup] = useState(false);
 
   const [activeModal, setActiveModal] = useState<
     | "welcome"
@@ -202,6 +204,9 @@ export default function Home() {
   // --- Handlers ---
   const handleCloseModal = () => {
     if (isProcessingPdf) return;
+    if (activeModal === "welcome") {
+      setTimeout(() => setShowCoffeePopup(true), 15000);
+    }
     setActiveModal(null);
   };
   const handlePositionLawn = () => {
@@ -998,6 +1003,9 @@ export default function Home() {
           onSignup={() => router.push("/signup")}
           onLogin={() => router.push("/login")}
         />
+      )}
+      {showCoffeePopup && (
+        <CoffeePopup onClose={() => setShowCoffeePopup(false)} />
       )}
       {activeModal === "welcome" && (
         <Modal
