@@ -387,7 +387,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
   onSelectZone,
   onSelectNoteTool,
   config,
-  className,
+  className = "",
 }) => {
   const plotToolConfig = config.tools.find((t) => t.id === "plot") as
     | PlotToolConfig

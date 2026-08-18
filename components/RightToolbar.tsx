@@ -97,7 +97,7 @@ const RightToolbar: React.FC<RightToolbarProps> = ({
   visibility,
   onVisibilityChange,
   onCenterCanvas, // Destructure the new prop
-  className,
+  className = "",
 }) => {
   const buttons: {
     key: VisibilityToggle;

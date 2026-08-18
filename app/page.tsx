@@ -16,6 +16,12 @@ import {
   X,
   Edit, // <-- ADD THIS
   Trash2,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 // --- Component Imports ---
@@ -126,6 +132,19 @@ export default function Home() {
     items: true,
     notes: true,
   });
+  // Desktop floating bars: each collapsible on its own, plus one toggle to
+  // hide/show all three at once for a clean canvas.
+  const [topBarVisible, setTopBarVisible] = useState(true);
+  const [leftToolbarVisible, setLeftToolbarVisible] = useState(true);
+  const [rightToolbarVisible, setRightToolbarVisible] = useState(true);
+  const allBarsVisible =
+    topBarVisible && leftToolbarVisible && rightToolbarVisible;
+  const toggleAllBars = () => {
+    const next = !allBarsVisible;
+    setTopBarVisible(next);
+    setLeftToolbarVisible(next);
+    setRightToolbarVisible(next);
+  };
   // ✨ NEW: State to manage which mobile panel is open
   const [activeMobilePanel, setActiveMobilePanel] = useState<MobilePanel>(null);
 
@@ -537,57 +556,135 @@ export default function Home() {
             onScaleChange={setCanvasScale}
           />
 
-          <TopBar
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            onDelete={handleDelete}
-            onNewDrawing={handleNewDrawingClick}
-            onLoadTemplate={handleLoadTemplate}
-            onPrint={handlePrint}
-            onShare={handleShare}
-            templates={config.templates}
-            className="hidden lg:flex absolute top-10 left-1/2 -translate-x-1/2 z-30 w-fit"
-            onUploadPlan={() => setActiveModal("uploadPlan")}
-            onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
-            onToggleSketchLock={() => canvasRef.current?.toggleSketchLock()}
-            onDeleteSketch={() => canvasRef.current?.deleteSketch()}
-            onEditSketch={() => canvasRef.current?.editSketch()}
-            isSketchVisible={!!planningSketch}
-            isSketchLocked={!!planningSketch?.locked}
-            onSave={() => handleSave()}
-            onSaveAs={handleSaveAs}
-            onLoadProject={handleLoadProject}
-            isSaving={isSaving}
-          />
+          {/* Master toggle: hide/show all three floating bars at once */}
+          <button
+            type="button"
+            onClick={toggleAllBars}
+            title={allBarsVisible ? "Hide all bars" : "Show all bars"}
+            className="hidden lg:flex absolute top-4 right-4 z-40 items-center justify-center h-9 w-9 rounded-full bg-white/90 backdrop-blur-sm shadow-lg border border-gray-200 hover:bg-gray-100 text-[#404040]"
+          >
+            {allBarsVisible ? (
+              <Eye className="h-4 w-4" />
+            ) : (
+              <EyeOff className="h-4 w-4" />
+            )}
+          </button>
 
-          <Toolbar
-            activeTool={activeTool}
-            setActiveTool={setActiveTool}
-            onSelectPreset={handleSelectPreset}
-            onSelectTexture={(texture) => {
-              setPlotTexture(texture);
-              setActiveTool({ type: "plot" });
-              setActiveMobilePanel(null);
-            }}
-            onSelectZone={(zone) => {
-              setActiveZone(zone);
-              setActiveTool({ type: "zone" });
-              setActiveMobilePanel(null);
-            }}
-            onSelectNoteTool={(shape) => {
-              setActiveTool({ type: "note", shape });
-              setActiveMobilePanel(null);
-            }}
-            config={config}
-            className="hidden lg:flex absolute top-34 left-4 z-30"
-          />
+          <div className="hidden lg:flex absolute top-10 left-1/2 -translate-x-1/2 z-30 flex-col items-center gap-1">
+            <div
+              className={`transition-all duration-200 ${
+                topBarVisible
+                  ? "opacity-100 translate-y-0"
+                  : "absolute opacity-0 -translate-y-2 pointer-events-none"
+              }`}
+            >
+              <TopBar
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                onDelete={handleDelete}
+                onNewDrawing={handleNewDrawingClick}
+                onLoadTemplate={handleLoadTemplate}
+                onPrint={handlePrint}
+                onShare={handleShare}
+                templates={config.templates}
+                className="w-fit"
+                onUploadPlan={() => setActiveModal("uploadPlan")}
+                onToggleSketchLayer={() => canvasRef.current?.toggleSketchLayer()}
+                onToggleSketchLock={() => canvasRef.current?.toggleSketchLock()}
+                onDeleteSketch={() => canvasRef.current?.deleteSketch()}
+                onEditSketch={() => canvasRef.current?.editSketch()}
+                isSketchVisible={!!planningSketch}
+                isSketchLocked={!!planningSketch?.locked}
+                onSave={() => handleSave()}
+                onSaveAs={handleSaveAs}
+                onLoadProject={handleLoadProject}
+                isSaving={isSaving}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setTopBarVisible((v) => !v)}
+              title={topBarVisible ? "Hide top bar" : "Show top bar"}
+              className="p-1 rounded-full bg-white/90 backdrop-blur-sm shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
+            >
+              {topBarVisible ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+          </div>
 
-          <RightToolbar
-            visibility={visibility}
-            onCenterCanvas={() => canvasRef.current?.center()}
-            onVisibilityChange={handleVisibilityChange}
-            className="hidden lg:flex absolute top-34 right-4 z-30"
-          />
+          <div className="hidden lg:flex absolute top-34 left-4 z-30 items-start gap-1">
+            <div
+              className={`transition-all duration-200 ${
+                leftToolbarVisible
+                  ? "opacity-100 translate-x-0"
+                  : "absolute opacity-0 -translate-x-2 pointer-events-none"
+              }`}
+            >
+              <Toolbar
+                activeTool={activeTool}
+                setActiveTool={setActiveTool}
+                onSelectPreset={handleSelectPreset}
+                onSelectTexture={(texture) => {
+                  setPlotTexture(texture);
+                  setActiveTool({ type: "plot" });
+                  setActiveMobilePanel(null);
+                }}
+                onSelectZone={(zone) => {
+                  setActiveZone(zone);
+                  setActiveTool({ type: "zone" });
+                  setActiveMobilePanel(null);
+                }}
+                onSelectNoteTool={(shape) => {
+                  setActiveTool({ type: "note", shape });
+                  setActiveMobilePanel(null);
+                }}
+                config={config}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => setLeftToolbarVisible((v) => !v)}
+              title={leftToolbarVisible ? "Hide tools" : "Show tools"}
+              className="mt-1 p-1 rounded-full bg-white/90 backdrop-blur-sm shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
+            >
+              {leftToolbarVisible ? (
+                <ChevronLeft className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+          </div>
+
+          <div className="hidden lg:flex absolute top-34 right-4 z-30 items-start gap-1">
+            <button
+              type="button"
+              onClick={() => setRightToolbarVisible((v) => !v)}
+              title={rightToolbarVisible ? "Hide layers" : "Show layers"}
+              className="mt-1 p-1 rounded-full bg-white/90 backdrop-blur-sm shadow border border-gray-200 hover:bg-gray-100 text-[#404040]"
+            >
+              {rightToolbarVisible ? (
+                <ChevronRight className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
+              )}
+            </button>
+            <div
+              className={`transition-all duration-200 ${
+                rightToolbarVisible
+                  ? "opacity-100 translate-x-0"
+                  : "absolute opacity-0 translate-x-2 pointer-events-none"
+              }`}
+            >
+              <RightToolbar
+                visibility={visibility}
+                onCenterCanvas={() => canvasRef.current?.center()}
+                onVisibilityChange={handleVisibilityChange}
+              />
+            </div>
+          </div>
 
           <div className="hidden lg:block">
             <CanvasControls
