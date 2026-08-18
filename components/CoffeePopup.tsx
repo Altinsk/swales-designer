@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { X, Coffee } from "lucide-react";
+import Image from "next/image";
+import { X } from "lucide-react";
 
-// Shown once, ~15s after the user closes the welcome popup.
+// Shown once per session, after the user's first successful project save
+// (see maybeShowCoffeePopup in app/page.tsx) — only ever reached by signed-in
+// users, since saving requires an account.
 // Presets open static Stripe Payment Links (no backend/webhook needed) —
 // set these in .env.local once the Stripe account/links exist:
 //   NEXT_PUBLIC_STRIPE_LINK_3, _5, _10   — fixed-price links
@@ -70,8 +73,14 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
           <X className="w-[18px] h-[18px]" />
         </button>
 
-        <div className="w-14 h-14 mx-auto mb-4 rounded-xl bg-amber-50 flex items-center justify-center">
-          <Coffee className="w-[26px] h-[26px] text-amber-600" />
+        <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+          <Image
+            src="/logo.png"
+            alt="Swales"
+            width={64}
+            height={64}
+            className="object-contain"
+          />
         </div>
 
         <h3 className="text-[17px] font-extrabold text-[#111827] mb-2">

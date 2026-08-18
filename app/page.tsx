@@ -51,6 +51,7 @@ import ForgotPasswordModal from "@/components/auth/ForgotPasswordModal";
 import MobileHeader from "@/components/MobileHeader";
 import PrintAuthGatePopup from "@/components/PrintAuthGatePopup";
 import CoffeePopup from "@/components/CoffeePopup";
+import SignupQuotePopup from "@/components/SignupQuotePopup";
 
 // --- Type Definitions (no changes) ---
 interface AppConfig {
@@ -149,6 +150,7 @@ export default function Home() {
   // ✨ NEW: State to manage which mobile panel is open
   const [activeMobilePanel, setActiveMobilePanel] = useState<MobilePanel>(null);
   const [showCoffeePopup, setShowCoffeePopup] = useState(false);
+  const [showSignupPopup, setShowSignupPopup] = useState(false);
 
   const [activeModal, setActiveModal] = useState<
     | "welcome"
@@ -166,6 +168,17 @@ export default function Home() {
     | "printGate"
     | null
   >("welcome");
+
+  // Live refs so the 15s-delayed signup-popup timer can re-check state at
+  // fire time instead of the stale values captured when it was scheduled.
+  const tokenRef = useRef(token);
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+  const activeModalRef = useRef(activeModal);
+  useEffect(() => {
+    activeModalRef.current = activeModal;
+  }, [activeModal]);
 
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
@@ -202,10 +215,33 @@ export default function Home() {
   }, []);
 
   // --- Handlers ---
+  // Signed-out visitors get the signup prompt once per session, 15s after
+  // dismissing the welcome popup. Signed-in users never see it here — they
+  // get the coffee popup instead, triggered by maybeShowCoffeePopup below.
+  const maybeShowSignupPopup = () => {
+    if (token) return;
+    if (sessionStorage.getItem("signupPopupShown")) return;
+    sessionStorage.setItem("signupPopupShown", "1");
+    setTimeout(() => {
+      // Re-check at fire time: skip if the visitor signed in, or opened
+      // another modal, during the 15s wait.
+      if (tokenRef.current) return;
+      if (activeModalRef.current) return;
+      setShowSignupPopup(true);
+    }, 15000);
+  };
+  // Signed-in users get the coffee popup once per session, after their first
+  // successful project save — not on every save, so it doesn't wear out its
+  // welcome. A short delay lets the "Garden saved!" toast register first.
+  const maybeShowCoffeePopup = () => {
+    if (sessionStorage.getItem("coffeePopupShown")) return;
+    sessionStorage.setItem("coffeePopupShown", "1");
+    setTimeout(() => setShowCoffeePopup(true), 2000);
+  };
   const handleCloseModal = () => {
     if (isProcessingPdf) return;
     if (activeModal === "welcome") {
-      setTimeout(() => setShowCoffeePopup(true), 15000);
+      maybeShowSignupPopup();
     }
     setActiveModal(null);
   };
@@ -392,6 +428,7 @@ export default function Home() {
           name: res.data.data.Name,
         });
         setNotification("Garden saved successfully!");
+        maybeShowCoffeePopup();
         handleCloseModal();
         if (postSaveCallback.current) {
           postSaveCallback.current();
@@ -421,6 +458,7 @@ export default function Home() {
           { headers: { Authorization: `Bearer ${token}` } },
         );
         setNotification("Garden updated!");
+        maybeShowCoffeePopup();
         if (onSuccess) onSuccess();
       } catch (err) {
         setNotification("Error: Could not update garden.");
@@ -1006,6 +1044,15 @@ export default function Home() {
       )}
       {showCoffeePopup && (
         <CoffeePopup onClose={() => setShowCoffeePopup(false)} />
+      )}
+      {showSignupPopup && (
+        <SignupQuotePopup
+          onClose={() => setShowSignupPopup(false)}
+          onSignup={() => {
+            setShowSignupPopup(false);
+            router.push("/signup");
+          }}
+        />
       )}
       {activeModal === "welcome" && (
         <Modal
