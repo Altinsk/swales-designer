@@ -65,8 +65,6 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ onPositionLawn }) => {
         <div className="flex flex-col sm:flex-row justify-end items-center gap-4">
           <Link
             href="/faq"
-            target="_blank"
-            rel="noopener noreferrer"
             className="px-6 py-2 w-full sm:w-auto text-center rounded-full text-[#404040] border border-gray-300 hover:bg-gray-100 transition-colors"
           >
             More information
