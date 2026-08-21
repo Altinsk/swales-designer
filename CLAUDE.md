@@ -1,2 +1,7 @@
-Roadmap & phase plan: `../back/docs/roadmap.md` (canonical — edit there only, not a copy here).
-Live status tracker: `../back/docs/roadmap_backlog.xlsx`. Session continuity notes: `../back/docs/status.md`.
+This is an independent dev/sandbox environment cloned from swales-designer, kept
+deliberately separate from production. It does not carry its own copy of the
+roadmap or tracking docs — those stay canonical in one place only:
+
+Roadmap & phase plan: C:\Users\omarr\Desktop\SwalesApp\back\docs\roadmap.md
+Live status tracker: C:\Users\omarr\Desktop\SwalesApp\back\docs\roadmap_backlog.xlsx
+Session continuity notes: C:\Users\omarr\Desktop\SwalesApp\back\docs\status.md
