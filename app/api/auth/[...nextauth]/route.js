@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import crypto from "crypto";
 
 export const authOptions = {
   providers: [
@@ -15,17 +14,17 @@ export const authOptions = {
   },
   callbacks: {
     async jwt({ token, account }) {
-      if (token.email) {
-        token.accessToken = crypto
-          .createHmac("sha256", process.env.NEXTAUTH_SECRET)
-          .update(token.email)
-          .digest("hex");
+      // Only present on the initial sign-in request. Persist Google's own
+      // signed id_token so the backend can verify it against Google's public
+      // keys (aud/iss/exp/signature) instead of trusting a value we made up.
+      if (account?.id_token) {
+        token.idToken = account.id_token;
       }
       return token;
     },
     async session({ session, token }) {
       session.user.id = token.sub;
-      session.user.token = token.accessToken;
+      session.user.token = token.idToken;
       return session;
     },
   },
