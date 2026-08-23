@@ -1,7 +1,10 @@
-This is an independent dev/sandbox environment cloned from swales-designer, kept
-deliberately separate from production. It does not carry its own copy of the
-roadmap or tracking docs — those stay canonical in one place only:
+This app talks to `swales-backend`, the real production backend
+(`swales-backend.vercel.app`). This repo does not carry its own copy of the
+roadmap or tracking docs — those stay canonical in `swales-backend`:
 
-Roadmap & phase plan: C:\Users\omarr\Desktop\SwalesApp\back\docs\roadmap.md
-Live status tracker: C:\Users\omarr\Desktop\SwalesApp\back\docs\roadmap_backlog.xlsx
-Session continuity notes: C:\Users\omarr\Desktop\SwalesApp\back\docs\status.md
+Roadmap & phase plan: `../swales-backend/docs/roadmap.md`
+Live status tracker: `../swales-backend/docs/roadmap_backlog.xlsx`
+Session continuity notes: `../swales-backend/docs/status.md`
+
+`SwalesApp\back` (a separate, unrelated repo/database) is out of scope —
+do not read from or write to it.
