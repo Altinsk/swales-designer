@@ -6,7 +6,6 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
 // Define your API URL (ensure this is defined in your environment variables)
@@ -22,9 +21,8 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  login: (token: string) => Promise<void>; // Login is now async
-  logout: () => void;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
   updateUser: (userData: Partial<User>) => void;
   isLoading: boolean;
 }
@@ -33,17 +31,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- Helper: Fetch User Data from API ---
-  const fetchUserProfile = async (accessToken: string) => {
+  // Auth lives entirely in the httpOnly `token` cookie the backend sets on
+  // login/google-signin - the browser attaches it automatically on every
+  // withCredentials request, so this just asks the server who (if anyone)
+  // the current cookie belongs to.
+  const fetchUserProfile = async () => {
     try {
       const res = await axios.get(`${API_URL}/auth/me`, {
         withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${accessToken}`, // Include token from LocalStorage
-        },
       });
 
       if (res.data.success) {
@@ -56,40 +53,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     } catch (error: any) {
-      console.error("Failed to fetch user profile:", error);
-      // The server rejected the token (expired/revoked server-side even though
-      // it looked valid locally) - clear it so the app doesn't sit half-authed
-      // with a token but no user.
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
-        logout();
-      }
+      // No cookie, or the server rejected it (expired/revoked) - either way
+      // there's no session.
+      setUser(null);
     }
   };
 
-  // --- Effect: Check Token on App Load ---
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = localStorage.getItem("token");
-
-      if (storedToken) {
-        try {
-          // 1. Check if token is expired locally first
-          const decoded: any = jwtDecode(storedToken);
-          const currentTime = Date.now() / 1000;
-
-          if (decoded.exp > currentTime) {
-            setToken(storedToken);
-            // 2. Token is valid, now fetch the real user data from server
-            await fetchUserProfile(storedToken);
-          } else {
-            console.warn("Token expired");
-            logout();
-          }
-        } catch (error) {
-          console.error("Invalid token format:", error);
-          logout();
-        }
-      }
+      await fetchUserProfile();
       setIsLoading(false);
     };
 
@@ -98,16 +70,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // --- Actions ---
 
-  const login = async (newToken: string) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
-    // Fetch user details immediately after setting the token
-    await fetchUserProfile(newToken);
+  // Called after the backend has already set the session cookie (login,
+  // google-signin, or a profile update that reissues it) - just re-syncs
+  // `user` with what the cookie now represents.
+  const login = async () => {
+    await fetchUserProfile();
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    setToken(null);
+  const logout = async () => {
+    try {
+      await axios.post(
+        `${API_URL}/auth/logout`,
+        {},
+        { withCredentials: true },
+      );
+    } catch (error) {
+      console.error("Logout request failed:", error);
+    }
     setUser(null);
   };
 
@@ -120,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, logout, updateUser, isLoading }}
+      value={{ user, login, logout, updateUser, isLoading }}
     >
       {!isLoading && children}
     </AuthContext.Provider>

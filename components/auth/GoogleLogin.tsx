@@ -19,11 +19,11 @@ function GoogleLogin({ onClose }) {
   }, []);
   const googleSignin = async (firstName, email, authToken) => {
     try {
-      const response = await axios.post(API_URL + "/auth/google-signin", {
-        firstName,
-        email,
-        authToken,
-      });
+      const response = await axios.post(
+        API_URL + "/auth/google-signin",
+        { firstName, email, authToken },
+        { withCredentials: true },
+      );
       return response.data;
     } catch (error) {
       throw error;
@@ -67,12 +67,8 @@ function GoogleLogin({ onClose }) {
             const res = await googleSignin(name, email, token);
 
             if (res.success) {
-              await login(res.data.accessToken);
+              await login();
               onClose();
-              localStorage.setItem("accessToken", res.data.accessToken);
-              localStorage.setItem("userName", res.data.userName);
-              //   window.location.href = process.env.NEXT_PUBLIC_APP_BASE_URL;
-              sessionStorage.setItem("userName", res.data.userName);
             } else {
               setTimeout(() => window.location.reload(), 3000);
             }

@@ -94,7 +94,7 @@ const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
 });
 
 export default function SharePage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const canvasRef = useRef<CanvasHandles>(null);
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
@@ -251,7 +251,7 @@ export default function SharePage() {
     setActiveMobilePanel(null);
   };
   const handlePrint = () => {
-    if (!token) {
+    if (!user) {
       setActiveMobilePanel(null);
       setActiveModal("printGate");
       return;
@@ -382,7 +382,7 @@ export default function SharePage() {
     setActiveMobilePanel(null);
   };
   const executeSaveAs = async (projectName: string) => {
-    if (!token) {
+    if (!user) {
       setNotification("You must be logged in to save.");
       return;
     }
@@ -398,7 +398,7 @@ export default function SharePage() {
           projectData: canvasData.canvasState,
           thumbnail: canvasData.thumbnail,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { withCredentials: true }
       );
       if (res.data.success) {
         setCurrentProject({
@@ -425,7 +425,7 @@ export default function SharePage() {
   const handleSave = async (options?: { onSuccess?: () => void }) => {
     const canvasData = getCanvasData();
     const { onSuccess } = options || {};
-    if (!canvasData || !token || isSaving) return;
+    if (!canvasData || !user || isSaving) return;
     if (currentProject) {
       setIsSaving(true);
       try {
@@ -436,7 +436,7 @@ export default function SharePage() {
             projectData: canvasData.canvasState,
             thumbnail: canvasData.thumbnail,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { withCredentials: true }
         );
         setNotification("Garden updated!");
         if (onSuccess) onSuccess();
@@ -468,10 +468,10 @@ export default function SharePage() {
     };
   }, []);
   const handleLoadProject = async (projectId: number) => {
-    if (!token) return;
+    if (!user) return;
     try {
       const res = await axios.get(`${API_URL}/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       const project = res.data.data;
       if (project && project.ProjectData) {
@@ -507,10 +507,10 @@ export default function SharePage() {
   };
 
   const handleDeleteGarden = async (projectId: number) => {
-    if (!token) return;
+    if (!user) return;
     try {
       await axios.delete(`${API_URL}/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       setNotification("Garden deleted successfully.");
       // NOTE: The modal will re-fetch its own data.
@@ -685,17 +685,17 @@ export default function SharePage() {
                 {/* --- User-specific actions --- */}
                 <button
                   onClick={() => handleSave()}
-                  disabled={!token}
+                  disabled={!user}
                   className="w-full text-left p-3 text-[#404040] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!token ? "Login to save" : "Save Project"}
+                  title={!user ? "Login to save" : "Save Project"}
                 >
                   Save Project
                 </button>
                 <button
                   onClick={handleShare}
-                  disabled={!token}
+                  disabled={!user}
                   className="w-full text-left p-3 text-[#404040] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!token ? "Login to share" : "Share"}
+                  title={!user ? "Login to share" : "Share"}
                 >
                   Share
                 </button>
@@ -843,14 +843,14 @@ export default function SharePage() {
               <button
                 onClick={() => {
                   setActiveModal("allGardens");
-                  if (token) {
+                  if (user) {
                     setActiveModal("allGardens");
                   } else {
                     router.push("/login");
                   }
                 }}
                 className="p-4 rounded-full hover:bg-gray-200"
-                title={token ? "My Gardens" : "Login to see your gardens"}
+                title={user ? "My Gardens" : "Login to see your gardens"}
               >
                 <TreePine className="w-6 h-6" />
               </button>
@@ -922,7 +922,7 @@ export default function SharePage() {
           <NewDrawingWarningStep
             onDiscard={handlePositionLawn}
             onSave={() => {
-              if (!token) {
+              if (!user) {
                 router.push("/login");
                 return;
               }

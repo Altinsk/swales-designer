@@ -88,15 +88,11 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     const fetchUserData = async () => {
       if (isOpen) {
         setIsLoading(true);
-        const storedToken = localStorage.getItem("token");
         setMessages({ error: "", success: "" });
         try {
           // Use the new endpoint
           const res = await axios.get(`${API_URL}/auth/me`, {
             withCredentials: true,
-            headers: {
-              Authorization: `Bearer ${storedToken}`, // Include token from LocalStorage
-            },
           });
 
           if (res.data.success) {
@@ -167,7 +163,6 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
           ? new Date(profileData.dateOfBirth).toISOString().split("T")[0]
           : null,
       };
-      const storedToken = localStorage.getItem("token");
       const res = await axios.put(
         `${API_URL}/auth/update-profile`,
 
@@ -178,18 +173,13 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
             ? new Date(profileData.dateOfBirth).toISOString().split("T")[0]
             : null,
         },
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
-        }
+        { withCredentials: true }
       );
 
       if (res.data.success) {
-        if (res.data.data.accessToken) {
-          await login(res.data.data.accessToken);
-        }
+        // The backend reissued the session cookie with the updated details -
+        // re-sync `user` from it.
+        await login();
         setMessages({
           error: "",
           success: "Profile details updated successfully.",
@@ -229,12 +219,8 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         currentPassword: passData.currentPassword,
         newPassword: passData.newPassword,
       };
-      const storedToken = localStorage.getItem("token");
       const res = await axios.put(`${API_URL}/auth/change-password`, payload, {
         withCredentials: true,
-        headers: {
-          Authorization: `Bearer ${storedToken}`,
-        },
       });
 
       if (res.data.success) {

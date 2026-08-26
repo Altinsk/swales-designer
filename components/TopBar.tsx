@@ -95,7 +95,7 @@ const TopBar: React.FC<TopBarProps> = ({
   onLoadProject,
   isSaving = false,
 }) => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [myGardens, setMyGardens] = useState<Project[]>([]);
   // ✅ ADDED: State to control the modal visibility
   const [isAllGardensModalOpen, setIsAllGardensModalOpen] = useState(false);
@@ -105,11 +105,11 @@ const TopBar: React.FC<TopBarProps> = ({
 
   const fetchRequestIdRef = useRef(0);
   const fetchMyGardens = async () => {
-    if (!token) return;
+    if (!user) return;
     const requestId = ++fetchRequestIdRef.current;
     try {
       const res = await axios.get(`${API_URL}/projects?limit=5`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       // Ignore this response if a newer fetchMyGardens call has since started.
       if (requestId !== fetchRequestIdRef.current) return;
@@ -127,10 +127,10 @@ const TopBar: React.FC<TopBarProps> = ({
 
   // This function is now passed to the modal for consistency
   const handleDeleteGarden = async (projectId: number) => {
-    if (!token) return;
+    if (!user) return;
     try {
       await axios.delete(`${API_URL}/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       // Re-fetch the short list for the dropdown after deletion
       fetchMyGardens();

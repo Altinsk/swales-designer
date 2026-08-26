@@ -33,7 +33,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   onLoadProject,
   onDeleteProject,
 }) => {
-  const { token } = useAuth();
+  const { user } = useAuth();
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
@@ -56,7 +56,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   }, [searchTerm]);
 
   const fetchAllGardens = async () => {
-    if (!token) return;
+    if (!user) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -69,7 +69,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
       if (dateRange.to) params.append("endDate", dateRange.to);
 
       const res = await axios.get(`${API_URL}/projects`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
         params,
       });
 
@@ -89,7 +89,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
     if (isOpen) {
       fetchAllGardens();
     }
-  }, [isOpen, currentPage, debouncedSearchTerm, sortBy, dateRange, token]);
+  }, [isOpen, currentPage, debouncedSearchTerm, sortBy, dateRange, user]);
 
   const handleLocalDelete = async (e: React.MouseEvent, projectId: number) => {
     e.stopPropagation();

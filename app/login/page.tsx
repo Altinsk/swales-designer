@@ -87,7 +87,7 @@ export default function LoginPage() {
         { withCredentials: true }
       );
       if (res.data.success) {
-        await login(res.data.data.accessToken);
+        await login();
         router.push("/");
         return;
       }

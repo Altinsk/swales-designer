@@ -104,7 +104,7 @@ const GardenCanvas = dynamic(() => import("@/components/GardenCanvas"), {
 });
 
 export default function Home() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const router = useRouter();
   const canvasRef = useRef<CanvasHandles>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -171,10 +171,10 @@ export default function Home() {
 
   // Live refs so the 15s-delayed signup-popup timer can re-check state at
   // fire time instead of the stale values captured when it was scheduled.
-  const tokenRef = useRef(token);
+  const userRef = useRef(user);
   useEffect(() => {
-    tokenRef.current = token;
-  }, [token]);
+    userRef.current = user;
+  }, [user]);
   const activeModalRef = useRef(activeModal);
   useEffect(() => {
     activeModalRef.current = activeModal;
@@ -219,13 +219,13 @@ export default function Home() {
   // dismissing the welcome popup. Signed-in users never see it here — they
   // get the coffee popup instead, triggered by maybeShowCoffeePopup below.
   const maybeShowSignupPopup = () => {
-    if (token) return;
+    if (user) return;
     if (sessionStorage.getItem("signupPopupShown")) return;
     sessionStorage.setItem("signupPopupShown", "1");
     setTimeout(() => {
       // Re-check at fire time: skip if the visitor signed in, or opened
       // another modal, during the 15s wait.
-      if (tokenRef.current) return;
+      if (userRef.current) return;
       if (activeModalRef.current) return;
       setShowSignupPopup(true);
     }, 15000);
@@ -271,7 +271,7 @@ export default function Home() {
     setActiveMobilePanel(null);
   };
   const handlePrint = () => {
-    if (!token) {
+    if (!user) {
       setActiveMobilePanel(null);
       setActiveModal("printGate");
       return;
@@ -404,7 +404,7 @@ export default function Home() {
     setActiveMobilePanel(null);
   };
   const executeSaveAs = async (projectName: string) => {
-    if (!token) {
+    if (!user) {
       setNotification("You must be logged in to save.");
       return;
     }
@@ -420,7 +420,7 @@ export default function Home() {
           projectData: canvasData.canvasState,
           thumbnail: canvasData.thumbnail,
         },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { withCredentials: true },
       );
       if (res.data.success) {
         setCurrentProject({
@@ -444,7 +444,7 @@ export default function Home() {
   const handleSave = async (options?: { onSuccess?: () => void }) => {
     const canvasData = getCanvasData();
     const { onSuccess } = options || {};
-    if (!canvasData || !token || isSaving) return;
+    if (!canvasData || !user || isSaving) return;
     if (currentProject) {
       setIsSaving(true);
       try {
@@ -455,7 +455,7 @@ export default function Home() {
             projectData: canvasData.canvasState,
             thumbnail: canvasData.thumbnail,
           },
-          { headers: { Authorization: `Bearer ${token}` } },
+          { withCredentials: true },
         );
         setNotification("Garden updated!");
         maybeShowCoffeePopup();
@@ -488,10 +488,10 @@ export default function Home() {
     };
   }, []);
   const handleLoadProject = async (projectId: number) => {
-    if (!token) return;
+    if (!user) return;
     try {
       const res = await axios.get(`${API_URL}/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       const project = res.data.data;
       if (project && project.ProjectData) {
@@ -528,10 +528,10 @@ export default function Home() {
   };
 
   const handleDeleteGarden = async (projectId: number) => {
-    if (!token) return;
+    if (!user) return;
     try {
       await axios.delete(`${API_URL}/projects/${projectId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
       });
       setNotification("Garden deleted successfully.");
       // NOTE: The modal will re-fetch its own data.
@@ -824,17 +824,17 @@ export default function Home() {
               <div className="absolute bottom-24 left-1/2 -translate-x-1/2 landscape:bottom-auto landscape-safe-left-24 landscape:translate-x-0 landscape:top-1/2 landscape:-translate-y-1/2 bg-white/90 backdrop-blur-sm p-2 rounded-xl shadow-lg flex flex-col w-64 space-y-1 z-50 h-[60vh] overflow-y-auto landscape:h-[80vh]">
                 <button
                   onClick={() => handleSave()}
-                  disabled={!token}
+                  disabled={!user}
                   className="w-full text-left p-3 text-[#404040] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!token ? "Login to save" : "Save Project"}
+                  title={!user ? "Login to save" : "Save Project"}
                 >
                   Save Project
                 </button>
                 <button
                   onClick={handleShare}
-                  disabled={!token}
+                  disabled={!user}
                   className="w-full text-left p-3 text-[#404040] rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={!token ? "Login to share" : "Share"}
+                  title={!user ? "Login to share" : "Share"}
                 >
                   Share
                 </button>
@@ -896,7 +896,7 @@ export default function Home() {
                 <button
                   onClick={handlePrint}
                   className="w-full text-left p-3 text-[#404040] rounded-lg hover:bg-gray-100"
-                  title={token ? "Print Page" : "Log in to print"}
+                  title={user ? "Print Page" : "Log in to print"}
                 >
                   Print Page
                 </button>
@@ -994,7 +994,7 @@ export default function Home() {
 
               <button
                 onClick={() => {
-                  if (token) {
+                  if (user) {
                     setActiveModal("allGardens");
                   } else {
                     router.push("/login");
@@ -1005,7 +1005,7 @@ export default function Home() {
       p-4 rounded-full 
       landscape:p-2.5 landscape:rounded-xl
     "
-                title={token ? "My Gardens" : "Login to see your gardens"}
+                title={user ? "My Gardens" : "Login to see your gardens"}
               >
                 <TreePine className="w-6 h-6 landscape:w-5 landscape:h-5" />
               </button>
@@ -1095,7 +1095,7 @@ export default function Home() {
           <NewDrawingWarningStep
             onDiscard={handlePositionLawn}
             onSave={() => {
-              if (!token) {
+              if (!user) {
                 router.push("/login");
                 return;
               }
