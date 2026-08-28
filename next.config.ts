@@ -24,6 +24,26 @@ const config: NextConfig = {
     }
     return config;
   },
+
+  // Defaults every deployment to noindex — same reasoning as swales-services'
+  // next.config.mjs: cert-transparency logs expose a new domain to crawlers
+  // regardless of robots.txt/Search Console submission. Set
+  // ALLOW_INDEXING=true in Vercel's env vars only on the deployment that
+  // should really be searchable.
+  // TODO at the swales.app cutover: set ALLOW_INDEXING=true on the
+  // production env var for whichever domain becomes canonical — see
+  // "Cutover stage" in ../swales-backend/docs/status.md. Don't just delete
+  // this block; it should keep defaulting to noindex for any
+  // non-canonical domain (staging/test) even after cutover.
+  async headers() {
+    if (process.env.ALLOW_INDEXING === "true") return [];
+    return [
+      {
+        source: "/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+    ];
+  },
 };
 
 export default config;
