@@ -15,14 +15,22 @@ export const validatePassword = (password = "") => {
   return re.test(password);
 };
 
+type FieldName = "password" | "confirmPassword";
+
 const ResetPasswordForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [token, setToken] = useState<string | null>(null);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+  const [formErrors, setFormErrors] = useState({
+    password: "",
+    confirmPassword: "",
+    form: "",
+  });
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -35,31 +43,87 @@ const ResetPasswordForm = () => {
     if (tokenFromUrl) {
       setToken(tokenFromUrl);
     } else {
-      setError("Invalid or missing reset token. Please try again.");
+      setFormErrors((prev) => ({
+        ...prev,
+        form: "Invalid or missing reset token. Please try again.",
+      }));
     }
   }, [searchParams]);
 
+  const borderClass = (field: FieldName) =>
+    formErrors[field]
+      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+      : formData[field]
+      ? "border-green-500 focus:border-green-500 focus:ring-green-500"
+      : "border-gray-300 focus:border-green-500 focus:ring-green-500";
+
+  const handleBlur = (field: FieldName) => {
+    if (!formData[field].trim()) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: "This field can't be empty.",
+      }));
+    }
+  };
+
+  const handleChange = (
+    field: FieldName,
+    value: string
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    let fieldError = "";
+    if (!value.trim()) {
+      fieldError = "This field can't be empty.";
+    } else if (field === "password" && !validatePassword(value)) {
+      fieldError =
+        "Min 8 chars, include uppercase, lowercase, number & symbol.";
+    } else if (
+      field === "confirmPassword" &&
+      value !== formData.password
+    ) {
+      fieldError = "Your confirm password does not match the password.";
+    }
+
+    setFormErrors((prev) => ({ ...prev, [field]: fieldError, form: "" }));
+  };
+
+  const validateForm = () => {
+    const errors = { password: "", confirmPassword: "" };
+    let valid = true;
+
+    if (!formData.password) {
+      errors.password = "Please provide your password.";
+      valid = false;
+    } else if (!validatePassword(formData.password)) {
+      errors.password =
+        "8+ characters, uppercase, lowercase, number & special character required";
+      valid = false;
+    }
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = "Please provide your confirm password.";
+      valid = false;
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = "The passwords do not match. Please try again.";
+      valid = false;
+    }
+
+    setFormErrors((prev) => ({ ...prev, ...errors }));
+    return valid;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(""); // Clear previous errors
+    setFormErrors((prev) => ({ ...prev, form: "" }));
 
-    // 1. Validate password strength
-    if (!validatePassword(password)) {
-      setError(
-        "Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character (@$!%*#?&^)."
-      );
-      return;
-    }
+    if (!validateForm()) return;
 
-    // 2. Validate passwords match
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
-    // 3. Check for token
     if (!token) {
-      setError("No reset token found. Please request a new link.");
+      setFormErrors((prev) => ({
+        ...prev,
+        form: "No reset token found. Please request a new link.",
+      }));
       return;
     }
 
@@ -69,7 +133,7 @@ const ResetPasswordForm = () => {
     try {
       const res = await axios.post(
         `${API_URL}/auth/reset-password`,
-        { token, newPassword: password },
+        { token, newPassword: formData.password },
         { withCredentials: true }
       );
 
@@ -82,10 +146,12 @@ const ResetPasswordForm = () => {
         }, 3000);
       }
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          "An error occurred. The token may be invalid or expired."
-      );
+      setFormErrors((prev) => ({
+        ...prev,
+        form:
+          err.response?.data?.message ||
+          "An error occurred. The token may be invalid or expired.",
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +176,13 @@ const ResetPasswordForm = () => {
             <div className="relative mt-1">
               <input
                 type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                value={formData.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                onBlur={() => handleBlur("password")}
                 disabled={isLoading || !!successMessage}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-10" // Added pr-10 for icon
+                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none pr-10 ${borderClass(
+                  "password"
+                )}`}
               />
               <button
                 type="button"
@@ -125,6 +193,11 @@ const ResetPasswordForm = () => {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            {formErrors.password && (
+              <p className="text-sm text-red-600 mt-1">
+                {formErrors.password}
+              </p>
+            )}
           </div>
 
           {/* Confirm New Password Field */}
@@ -135,11 +208,15 @@ const ResetPasswordForm = () => {
             <div className="relative mt-1">
               <input
                 type={showConfirmPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
+                value={formData.confirmPassword}
+                onChange={(e) =>
+                  handleChange("confirmPassword", e.target.value)
+                }
+                onBlur={() => handleBlur("confirmPassword")}
                 disabled={isLoading || !!successMessage}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 pr-10" // Added pr-10 for icon
+                className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none pr-10 ${borderClass(
+                  "confirmPassword"
+                )}`}
               />
               <button
                 type="button"
@@ -152,9 +229,16 @@ const ResetPasswordForm = () => {
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
+            {formErrors.confirmPassword && (
+              <p className="text-sm text-red-600 mt-1">
+                {formErrors.confirmPassword}
+              </p>
+            )}
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {formErrors.form && (
+            <p className="text-sm text-red-600">{formErrors.form}</p>
+          )}
           {successMessage && (
             <p className="text-sm text-green-600">{successMessage}</p>
           )}

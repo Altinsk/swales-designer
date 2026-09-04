@@ -33,6 +33,12 @@ const validatePassword = (password = "") => {
   return re.test(password);
 };
 
+const validateEmail = (email = "") => {
+  if (typeof email !== "string") return false;
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
 const CalendarIcon = () => (
   <svg
     className="svg-icon"
@@ -193,15 +199,37 @@ export default function SignupPage() {
   const handleFocus = (field: FieldName) =>
     setIsFocused((prev) => ({ ...prev, [field]: true }));
 
-  const handleBlur = (field: FieldName) =>
+  const handleBlur = (field: FieldName) => {
     setIsFocused((prev) => ({ ...prev, [field]: false }));
+
+    const value = formData[field];
+    const isEmpty = field === "dateOfBirth" ? !value : !String(value).trim();
+    if (isEmpty) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: "This field can't be empty.",
+      }));
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    if (formErrors[name as keyof typeof formErrors] || formErrors.form) {
-      setFormErrors({ ...formErrors, [name]: "", form: "" });
+    const field = name as FieldName;
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    let fieldError = "";
+    if (!value.trim()) {
+      fieldError = "This field can't be empty.";
+    } else if (field === "email" && !validateEmail(value)) {
+      fieldError = "Please provide a valid email.";
+    } else if (field === "password" && !validatePassword(value)) {
+      fieldError =
+        "Password must be 8+ characters and include uppercase, lowercase, a number, and a special character (@$!%*#?&^).";
+    } else if (field === "confirmPassword" && value !== formData.password) {
+      fieldError = "Passwords do not match.";
     }
+
+    setFormErrors((prev) => ({ ...prev, [field]: fieldError, form: "" }));
   };
 
   const handleDateChange = (date: Date | null) => {
@@ -229,21 +257,28 @@ export default function SignupPage() {
 
   const validateForm = () => {
     const errors: any = {};
-    if (!formData.firstName) errors.firstName = "First name is required.";
-    if (!formData.lastName) errors.lastName = "Last name is required.";
-    if (!formData.email) errors.email = "Email is required.";
+    if (!formData.firstName) errors.firstName = "This field can't be empty.";
+    if (!formData.lastName) errors.lastName = "This field can't be empty.";
+    if (!formData.email) {
+      errors.email = "This field can't be empty.";
+    } else if (!validateEmail(formData.email)) {
+      errors.email = "Please provide a valid email.";
+    }
     if (!formData.dateOfBirth)
-      errors.dateOfBirth = "Date of birth is required.";
+      errors.dateOfBirth = "This field can't be empty.";
 
     if (!formData.password) {
-      errors.password = "Password is required.";
+      errors.password = "This field can't be empty.";
     } else if (!validatePassword(formData.password)) {
       errors.password =
         "Password must be 8+ characters and include uppercase, lowercase, a number, and a special character (@$!%*#?&^).";
     }
 
-    if (formData.password !== formData.confirmPassword)
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = "This field can't be empty.";
+    } else if (formData.password !== formData.confirmPassword) {
       errors.confirmPassword = "Passwords do not match.";
+    }
 
     setFormErrors((prev) => ({ ...prev, ...errors }));
     return Object.keys(errors).length === 0;

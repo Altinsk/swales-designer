@@ -83,6 +83,24 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
 
   const [messages, setMessages] = useState({ error: "", success: "" });
 
+  // --- Field-level Errors ---
+  const [profileErrors, setProfileErrors] = useState({
+    firstName: "",
+    lastName: "",
+  });
+  const [passErrors, setPassErrors] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+
+  const fieldBorderClass = (value: string, error: string) =>
+    error
+      ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+      : value
+      ? "border-green-500 focus:border-green-500 focus:ring-green-500"
+      : "border-gray-300 focus:border-green-500 focus:ring-green-500";
+
   // Fetch data when modal opens
   useEffect(() => {
     const fetchUserData = async () => {
@@ -119,6 +137,12 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
           newPassword: "",
           confirmPassword: "",
         });
+        setProfileErrors({ firstName: "", lastName: "" });
+        setPassErrors({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
       }
     };
 
@@ -132,8 +156,25 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   // --- Handlers ---
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProfileData({ ...profileData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setProfileData({ ...profileData, [name]: value });
     setMessages({ error: "", success: "" });
+
+    if (name === "firstName" || name === "lastName") {
+      setProfileErrors((prev) => ({
+        ...prev,
+        [name]: value.trim() ? "" : "This field can't be empty.",
+      }));
+    }
+  };
+
+  const handleProfileBlur = (field: "firstName" | "lastName") => {
+    if (!profileData[field].trim()) {
+      setProfileErrors((prev) => ({
+        ...prev,
+        [field]: "This field can't be empty.",
+      }));
+    }
   };
 
   const handleDateChange = (date: Date | null) => {
@@ -147,22 +188,53 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   };
 
   const handlePassChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassData({ ...passData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    const newPassData = { ...passData, [name]: value };
+    setPassData(newPassData);
     setMessages({ error: "", success: "" });
+
+    let fieldError = "";
+    if (!value) {
+      fieldError = "This field can't be empty.";
+    } else if (name === "newPassword" && !validatePasswordRule(value)) {
+      fieldError = "8+ chars with upper, lower, number & special char.";
+    } else if (
+      name === "confirmPassword" &&
+      value !== newPassData.newPassword
+    ) {
+      fieldError = "New passwords do not match.";
+    }
+
+    setPassErrors((prev) => ({ ...prev, [name]: fieldError }));
+  };
+
+  const handlePassBlur = (
+    field: "currentPassword" | "newPassword" | "confirmPassword"
+  ) => {
+    if (!passData[field]) {
+      setPassErrors((prev) => ({
+        ...prev,
+        [field]: "This field can't be empty.",
+      }));
+    }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessages({ error: "", success: "" });
 
+    const newProfileErrors = {
+      firstName: profileData.firstName.trim()
+        ? ""
+        : "This field can't be empty.",
+      lastName: profileData.lastName.trim()
+        ? ""
+        : "This field can't be empty.",
+    };
+    setProfileErrors(newProfileErrors);
+    if (newProfileErrors.firstName || newProfileErrors.lastName) return;
+
     try {
-      const payload = {
-        firstName: profileData.firstName,
-        lastName: profileData.lastName,
-        dateOfBirth: profileData.dateOfBirth
-          ? new Date(profileData.dateOfBirth).toISOString().split("T")[0]
-          : null,
-      };
       const res = await axios.put(
         `${API_URL}/auth/update-profile`,
 
@@ -197,22 +269,28 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     e.preventDefault();
     setMessages({ error: "", success: "" });
 
-    if (!passData.currentPassword) {
-      setMessages({ error: "Current password is required.", success: "" });
+    const newPassErrors = {
+      currentPassword: !passData.currentPassword
+        ? "This field can't be empty."
+        : "",
+      newPassword: !passData.newPassword
+        ? "This field can't be empty."
+        : !validatePasswordRule(passData.newPassword)
+        ? "8+ chars with upper, lower, number & special char."
+        : "",
+      confirmPassword: !passData.confirmPassword
+        ? "This field can't be empty."
+        : passData.newPassword !== passData.confirmPassword
+        ? "New passwords do not match."
+        : "",
+    };
+    setPassErrors(newPassErrors);
+    if (
+      newPassErrors.currentPassword ||
+      newPassErrors.newPassword ||
+      newPassErrors.confirmPassword
+    )
       return;
-    }
-    if (!validatePasswordRule(passData.newPassword)) {
-      setMessages({
-        error:
-          "New password must be 8+ chars with upper, lower, number & special char.",
-        success: "",
-      });
-      return;
-    }
-    if (passData.newPassword !== passData.confirmPassword) {
-      setMessages({ error: "New passwords do not match.", success: "" });
-      return;
-    }
 
     try {
       const payload = {
@@ -226,6 +304,11 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       if (res.data.success) {
         setMessages({ error: "", success: "Password changed successfully." });
         setPassData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setPassErrors({
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
@@ -298,8 +381,17 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
                     name="firstName"
                     value={profileData.firstName}
                     onChange={handleProfileChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+                    onBlur={() => handleProfileBlur("firstName")}
+                    className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none ${fieldBorderClass(
+                      profileData.firstName,
+                      profileErrors.firstName
+                    )}`}
                   />
+                  {profileErrors.firstName && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {profileErrors.firstName}
+                    </p>
+                  )}
                 </div>
                 <div className="w-full">
                   <label className="block text-sm font-medium text-[#404040]">
@@ -309,8 +401,17 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
                     name="lastName"
                     value={profileData.lastName}
                     onChange={handleProfileChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
+                    onBlur={() => handleProfileBlur("lastName")}
+                    className={`mt-1 block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none ${fieldBorderClass(
+                      profileData.lastName,
+                      profileErrors.lastName
+                    )}`}
                   />
+                  {profileErrors.lastName && (
+                    <p className="text-sm text-red-600 mt-1">
+                      {profileErrors.lastName}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -360,72 +461,105 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
               </h3>
 
               {/* Current Password */}
-              <div className="relative">
-                <input
-                  name="currentPassword"
-                  type={showPassword.current ? "text" : "password"}
-                  placeholder="Current Password"
-                  value={passData.currentPassword}
-                  onChange={handlePassChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <PasswordIcon
-                    onClick={() =>
-                      setShowPassword({
-                        ...showPassword,
-                        current: !showPassword.current,
-                      })
-                    }
-                    showPassword={showPassword.current}
+              <div>
+                <div className="relative">
+                  <input
+                    name="currentPassword"
+                    type={showPassword.current ? "text" : "password"}
+                    placeholder="Current Password"
+                    value={passData.currentPassword}
+                    onChange={handlePassChange}
+                    onBlur={() => handlePassBlur("currentPassword")}
+                    className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none pr-10 ${fieldBorderClass(
+                      passData.currentPassword,
+                      passErrors.currentPassword
+                    )}`}
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <PasswordIcon
+                      onClick={() =>
+                        setShowPassword({
+                          ...showPassword,
+                          current: !showPassword.current,
+                        })
+                      }
+                      showPassword={showPassword.current}
+                    />
+                  </div>
                 </div>
+                {passErrors.currentPassword && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {passErrors.currentPassword}
+                  </p>
+                )}
               </div>
 
               {/* New Password */}
-              <div className="relative">
-                <input
-                  name="newPassword"
-                  type={showPassword.new ? "text" : "password"}
-                  placeholder="New Password"
-                  value={passData.newPassword}
-                  onChange={handlePassChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <PasswordIcon
-                    onClick={() =>
-                      setShowPassword({
-                        ...showPassword,
-                        new: !showPassword.new,
-                      })
-                    }
-                    showPassword={showPassword.new}
+              <div>
+                <div className="relative">
+                  <input
+                    name="newPassword"
+                    type={showPassword.new ? "text" : "password"}
+                    placeholder="New Password"
+                    value={passData.newPassword}
+                    onChange={handlePassChange}
+                    onBlur={() => handlePassBlur("newPassword")}
+                    className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none pr-10 ${fieldBorderClass(
+                      passData.newPassword,
+                      passErrors.newPassword
+                    )}`}
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <PasswordIcon
+                      onClick={() =>
+                        setShowPassword({
+                          ...showPassword,
+                          new: !showPassword.new,
+                        })
+                      }
+                      showPassword={showPassword.new}
+                    />
+                  </div>
                 </div>
+                {passErrors.newPassword && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {passErrors.newPassword}
+                  </p>
+                )}
               </div>
 
               {/* Confirm Password */}
-              <div className="relative">
-                <input
-                  name="confirmPassword"
-                  type={showPassword.confirm ? "text" : "password"}
-                  placeholder="Confirm New Password"
-                  value={passData.confirmPassword}
-                  onChange={handlePassChange}
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500"
-                />
-                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <PasswordIcon
-                    onClick={() =>
-                      setShowPassword({
-                        ...showPassword,
-                        confirm: !showPassword.confirm,
-                      })
-                    }
-                    showPassword={showPassword.confirm}
+              <div>
+                <div className="relative">
+                  <input
+                    name="confirmPassword"
+                    type={showPassword.confirm ? "text" : "password"}
+                    placeholder="Confirm New Password"
+                    value={passData.confirmPassword}
+                    onChange={handlePassChange}
+                    onBlur={() => handlePassBlur("confirmPassword")}
+                    className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none pr-10 ${fieldBorderClass(
+                      passData.confirmPassword,
+                      passErrors.confirmPassword
+                    )}`}
                   />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <PasswordIcon
+                      onClick={() =>
+                        setShowPassword({
+                          ...showPassword,
+                          confirm: !showPassword.confirm,
+                        })
+                      }
+                      showPassword={showPassword.confirm}
+                    />
+                  </div>
                 </div>
+                {passErrors.confirmPassword && (
+                  <p className="text-sm text-red-600 mt-1">
+                    {passErrors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <button

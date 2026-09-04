@@ -59,11 +59,11 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[9999999] flex items-center justify-center bg-black/50 p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-[400px] bg-white rounded-2xl shadow-2xl px-7 pt-8 pb-7 text-center"
+        className="relative w-full max-w-[400px] bg-white rounded-2xl shadow-[0_20px_25px_-5px_rgba(0,0,0,0.15),0_10px_10px_-5px_rgba(0,0,0,0.06)] px-7 pt-8 pb-7 text-center"
       >
         <button
           onClick={onClose}
@@ -87,7 +87,7 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
         <h3 className="text-[17px] font-extrabold text-[#111827] mb-2">
           Enjoying Swales Designer?
         </h3>
-        <p className="text-[13.5px] text-[#6b7280] leading-relaxed mb-4">
+        <p className="text-[13.5px] text-[#6b7280] leading-[1.5] mb-4">
           Swales is free to use. If it&apos;s helping you plan your garden,
           consider buying us a coffee — it goes straight into building the
           next feature.
@@ -98,7 +98,7 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
             <button
               key={amount}
               onClick={() => openLink(envVar)}
-              className={`flex-1 py-2.5 rounded-[10px] font-extrabold text-sm border-[1.5px] transition-colors ${
+              className={`flex-1 py-[0.65rem] rounded-[10px] font-extrabold text-sm border-[1.5px] transition-colors ${
                 suggested
                   ? "bg-green-600 text-white border-green-600 hover:bg-green-700"
                   : "bg-white text-[#111827] border-[#e5e7eb] hover:border-[#d1d5db]"
@@ -112,7 +112,7 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
         <button
           onClick={() => openLink("NEXT_PUBLIC_STRIPE_LINK_CUSTOM")}
           disabled={!customConfigured}
-          className={`block w-full py-2.5 rounded-[10px] border border-dashed border-[#d1d5db] font-semibold text-[13px] mb-2.5 ${
+          className={`block w-full p-[0.6rem] rounded-[10px] border border-dashed border-[#d1d5db] font-semibold text-[13px] mb-2.5 ${
             customConfigured
               ? "text-[#6b7280] cursor-pointer"
               : "text-[#d1d5db] cursor-not-allowed"
@@ -123,7 +123,7 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
 
         <button
           onClick={onClose}
-          className="text-[13px] text-[#9ca3af] hover:text-[#404040] py-1"
+          className="text-[13px] text-[#9ca3af] hover:text-[#404040] p-1"
         >
           Maybe later
         </button>

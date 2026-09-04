@@ -169,7 +169,7 @@ export default function Home() {
     | null
   >("welcome");
 
-  // Live refs so the 15s-delayed signup-popup timer can re-check state at
+  // Live refs so the 4s-delayed signup-popup timer can re-check state at
   // fire time instead of the stale values captured when it was scheduled.
   const userRef = useRef(user);
   useEffect(() => {
@@ -215,7 +215,7 @@ export default function Home() {
   }, []);
 
   // --- Handlers ---
-  // Signed-out visitors get the signup prompt once per session, 15s after
+  // Signed-out visitors get the signup prompt once per session, 4s after
   // dismissing the welcome popup. Signed-in users never see it here — they
   // get the coffee popup instead, triggered by maybeShowCoffeePopup below.
   const maybeShowSignupPopup = () => {
@@ -224,11 +224,11 @@ export default function Home() {
     sessionStorage.setItem("signupPopupShown", "1");
     setTimeout(() => {
       // Re-check at fire time: skip if the visitor signed in, or opened
-      // another modal, during the 15s wait.
+      // another modal, during the 4s wait.
       if (userRef.current) return;
       if (activeModalRef.current) return;
       setShowSignupPopup(true);
-    }, 15000);
+    }, 4000);
   };
   // Signed-in users get the coffee popup once per session, after their first
   // successful project save — not on every save, so it doesn't wear out its

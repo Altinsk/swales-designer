@@ -14,6 +14,12 @@ import { getApiErrorMessage, Spinner } from "@/components/auth/authFeedback";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
+const validateEmail = (email = "") => {
+  if (typeof email !== "string") return false;
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+};
+
 const PasswordIcon = ({
   onClick,
   showPassword,
@@ -61,29 +67,107 @@ const PasswordIcon = ({
   </svg>
 );
 
+type FieldName = "email" | "password";
+
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formErrors, setFormErrors] = useState({
+    email: "",
+    password: "",
+    form: "",
+  });
+  const [isFocused, setIsFocused] = useState<Record<FieldName, boolean>>({
+    email: false,
+    password: false,
+  });
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+
+  const isFloated = (field: FieldName) =>
+    isFocused[field] || Boolean(formData[field]);
+
+  const borderClass = (field: FieldName) =>
+    formErrors[field]
+      ? "danger-control"
+      : formData[field]
+      ? "success-control"
+      : "";
+
+  const labelClass = (field: FieldName) =>
+    formErrors[field] ? "danger-label" : formData[field] ? "success-label" : "";
+
+  const handleFocus = (field: FieldName) =>
+    setIsFocused((prev) => ({ ...prev, [field]: true }));
+
+  const handleBlur = (field: FieldName) => {
+    setIsFocused((prev) => ({ ...prev, [field]: false }));
+
+    if (!formData[field].trim()) {
+      setFormErrors((prev) => ({
+        ...prev,
+        [field]: "This field can't be empty.",
+      }));
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const field = name as FieldName;
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
+    let fieldError = "";
+    if (!value.trim()) {
+      fieldError = "This field can't be empty.";
+    } else if (field === "email" && !validateEmail(value)) {
+      fieldError = "Please provide a valid email.";
+    }
+
+    setFormErrors((prev) => ({ ...prev, [field]: fieldError, form: "" }));
+  };
+
+  const validateForm = () => {
+    const errors = { email: "", password: "" };
+    let valid = true;
+
+    if (!formData.email) {
+      errors.email = "Please provide your email address.";
+      valid = false;
+    } else if (!validateEmail(formData.email)) {
+      errors.email =
+        "The email address entered is not valid. Please check and try again.";
+      valid = false;
+    }
+
+    if (!formData.password) {
+      errors.password = "Please provide your password.";
+      valid = false;
+    } else if (formData.password.length < 8) {
+      errors.password = "Your password must be at least 8 characters long.";
+      valid = false;
+    }
+
+    setFormErrors((prev) => ({ ...prev, ...errors }));
+    return valid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isLoading) return;
 
-    setError("");
+    setFormErrors((prev) => ({ ...prev, form: "" }));
+    if (!validateForm()) return;
+
     setIsLoading(true);
 
     try {
       const res = await axios.post(
         `${API_URL}/auth/login`,
-        { email, password },
+        { email: formData.email, password: formData.password },
         { withCredentials: true }
       );
       if (res.data.success) {
@@ -91,9 +175,15 @@ export default function LoginPage() {
         router.push("/");
         return;
       }
-      setError(res.data.message || "Invalid email or password.");
+      setFormErrors((prev) => ({
+        ...prev,
+        form: res.data.message || "Invalid email or password.",
+      }));
     } catch (err: any) {
-      setError(getApiErrorMessage(err, "An error occurred during login."));
+      setFormErrors((prev) => ({
+        ...prev,
+        form: getApiErrorMessage(err, "An error occurred during login."),
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -121,24 +211,36 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit}>
               <div className="auth-form-inner floating-form-label flex flex-col">
-                <div className="form-group">
+                <div
+                  className={`form-group ${
+                    isFloated("email") ? "label-floated" : ""
+                  }`}
+                >
                   <div className="form-relative">
-                    <label>Email</label>
+                    <label className={labelClass("email")}>Email</label>
                     <input
-                      type="email"
+                      type="text"
                       name="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+                      value={formData.email}
+                      onChange={handleChange}
                       disabled={isLoading}
-                      className="form-control"
+                      onFocus={() => handleFocus("email")}
+                      onBlur={() => handleBlur("email")}
+                      className={`form-control ${borderClass("email")}`}
                     />
                   </div>
+                  {formErrors.email && (
+                    <p className="validation">{formErrors.email}</p>
+                  )}
                 </div>
 
-                <div className="form-group">
+                <div
+                  className={`form-group ${
+                    isFloated("password") ? "label-floated" : ""
+                  }`}
+                >
                   <div className="form-relative">
-                    <label>Password</label>
+                    <label className={labelClass("password")}>Password</label>
                     <div className="input-icon icon-back">
                       <PasswordIcon
                         onClick={() => setShowPassword(!showPassword)}
@@ -147,14 +249,18 @@ export default function LoginPage() {
                       <input
                         type={showPassword ? "text" : "password"}
                         name="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
+                        value={formData.password}
+                        onChange={handleChange}
                         disabled={isLoading}
-                        className="form-control"
+                        onFocus={() => handleFocus("password")}
+                        onBlur={() => handleBlur("password")}
+                        className={`form-control ${borderClass("password")}`}
                       />
                     </div>
                   </div>
+                  {formErrors.password && (
+                    <p className="validation">{formErrors.password}</p>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2 justify-between">
@@ -176,9 +282,9 @@ export default function LoginPage() {
                   </button>
                 </div>
 
-                {error && (
+                {formErrors.form && (
                   <p role="alert" className="validation">
-                    {error}
+                    {formErrors.form}
                   </p>
                 )}
 
