@@ -66,7 +66,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             onClick={() => setIsMenuOpen(false)}
           >
             <img
-              src="/logo.png"
+              src="/logo.svg"
               alt="Logo"
               className="w-auto h-10 landscape:h-6 object-contain transition-all duration-300"
             />

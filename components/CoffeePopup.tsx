@@ -75,11 +75,12 @@ export default function CoffeePopup({ onClose }: CoffeePopupProps) {
 
         <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
           <Image
-            src="/logo.png"
+            src="/logo.svg"
             alt="Swales"
             width={64}
             height={64}
             className="object-contain"
+            priority
           />
         </div>
 
