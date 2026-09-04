@@ -66,12 +66,12 @@ const PrintAuthGatePopup: React.FC<PrintAuthGatePopupProps> = ({
           <X className="w-[18px] h-[18px]" />
         </button>
 
-        <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+        <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center">
           <Image
             src="/logo.svg"
             alt="Swales"
-            width={64}
-            height={64}
+            width={128}
+            height={128}
             className="object-contain"
             priority
           />
