@@ -10,17 +10,19 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 // Password validation utility function. "Special character" means any
 // non-letter, non-digit, non-space character - not a narrow allowlist.
 // Previously restricted to only @$!%*#?&^, which silently rejected an
-// otherwise-valid password containing e.g. a period.
+// otherwise-valid password containing e.g. a period. Spaces are allowed
+// anywhere in the password (they just don't count toward the symbol
+// requirement).
 export const validatePassword = (password = "") => {
   if (typeof password !== "string") return false; // Ensure input is a string
-  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/;
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
   return re.test(password);
 };
 
 // Shown both as the live validation error and as a permanent hint under the
 // password field, so the rule is visible before a user hits it as an error.
 export const PASSWORD_HINT =
-  "8+ characters, with uppercase, lowercase, a number, and a symbol with no spaces";
+  "8+ characters, uppercase, lowercase, a number, and a symbol";
 
 type FieldName = "password" | "confirmPassword";
 

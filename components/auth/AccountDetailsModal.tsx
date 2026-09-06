@@ -50,14 +50,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 // "Special character" means any non-letter, non-digit, non-space character -
 // not a narrow allowlist. Previously restricted to only @$!%*#?&^, which
 // silently rejected an otherwise-valid password containing e.g. a period.
+// Spaces are allowed anywhere in the password (they just don't count
+// toward the symbol requirement).
 const validatePasswordRule = (password = "") => {
   if (typeof password !== "string") return false;
-  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/;
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s]).{8,}$/;
   return re.test(password);
 };
 
 const PASSWORD_HINT =
-  "8+ characters, with uppercase, lowercase, a number, and a symbol with no spaces";
+  "8+ characters, uppercase, lowercase, a number, and a symbol";
 
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   isOpen,
