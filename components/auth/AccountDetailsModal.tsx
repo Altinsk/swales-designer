@@ -57,7 +57,7 @@ const validatePasswordRule = (password = "") => {
 };
 
 const PASSWORD_HINT =
-  "8+ characters, with uppercase, lowercase, a number, and a symbol (e.g. . , ! @ # -). No spaces.";
+  "8+ characters, with uppercase, lowercase, a number, and a symbol with no spaces";
 
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   isOpen,

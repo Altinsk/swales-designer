@@ -38,7 +38,7 @@ const validatePassword = (password = "") => {
 // Shown both as the live validation error and as a permanent hint under the
 // password field, so the rule is visible before a user hits it as an error.
 const PASSWORD_HINT =
-  "8+ characters, with uppercase, lowercase, a number, and a symbol (e.g. . , ! @ # -). No spaces.";
+  "8+ characters, with uppercase, lowercase, a number, and a symbol with no spaces";
 
 const validateEmail = (email = "") => {
   if (typeof email !== "string") return false;
