@@ -7,13 +7,20 @@ import { Eye, EyeOff } from "lucide-react"; // Import icons
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
-// Password validation utility function
+// Password validation utility function. "Special character" means any
+// non-letter, non-digit, non-space character - not a narrow allowlist.
+// Previously restricted to only @$!%*#?&^, which silently rejected an
+// otherwise-valid password containing e.g. a period.
 export const validatePassword = (password = "") => {
   if (typeof password !== "string") return false; // Ensure input is a string
-  const re =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^])[A-Za-z\d@$!%*#?&^]{8,}$/;
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/;
   return re.test(password);
 };
+
+// Shown both as the live validation error and as a permanent hint under the
+// password field, so the rule is visible before a user hits it as an error.
+export const PASSWORD_HINT =
+  "8+ characters, with uppercase, lowercase, a number, and a symbol (e.g. . , ! @ # -). No spaces.";
 
 type FieldName = "password" | "confirmPassword";
 
@@ -76,8 +83,7 @@ const ResetPasswordForm = () => {
     if (!value.trim()) {
       fieldError = "This field can't be empty.";
     } else if (field === "password" && !validatePassword(value)) {
-      fieldError =
-        "Min 8 chars, include uppercase, lowercase, number & symbol.";
+      fieldError = PASSWORD_HINT;
     } else if (
       field === "confirmPassword" &&
       value !== formData.password
@@ -96,8 +102,7 @@ const ResetPasswordForm = () => {
       errors.password = "Please provide your password.";
       valid = false;
     } else if (!validatePassword(formData.password)) {
-      errors.password =
-        "8+ characters, uppercase, lowercase, number & special character required";
+      errors.password = PASSWORD_HINT;
       valid = false;
     }
 
@@ -193,10 +198,12 @@ const ResetPasswordForm = () => {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {formErrors.password && (
+            {formErrors.password ? (
               <p className="text-sm text-red-600 mt-1">
                 {formErrors.password}
               </p>
+            ) : (
+              <p className="text-sm text-gray-500 mt-1">{PASSWORD_HINT}</p>
             )}
           </div>
 

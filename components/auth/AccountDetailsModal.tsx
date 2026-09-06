@@ -47,12 +47,17 @@ const PasswordIcon = ({
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
+// "Special character" means any non-letter, non-digit, non-space character -
+// not a narrow allowlist. Previously restricted to only @$!%*#?&^, which
+// silently rejected an otherwise-valid password containing e.g. a period.
 const validatePasswordRule = (password = "") => {
   if (typeof password !== "string") return false;
-  const re =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^])[A-Za-z\d@$!%*#?&^]{8,}$/;
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/;
   return re.test(password);
 };
+
+const PASSWORD_HINT =
+  "8+ characters, with uppercase, lowercase, a number, and a symbol (e.g. . , ! @ # -). No spaces.";
 
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   isOpen,
@@ -197,7 +202,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     if (!value) {
       fieldError = "This field can't be empty.";
     } else if (name === "newPassword" && !validatePasswordRule(value)) {
-      fieldError = "8+ chars with upper, lower, number & special char.";
+      fieldError = PASSWORD_HINT;
     } else if (
       name === "confirmPassword" &&
       value !== newPassData.newPassword
@@ -276,7 +281,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       newPassword: !passData.newPassword
         ? "This field can't be empty."
         : !validatePasswordRule(passData.newPassword)
-        ? "8+ chars with upper, lower, number & special char."
+        ? PASSWORD_HINT
         : "",
       confirmPassword: !passData.confirmPassword
         ? "This field can't be empty."
@@ -521,10 +526,12 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
                     />
                   </div>
                 </div>
-                {passErrors.newPassword && (
+                {passErrors.newPassword ? (
                   <p className="text-sm text-red-600 mt-1">
                     {passErrors.newPassword}
                   </p>
+                ) : (
+                  <p className="text-sm text-gray-500 mt-1">{PASSWORD_HINT}</p>
                 )}
               </div>
 

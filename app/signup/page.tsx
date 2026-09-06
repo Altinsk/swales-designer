@@ -20,18 +20,25 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 /**
  * Validates password based on the following rules:
- * - At least 8 characters
+ * - At least 8 characters, no spaces
  * - At least one lowercase letter
  * - At least one uppercase letter
  * - At least one digit
- * - At least one special character (@$!%*#?&^)
+ * - At least one special character (any non-letter, non-digit, non-space
+ *   character — not a narrow allowlist. Previously restricted to only
+ *   @$!%*#?&^, which silently rejected an otherwise-valid password
+ *   containing e.g. a period.)
  */
 const validatePassword = (password = "") => {
   if (typeof password !== "string") return false;
-  const re =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*#?&^])[A-Za-z\d@$!%*#?&^]{8,}$/;
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d\s])\S{8,}$/;
   return re.test(password);
 };
+
+// Shown both as the live validation error and as a permanent hint under the
+// password field, so the rule is visible before a user hits it as an error.
+const PASSWORD_HINT =
+  "8+ characters, with uppercase, lowercase, a number, and a symbol (e.g. . , ! @ # -). No spaces.";
 
 const validateEmail = (email = "") => {
   if (typeof email !== "string") return false;
@@ -223,8 +230,7 @@ export default function SignupPage() {
     } else if (field === "email" && !validateEmail(value)) {
       fieldError = "Please provide a valid email.";
     } else if (field === "password" && !validatePassword(value)) {
-      fieldError =
-        "Password must be 8+ characters and include uppercase, lowercase, a number, and a special character (@$!%*#?&^).";
+      fieldError = PASSWORD_HINT;
     } else if (field === "confirmPassword" && value !== formData.password) {
       fieldError = "Passwords do not match.";
     }
@@ -270,8 +276,7 @@ export default function SignupPage() {
     if (!formData.password) {
       errors.password = "This field can't be empty.";
     } else if (!validatePassword(formData.password)) {
-      errors.password =
-        "Password must be 8+ characters and include uppercase, lowercase, a number, and a special character (@$!%*#?&^).";
+      errors.password = PASSWORD_HINT;
     }
 
     if (!formData.confirmPassword) {
@@ -522,8 +527,10 @@ export default function SignupPage() {
                           />
                         </div>
                       </div>
-                      {formErrors.password && (
+                      {formErrors.password ? (
                         <p className="validation">{formErrors.password}</p>
+                      ) : (
+                        <p className="field-hint">{PASSWORD_HINT}</p>
                       )}
                     </div>
 

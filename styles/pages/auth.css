@@ -143,6 +143,19 @@ input:-webkit-autofill {
   position: absolute;
   top: 100%;
 }
+/* Permanent password-rule hint, shown in place of .validation when the
+   field has no error yet — states the rule upfront instead of only after
+   a failed attempt. */
+.field-hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.75rem;
+  padding-left: 1rem;
+}
+.floating-form-label .form-group .field-hint {
+  position: absolute;
+  top: 100%;
+}
 .form-control,
 .date-width {
   width: 100%;
