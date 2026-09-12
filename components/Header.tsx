@@ -159,7 +159,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Left Side: Logo (Unchanged) */}
           <div className="flex items-center space-x-3">
             <Link href="https://www.swales.app">
-              <img width={100} height={100} src="/logo.png" alt="Logo" />
+              <img width={100} height={66} src="/logo.svg" alt="Logo" />
             </Link>
           </div>
 

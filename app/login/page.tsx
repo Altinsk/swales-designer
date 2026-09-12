@@ -195,7 +195,7 @@ export default function LoginPage() {
         <figure className="logo">
           <Link href="https://www.swales.app">
             <Image
-              src="/logo.png"
+              src="/logo-dark.svg"
               alt="Swales"
               width={200}
               height={60}
