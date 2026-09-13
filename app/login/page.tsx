@@ -146,10 +146,13 @@ export default function LoginPage() {
     if (!formData.password) {
       errors.password = "Please provide your password.";
       valid = false;
-    } else if (formData.password.length < 8) {
-      errors.password = "Your password must be at least 8 characters long.";
-      valid = false;
     }
+    // No length/complexity check here on purpose: that's a set-time rule
+    // (signup/reset/change-password), not a login-time one. Enforcing it
+    // here too used the wrong rule (a bare 8-char minimum instead of the
+    // shared complexity regex) and would block a real login for any account
+    // whose actual password predates the current policy - the server, which
+    // just compares against the stored hash, would have accepted it.
 
     setFormErrors((prev) => ({ ...prev, ...errors }));
     return valid;
@@ -167,7 +170,7 @@ export default function LoginPage() {
     try {
       const res = await axios.post(
         `${API_URL}/auth/login`,
-        { email: formData.email, password: formData.password },
+        { email: formData.email, password: formData.password, rememberMe },
         { withCredentials: true }
       );
       if (res.data.success) {

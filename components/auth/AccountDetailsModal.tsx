@@ -212,7 +212,19 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       fieldError = "New passwords do not match.";
     }
 
-    setPassErrors((prev) => ({ ...prev, [name]: fieldError }));
+    setPassErrors((prev) => {
+      const next = { ...prev, [name]: fieldError };
+      // Changing newPassword can flip whether the already-entered confirm
+      // value now matches it - re-check confirmPassword too instead of
+      // leaving its error/success state stuck on the old comparison.
+      if (name === "newPassword" && newPassData.confirmPassword) {
+        next.confirmPassword =
+          newPassData.confirmPassword !== value
+            ? "New passwords do not match."
+            : "";
+      }
+      return next;
+    });
   };
 
   const handlePassBlur = (

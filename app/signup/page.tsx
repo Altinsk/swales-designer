@@ -235,7 +235,17 @@ export default function SignupPage() {
       fieldError = "Passwords do not match.";
     }
 
-    setFormErrors((prev) => ({ ...prev, [field]: fieldError, form: "" }));
+    setFormErrors((prev) => {
+      const next = { ...prev, [field]: fieldError, form: "" };
+      // Changing the primary password can flip whether the already-entered
+      // confirm value now matches it - re-check confirmPassword too instead
+      // of leaving its error/success state stuck on the old comparison.
+      if (field === "password" && formData.confirmPassword) {
+        next.confirmPassword =
+          formData.confirmPassword !== value ? "Passwords do not match." : "";
+      }
+      return next;
+    });
   };
 
   const handleDateChange = (date: Date | null) => {

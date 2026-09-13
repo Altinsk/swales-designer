@@ -184,7 +184,15 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 
                   <button
                     onClick={() => {
-                      logout();
+                      // logout() rejects if the server call fails (see
+                      // AuthContext) instead of always resolving after
+                      // silently swallowing the error - catch it here so
+                      // failure surfaces as feedback instead of an
+                      // unhandled rejection. Menu still closes immediately,
+                      // same as before.
+                      logout().catch(() => {
+                        alert("Logout failed - please check your connection and try again.");
+                      });
                       setIsMenuOpen(false);
                     }}
                     className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50"

@@ -105,6 +105,15 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
 
+  // logout() now rejects if the server call fails (see AuthContext) instead
+  // of always resolving after silently swallowing the error - handled here
+  // so that failure surfaces as feedback instead of an unhandled rejection.
+  const handleLogout = () => {
+    logout().catch(() => {
+      alert("Logout failed - please check your connection and try again.");
+    });
+  };
+
   // 2. RENAMED STATE: This is for the USER dropdown, not the mobile nav
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null); // Renamed ref
@@ -213,7 +222,7 @@ const Header: React.FC<HeaderProps> = ({
 
                   <div className="border-t border-gray-100 my-1"></div>
                   <button
-                    onClick={logout}
+                    onClick={handleLogout}
                     className="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
@@ -284,7 +293,7 @@ const Header: React.FC<HeaderProps> = ({
                     </span>
                   </div>
                   <button
-                    onClick={logout} // Use logout from useAuth
+                    onClick={handleLogout}
                     className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg"
                   >
                     <LogOut className="w-4 h-4 mr-2" />

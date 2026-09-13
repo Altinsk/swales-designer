@@ -41,6 +41,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const res = await axios.get(`${API_URL}/auth/me`, {
         withCredentials: true,
+        // Without a timeout, a hung/slow /auth/me response left `isLoading`
+        // true indefinitely - see the render gate below, which used to
+        // render nothing at all (not even a spinner) until this resolved,
+        // blanking every page including /login and /signup.
+        timeout: 8000,
       });
 
       if (res.data.success) {
@@ -78,14 +83,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
+    const requestLogout = () =>
+      axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+
     try {
-      await axios.post(
-        `${API_URL}/auth/logout`,
-        {},
-        { withCredentials: true },
-      );
-    } catch (error) {
-      console.error("Logout request failed:", error);
+      await requestLogout();
+    } catch {
+      // The httpOnly cookie can only be cleared by the server's Set-Cookie
+      // response, so a failed request here leaves it intact - the UI would
+      // otherwise show "logged out" while the next fetchUserProfile() (e.g.
+      // on reload) silently re-authenticates against the still-valid
+      // cookie. One retry covers a transient blip; if it still fails, the
+      // user genuinely wasn't logged out, so don't clear local state either
+      // - that would just be a UI lying about what actually happened.
+      try {
+        await requestLogout();
+      } catch (retryError) {
+        console.error("Logout request failed:", retryError);
+        throw retryError;
+      }
     }
     setUser(null);
   };
@@ -101,7 +117,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     <AuthContext.Provider
       value={{ user, login, logout, updateUser, isLoading }}
     >
-      {!isLoading && children}
+      {children}
     </AuthContext.Provider>
   );
 };
