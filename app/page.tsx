@@ -87,6 +87,7 @@ export interface CanvasHandles {
   toggleSketchLayer: () => void;
   editSketch: () => void;
   getStageNode: () => any;
+  deselect: () => Promise<void>;
 }
 export type VisibilityToggle = "grid" | "sketch" | "items" | "notes";
 export interface VisibilityState {
@@ -270,7 +271,7 @@ export default function Home() {
     }
     setActiveMobilePanel(null);
   };
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!user) {
       setActiveMobilePanel(null);
       setActiveModal("printGate");
@@ -281,6 +282,9 @@ export default function Home() {
       setNotification("Canvas is not ready to print.");
       return;
     }
+    // Deselect first, otherwise the Transformer handles and floating
+    // lock/settings icons get baked into the printed image.
+    await canvasRef.current?.deselect();
     const dataURL = stage.toDataURL({ pixelRatio: 2 });
     let printContainer = document.getElementById("print-container");
     if (printContainer) {
@@ -387,10 +391,13 @@ export default function Home() {
     setUploadedImage(imageUrl);
     setActiveModal("alignMeasure");
   };
-  const getCanvasData = () => {
+  const getCanvasData = async () => {
     if (!canvasRef.current) return null;
     const stage = canvasRef.current.getStageNode();
     if (!stage) return null;
+    // Deselect first, otherwise the Transformer handles and floating
+    // lock/settings icons get baked into the saved thumbnail.
+    await canvasRef.current.deselect();
     const canvasState = canvasRef.current.getCanvasState();
     const thumbnail = stage.toDataURL({
       pixelRatio: 0.2,
@@ -409,7 +416,7 @@ export default function Home() {
       return;
     }
     if (isSaving) return;
-    const canvasData = getCanvasData();
+    const canvasData = await getCanvasData();
     if (!canvasData) return;
     setIsSaving(true);
     try {
@@ -442,7 +449,7 @@ export default function Home() {
     }
   };
   const handleSave = async (options?: { onSuccess?: () => void }) => {
-    const canvasData = getCanvasData();
+    const canvasData = await getCanvasData();
     const { onSuccess } = options || {};
     if (!canvasData || !user || isSaving) return;
     if (currentProject) {
@@ -475,9 +482,13 @@ export default function Home() {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       const state = canvasRef.current?.getCanvasState();
       if (!state) return;
-      const { polygons, placedObjects, notes } = JSON.parse(state);
+      const { polygons, placedObjects, notes, planningSketch } = JSON.parse(state);
+      // planningSketch was missing here, so a canvas with only an aligned
+      // reference image and no shapes yet (a real, common in-progress state
+      // right after Align & Measure) let the user navigate away with no
+      // warning at all, losing that alignment work.
       const hasContent =
-        polygons?.length > 0 || placedObjects?.length > 0 || notes?.length > 0;
+        polygons?.length > 0 || placedObjects?.length > 0 || notes?.length > 0 || !!planningSketch;
       if (!hasContent) return;
       event.preventDefault();
       event.returnValue = "";
@@ -496,8 +507,11 @@ export default function Home() {
       const project = res.data.data;
       if (project && project.ProjectData) {
         const projectData = JSON.parse(project.ProjectData);
+        // loadCanvasState() now restores planningSketch itself (via
+        // onSketchChange) when the saved project has one - this used to
+        // unconditionally null it right back out immediately after,
+        // discarding a saved reference-image alignment on every load.
         canvasRef.current?.loadCanvasState(projectData);
-        setPlanningSketch(null);
         setTimeout(() => {
           canvasRef.current?.center();
         }, 200);

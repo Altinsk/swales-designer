@@ -367,29 +367,55 @@ const GardenCanvas = forwardRef<
       }
     }, [history, historyStep, polygons, placedObjects, notes]);
 
+    // History commits are debounced 500ms after the last edit (see the
+    // effect below) so rapid edits coalesce into one undo step instead of
+    // one per keystroke/drag-frame. That means the live canvas state can be
+    // genuinely ahead of `history[historyStep]` when undo/redo fires - e.g.
+    // draw A (commits after 500ms), draw B, then Ctrl+Z within 500ms of B:
+    // undo used to just decrement historyStep past the already-committed A
+    // entry, jumping straight to the pre-A state and discarding B with no
+    // way to redo back to it, since its pending debounce timeout also gets
+    // cancelled by the very state change undo itself triggers. Flushing any
+    // pending change into history first (exactly what the debounced call
+    // would have done, just synchronously) makes undo/redo always step
+    // from the true current state instead of a possibly-stale committed one.
+    const flushPendingHistory = useCallback(() => {
+      const currentState = { polygons, placedObjects, notes };
+      const lastCommitted = history[historyStep];
+      if (JSON.stringify(lastCommitted) === JSON.stringify(currentState)) {
+        return { history, historyStep };
+      }
+      const nextHistory = [...history.slice(0, historyStep + 1), currentState];
+      return { history: nextHistory, historyStep: nextHistory.length - 1 };
+    }, [history, historyStep, polygons, placedObjects, notes]);
+
     const handleUndo = useCallback(() => {
-      if (historyStep > 0) {
-        const newStep = historyStep - 1;
-        const prevState = history[newStep];
+      const { history: effectiveHistory, historyStep: effectiveStep } = flushPendingHistory();
+      if (effectiveStep > 0) {
+        const newStep = effectiveStep - 1;
+        const prevState = effectiveHistory[newStep];
         setPolygons(prevState.polygons);
         setPlacedObjects(prevState.placedObjects);
         setNotes(prevState.notes);
+        setHistory(effectiveHistory);
         setHistoryStep(newStep);
         selectShape(null);
       }
-    }, [history, historyStep]);
+    }, [flushPendingHistory]);
 
     const handleRedo = useCallback(() => {
-      if (historyStep < history.length - 1) {
-        const newStep = historyStep + 1;
-        const nextState = history[newStep];
+      const { history: effectiveHistory, historyStep: effectiveStep } = flushPendingHistory();
+      if (effectiveStep < effectiveHistory.length - 1) {
+        const newStep = effectiveStep + 1;
+        const nextState = effectiveHistory[newStep];
         setPolygons(nextState.polygons);
         setPlacedObjects(nextState.placedObjects);
         setNotes(nextState.notes);
+        setHistory(effectiveHistory);
         setHistoryStep(newStep);
         selectShape(null);
       }
-    }, [history, historyStep]);
+    }, [flushPendingHistory]);
 
     const handleDelete = useCallback(() => {
       if (!selectedId) return;
@@ -1207,18 +1233,28 @@ const GardenCanvas = forwardRef<
         polygons.length === 0 &&
         placedObjects.length === 0 &&
         notes.length === 0,
-      getCanvasState: () => JSON.stringify({ polygons, placedObjects, notes }),
+      // planningSketch was missing here, so it was never part of what got
+      // saved/shared - a moved/scaled/rotated reference image (via Align &
+      // Measure) survived only in memory, and reloading or sharing the
+      // project (or even just re-loading the same project) silently
+      // dropped it permanently, since the backend row never had it either.
+      getCanvasState: () =>
+        JSON.stringify({ polygons, placedObjects, notes, planningSketch }),
       clearCanvas: () => {
         setPolygons([]);
         setPlacedObjects([]);
         setNotes([]);
         selectShape(null);
       },
-      loadCanvasState: (data: HistoryState) => {
+      loadCanvasState: (data: HistoryState & { planningSketch?: PlanningSketch | null }) => {
         if (data) {
           setPolygons(data.polygons || []);
           setPlacedObjects(data.placedObjects || []);
           setNotes(data.notes || []);
+          // planningSketch is parent-owned state (passed in as a prop), so
+          // it's restored via the same callback the component already uses
+          // to push sketch changes up, rather than local setState.
+          onSketchChange(data.planningSketch ?? null);
           selectShape(null);
           const newHistoryState = [
             {
@@ -1232,6 +1268,19 @@ const GardenCanvas = forwardRef<
         }
       },
       getStageNode: () => stageRef.current,
+      // Print/thumbnail capture calls toDataURL() straight off the stage
+      // node - with something selected, the Transformer handles and the
+      // floating lock/settings icons (rendered live on the stage whenever
+      // selectedId is set) get baked permanently into that image. Returns a
+      // promise that resolves after React/Konva have actually redrawn the
+      // deselected stage (selectShape's state update doesn't take effect on
+      // the canvas synchronously), so callers can `await` this immediately
+      // before calling toDataURL() rather than capturing a stale frame.
+      deselect: () =>
+        new Promise<void>((resolve) => {
+          selectShape(null);
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
       editSketch: () => {
         if (planningSketch) {
           selectShape(planningSketch.id);
