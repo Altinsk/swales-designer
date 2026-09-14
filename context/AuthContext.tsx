@@ -56,6 +56,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           email: data.email || "",
           dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
         });
+      } else {
+        // A 200 with success:false fell through both branches before -
+        // leaving whatever `user` was already set, so e.g. a stale session
+        // from earlier in the same tab kept showing as signed in. Same fix
+        // already applied in swales-services' AuthContext.
+        setUser(null);
       }
     } catch (error: any) {
       // No cookie, or the server rejected it (expired/revoked) - either way

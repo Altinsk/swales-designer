@@ -23,7 +23,7 @@ const SelectPdfPageStep: React.FC<SelectPdfPageStepProps> = ({
   return (
     <div>
       <p className="text-[#525252] my-4">
-        Your PDF has been processed. Please select the page you'd like to use as
+        Your PDF has been processed. Please select the page you&apos;d like to use as
         your plan.
       </p>
       <div className="max-h-[60vh] overflow-y-auto p-2 bg-gray-100 rounded-lg">
