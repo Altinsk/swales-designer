@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -66,6 +66,16 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   onClose,
 }) => {
   const [isLoading, setIsLoading] = useState(false); // Loading state
+  const [isSubmittingProfile, setIsSubmittingProfile] = useState(false);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+
+  // This modal is always mounted (Header/MobileHeader just toggle `isOpen`
+  // and `return null` internally rather than unmounting), so an in-flight
+  // request's response can otherwise resolve after the user has closed and
+  // reopened it, stomping the freshly-reset form with a stale success/error
+  // message. Incremented on every close; a response is only applied if this
+  // hasn't changed since the request started.
+  const sessionIdRef = useRef(0);
 
   // --- Profile State ---
   const [profileData, setProfileData] = useState({
@@ -110,6 +120,12 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
 
   // Fetch data when modal opens
   useEffect(() => {
+    if (!isOpen) {
+      // Invalidate any in-flight update-profile/change-password request so
+      // its response can't land on the next time the modal is reopened.
+      sessionIdRef.current += 1;
+      return;
+    }
     const fetchUserData = async () => {
       if (isOpen) {
         setIsLoading(true);
@@ -240,6 +256,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingProfile) return;
     setMessages({ error: "", success: "" });
 
     const newProfileErrors = {
@@ -253,6 +270,8 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     setProfileErrors(newProfileErrors);
     if (newProfileErrors.firstName || newProfileErrors.lastName) return;
 
+    const requestSessionId = sessionIdRef.current;
+    setIsSubmittingProfile(true);
     try {
       const res = await axios.put(
         `${API_URL}/auth/update-profile`,
@@ -267,6 +286,8 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         { withCredentials: true }
       );
 
+      if (sessionIdRef.current !== requestSessionId) return; // modal closed/reopened since this request started
+
       if (res.data.success) {
         // The backend reissued the session cookie with the updated details -
         // re-sync `user` from it.
@@ -277,15 +298,19 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         });
       }
     } catch (err: any) {
+      if (sessionIdRef.current !== requestSessionId) return;
       setMessages({
         error: err.response?.data?.message || "Failed to update profile.",
         success: "",
       });
+    } finally {
+      if (sessionIdRef.current === requestSessionId) setIsSubmittingProfile(false);
     }
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingPassword) return;
     setMessages({ error: "", success: "" });
 
     const newPassErrors = {
@@ -311,6 +336,8 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     )
       return;
 
+    const requestSessionId = sessionIdRef.current;
+    setIsSubmittingPassword(true);
     try {
       const payload = {
         currentPassword: passData.currentPassword,
@@ -319,6 +346,8 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       const res = await axios.put(`${API_URL}/auth/change-password`, payload, {
         withCredentials: true,
       });
+
+      if (sessionIdRef.current !== requestSessionId) return; // modal closed/reopened since this request started
 
       if (res.data.success) {
         setMessages({ error: "", success: "Password changed successfully." });
@@ -334,10 +363,19 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
         });
       }
     } catch (err: any) {
-      setMessages({
-        error: err.response?.data?.message || "Failed to change password.",
-        success: "",
-      });
+      if (sessionIdRef.current !== requestSessionId) return;
+      const message = err.response?.data?.message || "Failed to change password.";
+      // Distinguish "current password is wrong" (the one failure the user
+      // can actually act on) from everything else, and point at the actual
+      // field like every other validation error here does instead of only
+      // ever showing a generic top-of-form banner.
+      if (err.response?.status === 400 && message === "Incorrect current password") {
+        setPassErrors((prev) => ({ ...prev, currentPassword: message }));
+      } else {
+        setMessages({ error: message, success: "" });
+      }
+    } finally {
+      if (sessionIdRef.current === requestSessionId) setIsSubmittingPassword(false);
     }
   };
 
@@ -464,9 +502,10 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
+                disabled={isSubmittingProfile}
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Update Profile
+                {isSubmittingProfile ? "Updating..." : "Update Profile"}
               </button>
             </form>
 
@@ -585,9 +624,10 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
 
               <button
                 type="submit"
-                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700"
+                disabled={isSubmittingPassword}
+                className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Change Password
+                {isSubmittingPassword ? "Changing..." : "Change Password"}
               </button>
             </form>
           </div>

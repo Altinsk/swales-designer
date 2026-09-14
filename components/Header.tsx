@@ -284,7 +284,13 @@ const Header: React.FC<HeaderProps> = ({
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="px-4">
               {user ? (
-                // Mobile version of the user menu
+                // Mobile version of the user menu. This Header is also
+                // rendered standalone (no paired MobileHeader) on
+                // /share/[uuid] and /reset-password, so its own mobile
+                // panel needs Account Details/Subscription too - without
+                // these, a logged-in mobile user on those pages had no way
+                // to reach account settings at all, unlike everywhere else
+                // in the app.
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <UserCircle className="h-6 w-6 text-[#525252]" />
@@ -292,6 +298,23 @@ const Header: React.FC<HeaderProps> = ({
                       Hello, {user.firstName}
                     </span>
                   </div>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      setIsAccountModalOpen(true);
+                    }}
+                    className="w-full flex items-center justify-center px-4 py-2 text-sm text-[#404040] hover:bg-gray-50 border border-gray-200 rounded-lg"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Account Details
+                  </button>
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)} // Just closes menu for now - matches the desktop dropdown's Subscription placeholder
+                    className="w-full flex items-center justify-center px-4 py-2 text-sm text-[#404040] hover:bg-gray-50 border border-gray-200 rounded-lg"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Subscription
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 border border-red-200 rounded-lg"
@@ -329,7 +352,6 @@ const Header: React.FC<HeaderProps> = ({
       <AccountDetailsModal
         isOpen={isAccountModalOpen}
         onClose={() => setIsAccountModalOpen(false)}
-        user={user}
       />
     </>
   );

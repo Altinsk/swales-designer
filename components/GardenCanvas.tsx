@@ -1520,13 +1520,18 @@ const GardenCanvas = forwardRef<
         };
         const p1 = lastPoint;
         const v1 = vSub(p2, p1);
-        const lineNormal = { x: -v1.y, y: v1.x };
 
         const v2 = vSub(pos, p1);
 
-        const t =
-          dotProduct(v2, lineNormal) / dotProduct(lineNormal, lineNormal);
-        const projectedPoint = vAdd(p1, vScale(lineNormal, t));
+        // Project the cursor onto the line THROUGH p1 in the direction of
+        // v1 (the previous segment) to test "is the cursor a straight-line
+        // continuation" - i.e. project v2 onto v1 itself. This used to
+        // project onto v1's normal instead, which swaps "along the line"
+        // and "perpendicular to the line": it snapped when the cursor was
+        // near a right angle to the last segment (near p1) and failed to
+        // snap on a genuine straight-line continuation any distance out.
+        const t = dotProduct(v2, v1) / dotProduct(v1, v1);
+        const projectedPoint = vAdd(p1, vScale(v1, t));
 
         if (
           calculateDistance(pos, projectedPoint) <
