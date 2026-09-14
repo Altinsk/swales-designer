@@ -254,7 +254,8 @@ const ObjectMenuItem: React.FC<{
   item: Preset;
   onSelectPreset: (preset: PresetItem) => void;
   prefersHover: boolean;
-}> = ({ item, onSelectPreset, prefersHover }) => {
+  activeTool?: ActiveTool;
+}> = ({ item, onSelectPreset, prefersHover, activeTool }) => {
   const {
     open: isSubMenuOpen,
     setOpen: setIsSubMenuOpen,
@@ -284,10 +285,23 @@ const ObjectMenuItem: React.FC<{
   }, [isSubMenuOpen, prefersHover]);
 
   if (item.type === "item") {
+    // Note-shape leaf items (id like "note-text") are the one case where
+    // clicking arms a persistent tool rather than immediately placing
+    // something - activeTool stays "note" until the user places one or
+    // switches tools, same as "select"/"plot"/"zone" already show as
+    // highlighted elsewhere in this toolbar. This item never had that
+    // highlighting at all, so nothing here visually reflected that a note
+    // tool was armed and the very next canvas click would place one.
+    const isActiveNoteTool =
+      activeTool?.type === "note" && item.id === `note-${activeTool.shape}`;
     return (
       <button
         onClick={() => onSelectPreset(item)}
-        className="w-full flex items-center p-2 rounded-md hover:bg-green-100 text-[#404040] transition-colors duration-150"
+        className={`w-full flex items-center p-2 rounded-md transition-colors duration-150 ${
+          isActiveNoteTool
+            ? "bg-green-600 text-white shadow"
+            : "hover:bg-green-100 text-[#404040]"
+        }`}
         title={`Add ${item.name} to canvas`}
       >
         {" "}
@@ -307,6 +321,7 @@ const ObjectMenuItem: React.FC<{
       item={child}
       onSelectPreset={onSelectPreset}
       prefersHover={prefersHover}
+      activeTool={activeTool}
     />
   ));
 
@@ -821,6 +836,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             item={item}
             onSelectPreset={onSelectPreset}
             prefersHover={prefersHover}
+            activeTool={activeTool}
           />
         ))}{" "}
       </div>{" "}
@@ -833,6 +849,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
           item={noteTools}
           onSelectPreset={handleSelectNote}
           prefersHover={prefersHover}
+          activeTool={activeTool}
         />{" "}
       </div>{" "}
         </>

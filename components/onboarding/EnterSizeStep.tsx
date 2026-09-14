@@ -5,25 +5,36 @@ interface EnterSizeStepProps {
   onPositionPlot: (width: number, height: number) => void;
 }
 
+const MAX_DIMENSION_M = 1000;
+
 const EnterSizeStep: React.FC<EnterSizeStepProps> = ({ onPositionPlot }) => {
   const [length, setLength] = useState("20");
   const [width, setWidth] = useState("10");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const lengthNum = parseFloat(length);
     const widthNum = parseFloat(width);
-    if (
-      !isNaN(lengthNum) &&
-      !isNaN(widthNum) &&
-      lengthNum > 0 &&
-      widthNum > 0
-    ) {
-      // Note: The UI shows "Length" and "Width", but conventionally in graphics,
-      // we use width (x-axis) and height (y-axis).
-      // We'll treat "Length" as the width and "Width" as the height.
-      onPositionPlot(lengthNum, widthNum);
+
+    if (isNaN(lengthNum) || isNaN(widthNum)) {
+      setError("Enter a length and width.");
+      return;
     }
+    if (lengthNum <= 0 || widthNum <= 0) {
+      setError("Length and width must be greater than 0.");
+      return;
+    }
+    if (lengthNum > MAX_DIMENSION_M || widthNum > MAX_DIMENSION_M) {
+      setError(`Length and width must be ${MAX_DIMENSION_M}m or less.`);
+      return;
+    }
+
+    setError("");
+    // Note: The UI shows "Length" and "Width", but conventionally in graphics,
+    // we use width (x-axis) and height (y-axis).
+    // We'll treat "Length" as the width and "Width" as the height.
+    onPositionPlot(lengthNum, widthNum);
   };
 
   return (
@@ -71,6 +82,11 @@ const EnterSizeStep: React.FC<EnterSizeStepProps> = ({ onPositionPlot }) => {
             </div>
           </div>
         </div>
+        {error && (
+          <p className="text-red-600 text-sm -mt-4 mb-4" role="alert">
+            {error}
+          </p>
+        )}
         <button
           type="submit"
           className="px-8 py-3 rounded-full bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"

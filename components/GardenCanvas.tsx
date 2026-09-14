@@ -438,6 +438,14 @@ const GardenCanvas = forwardRef<
             if (cancelled) return;
             setTextures((prev) => ({ ...prev, [tex.id]: image }));
           };
+          // No onerror previously - a 404/CORS-blocked texture just never
+          // populated `textures[tex.id]`, permanently and silently (see the
+          // fill fallback above, which now at least shows something for
+          // this case instead of a fully transparent polygon).
+          image.onerror = () => {
+            if (cancelled) return;
+            console.warn(`Failed to load plot texture "${tex.id}" from ${tex.src}`);
+          };
         });
       }
       return () => {
@@ -2248,6 +2256,11 @@ const GardenCanvas = forwardRef<
                         ? undefined
                         : textures[plotTexture?.id || ""]
                     }
+                    fill={
+                      activeTool.type !== "zone" && !textures[plotTexture?.id || ""]
+                        ? "#d1d5db"
+                        : undefined
+                    }
                     fillPatternScale={{ x: 0.2, y: 0.2 }}
                     stroke={
                       activeTool.type === "zone"
@@ -3073,6 +3086,13 @@ const FinalPolygon = memo(
         <Line
           points={poly.points}
           fillPatternImage={poly.isZone ? undefined : grassPattern}
+          // Konva prefers fillPatternImage over fill when both are set, so
+          // this only actually shows while the pattern is absent - a
+          // texture that 404s/CORS-fails never populates `textures` (the
+          // preload effect has no onerror handler), and with no fallback
+          // here the polygon rendered with a fully transparent interior
+          // forever, no indication anything was wrong.
+          fill={!poly.isZone && !grassPattern ? "#d1d5db" : undefined}
           fillPatternScale={{ x: 0.2, y: 0.2 }}
           stroke={poly.strokeColor || "black"}
           strokeWidth={(poly.strokeWidth || 3) / stageScale}

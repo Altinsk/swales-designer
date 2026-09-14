@@ -34,6 +34,7 @@ const AlignMeasureStep: React.FC<AlignMeasureStepProps> = ({
   const [bgRotation, setBgRotation] = useState(0);
   const [rulerLength, setRulerLength] = useState("10");
   const [zoom, setZoom] = useState(1);
+  const [error, setError] = useState("");
   const [imageLayerPos, setImageLayerPos] = useState({ x: 0, y: 0 }); // Manages position of the image layer
 
   const [rulerNode, setRulerNode] = useState({
@@ -127,9 +128,12 @@ const AlignMeasureStep: React.FC<AlignMeasureStepProps> = ({
   const handleAddClick = () => {
     const realWorldLengthM = parseFloat(rulerLength);
     if (!bgImage || isNaN(realWorldLengthM) || realWorldLengthM <= 0) {
-      console.error("Please enter a valid length greater than 0.");
+      // Was console.error-only - nothing in the UI told the user why
+      // clicking "Add sketch" appeared to do nothing.
+      setError("Enter a valid ruler length greater than 0.");
       return;
     }
+    setError("");
 
     const rulerWidthOnStagePx = rulerNode.width;
     const isSideways = bgRotation % 180 !== 0;
@@ -314,6 +318,11 @@ const AlignMeasureStep: React.FC<AlignMeasureStepProps> = ({
           </svg>
         </button>
       </div>
+      {error && (
+        <p className="text-red-600 text-sm text-right mt-2" role="alert">
+          {error}
+        </p>
+      )}
       <div className="mt-8 flex justify-end items-center gap-4">
         <button
           onClick={onClose}
