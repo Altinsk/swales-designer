@@ -24,7 +24,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   onLoginClick,
   onSignupClick,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // NEW: State for Account Modal
@@ -139,7 +139,22 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
 
             {/* 2. User Actions (Login/Signup/Profile) */}
             <div className="p-4 bg-gray-50 border-t border-gray-200">
-              {user ? (
+              {authLoading ? (
+                // AuthContext's `user` starts null until its initial
+                // /auth/me round-trip resolves - without gating on
+                // isLoading too, a signed-in visitor saw Login/Sign Up
+                // flash here on every cold load before swapping to their
+                // account menu. Invisible rather than omitted so the panel
+                // keeps its real height instead of jumping.
+                <div className="space-y-2" style={{ visibility: "hidden" }}>
+                  <button className="w-full flex justify-center px-4 py-3 border border-gray-300 rounded-lg font-medium">
+                    Login
+                  </button>
+                  <button className="w-full flex justify-center px-4 py-3 border border-transparent rounded-lg text-white bg-green-600 font-medium">
+                    Sign Up
+                  </button>
+                </div>
+              ) : user ? (
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3 mb-2">
                     <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700">

@@ -9,8 +9,16 @@ function GoogleLogin({ onClose }) {
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
   const { login } = useAuth();
   const pendingListenerRef = useRef<((event: any) => void) | null>(null);
+  const popupCheckIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const clearPopupCheck = () => {
+    if (popupCheckIntervalRef.current) {
+      clearInterval(popupCheckIntervalRef.current);
+      popupCheckIntervalRef.current = null;
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -18,6 +26,7 @@ function GoogleLogin({ onClose }) {
         window.removeEventListener("message", pendingListenerRef.current);
         pendingListenerRef.current = null;
       }
+      clearPopupCheck();
     };
   }, []);
   const googleSignin = async (firstName, email, authToken) => {
@@ -43,6 +52,7 @@ function GoogleLogin({ onClose }) {
       window.removeEventListener("message", pendingListenerRef.current);
       pendingListenerRef.current = null;
     }
+    clearPopupCheck();
 
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/auth-popup-complete`;
 
@@ -71,6 +81,7 @@ function GoogleLogin({ onClose }) {
       if (event.data.type === "google-auth-success") {
         window.removeEventListener("message", handleMessage);
         pendingListenerRef.current = null;
+        clearPopupCheck();
 
         // googleSignin() throws on any non-2xx response (axios's default),
         // so this used to be an unhandled rejection inside an async message
@@ -104,6 +115,24 @@ function GoogleLogin({ onClose }) {
     };
     pendingListenerRef.current = handleMessage;
     window.addEventListener("message", handleMessage);
+
+    // If the user closes the popup themselves (or denies consent, which
+    // NextAuth handles by showing an error page inside the popup rather
+    // than ever navigating to /auth-popup-complete), no message ever
+    // arrives - without this poll, handleMessage never fires and isLoading
+    // was stuck true forever, with the button permanently reading
+    // "Signing in..." and no error shown.
+    popupCheckIntervalRef.current = setInterval(() => {
+      if (popup.closed) {
+        clearPopupCheck();
+        if (pendingListenerRef.current) {
+          window.removeEventListener("message", pendingListenerRef.current);
+          pendingListenerRef.current = null;
+          setIsLoading(false);
+          setError("Google sign-in was cancelled.");
+        }
+      }
+    }, 500);
   };
 
   return (

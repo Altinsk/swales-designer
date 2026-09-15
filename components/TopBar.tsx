@@ -95,7 +95,7 @@ const TopBar: React.FC<TopBarProps> = ({
   onLoadProject,
   isSaving = false,
 }) => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [myGardens, setMyGardens] = useState<Project[]>([]);
   // ✅ ADDED: State to control the modal visibility
   const [isAllGardensModalOpen, setIsAllGardensModalOpen] = useState(false);
@@ -155,13 +155,29 @@ const TopBar: React.FC<TopBarProps> = ({
           <div className="flex items-center gap-1">
             <Icon
               icon={Save}
-              title={!user ? "Log in to save" : isSaving ? "Saving..." : "Save"}
+              title={
+                authLoading
+                  ? "Loading..."
+                  : !user
+                  ? "Log in to save"
+                  : isSaving
+                  ? "Saving..."
+                  : "Save"
+              }
               onClick={onSave}
               disabled={!user || isSaving}
             />
             <Icon
               icon={PenBox}
-              title={!user ? "Log in to save" : isSaving ? "Saving..." : "Save As"}
+              title={
+                authLoading
+                  ? "Loading..."
+                  : !user
+                  ? "Log in to save"
+                  : isSaving
+                  ? "Saving..."
+                  : "Save As"
+              }
               onClick={onSaveAs}
               disabled={!user || isSaving}
             />
@@ -174,7 +190,7 @@ const TopBar: React.FC<TopBarProps> = ({
             <Icon icon={Redo2} title="Redo (Ctrl+Y)" onClick={onRedo} />
             <Icon
               icon={Printer}
-              title={user ? "Print" : "Log in to print"}
+              title={authLoading ? "Loading..." : user ? "Print" : "Log in to print"}
               onClick={onPrint}
             />
             <div className="relative group">

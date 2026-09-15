@@ -103,7 +103,7 @@ const Header: React.FC<HeaderProps> = ({
   onSignupClick,
   nologin = false,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading: authLoading } = useAuth();
 
   // logout() now rejects if the server call fails (see AuthContext) instead
   // of always resolving after silently swallowing the error - handled here
@@ -180,7 +180,22 @@ const Header: React.FC<HeaderProps> = ({
           {/* --- Right Side: Login/User Area --- */}
           {/* 5. ADDED 'hidden lg:flex': This hides the desktop login buttons on mobile */}
           <div className="hidden lg:flex items-center space-x-2">
-            {user ? (
+            {authLoading ? (
+              // AuthContext's `user` starts null until its initial /auth/me
+              // round-trip resolves - without gating on isLoading too, a
+              // signed-in visitor saw Login/Sign Up flash on every cold
+              // load before swapping to their account menu. Rendered
+              // invisible (not omitted) so this area keeps its real width
+              // during the auth round-trip instead of the nav bar jumping.
+              <div className="flex items-center space-x-2" style={{ visibility: "hidden" }}>
+                <button className=" hover:bg-slate-100 px-4 py-2 rounded-lg transition-colors font-medium mr-3">
+                  Login
+                </button>
+                <button className="bg-green-600 w-[100px] text-white px-4 py-2 rounded-lg font-medium">
+                  Sign Up
+                </button>
+              </div>
+            ) : user ? (
               // User Menu (Dropdown)
               <div className="relative" ref={userMenuRef}>
                 {" "}
@@ -283,7 +298,20 @@ const Header: React.FC<HeaderProps> = ({
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
             <div className="px-4">
-              {user ? (
+              {authLoading ? (
+                // Same box-model-matching approach as the desktop area
+                // above - invisible rather than omitted, so opening the
+                // mobile menu mid-auth-check doesn't jump once the real
+                // state (logged in or out) resolves a moment later.
+                <div className="space-y-2" style={{ visibility: "hidden" }}>
+                  <button className="w-full flex justify-center px-4 py-2 border border-slate-300 rounded-lg font-medium">
+                    Login
+                  </button>
+                  <button className="w-full mt-2 flex justify-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-white bg-green-600 font-medium">
+                    Sign Up
+                  </button>
+                </div>
+              ) : user ? (
                 // Mobile version of the user menu. This Header is also
                 // rendered standalone (no paired MobileHeader) on
                 // /share/[uuid] and /reset-password, so its own mobile

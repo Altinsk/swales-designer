@@ -33,7 +33,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   onLoadProject,
   onDeleteProject,
 }) => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const API_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
@@ -122,7 +122,12 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    // Without also checking authLoading, opening this modal before
+    // AuthContext's initial /auth/me round-trip resolves would fall
+    // through to the "No gardens found" empty state below (fetchAllGardens
+    // bails out early on `!user` and never sets isLoading) instead of a
+    // neutral loading indicator, for a user who actually has gardens.
+    if (isLoading || authLoading) {
       return (
         <div className="flex justify-center items-center h-full">
           <Loader2 className="w-8 h-8 text-[#737373] animate-spin" />
