@@ -28,6 +28,7 @@ import {
 import TopBar from "@/components/TopBar";
 import Toolbar, { PresetItem, Texture, ZoneOption } from "@/components/Toolbar";
 import CanvasControls from "@/components/CanvasControls";
+import { PIXELS_PER_METER } from "@/components/canvasConstants";
 import Header from "@/components/Header";
 import RightToolbar from "@/components/RightToolbar";
 import Modal from "@/components/Modal";
@@ -747,7 +748,7 @@ export default function Home() {
             <CanvasControls
               onZoomIn={handleZoomIn}
               onZoomOut={handleZoomOut}
-              scaleIndicatorPixels={40 * canvasScale}
+              scaleIndicatorPixels={PIXELS_PER_METER * canvasScale}
             />
           </div>
 
@@ -757,7 +758,7 @@ export default function Home() {
                 <CanvasControls
                   onZoomIn={handleZoomIn}
                   onZoomOut={handleZoomOut}
-                  scaleIndicatorPixels={40 * canvasScale}
+                  scaleIndicatorPixels={PIXELS_PER_METER * canvasScale}
                 />
               </div>
             </div>

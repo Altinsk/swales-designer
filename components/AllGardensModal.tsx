@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useAuth } from "@/context/AuthContext";
 import Modal from "./Modal";
@@ -46,6 +46,13 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
   const [dateRange, setDateRange] = useState({ from: "", to: "" });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  // Guards against a stale response overwriting a fresher one, same pattern
+  // already used correctly in AccountDetailsModal.tsx - this fetch had no
+  // such guard, so changing sort/page/search/date-range quickly (plausible:
+  // change sort, then immediately flip to page 2) could show a transiently
+  // wrong list if the earlier request happened to resolve after the later
+  // one.
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -57,6 +64,7 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
 
   const fetchAllGardens = async () => {
     if (!user) return;
+    const requestId = ++requestIdRef.current;
     setIsLoading(true);
     setError(null);
     try {
@@ -73,15 +81,17 @@ export const AllGardensModal: React.FC<AllGardensModalProps> = ({
         params,
       });
 
+      if (requestIdRef.current !== requestId) return;
       if (res.data.success) {
         setProjects(res.data.data.projects);
         setTotalPages(res.data.data.totalPages);
       }
     } catch (err) {
+      if (requestIdRef.current !== requestId) return;
       console.error("Failed to fetch all gardens", err);
       setError("Could not load your gardens. Please try again later.");
     } finally {
-      setIsLoading(false);
+      if (requestIdRef.current === requestId) setIsLoading(false);
     }
   };
 

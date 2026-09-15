@@ -35,7 +35,11 @@ import { Image as KonvaImage } from "react-konva"; // Add KonvaImage import
 import useImage from "use-image";
 
 // --- Configuration ---
-const PIXELS_PER_METER = 40;
+// PIXELS_PER_METER now lives in ./canvasConstants and is imported (not
+// declared) here - see that file's comment for why. Re-exported too since
+// this file already used it as a local identifier throughout.
+import { PIXELS_PER_METER } from "./canvasConstants";
+export { PIXELS_PER_METER };
 const GRID_SIZE = PIXELS_PER_METER;
 const INITIAL_PRESET_SIZE = 100;
 const MIN_FONT_SIZE = 10;
