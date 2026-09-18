@@ -124,6 +124,7 @@ export default function Home() {
   const [currentProject, setCurrentProject] = useState<{
     id: number;
     name: string;
+    updatedAt: string | null;
   } | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfPageImages, setPdfPageImages] = useState<string[]>([]);
@@ -434,6 +435,7 @@ export default function Home() {
         setCurrentProject({
           id: res.data.data.ProjectId,
           name: res.data.data.Name,
+          updatedAt: res.data.data.DateLastUpdated ?? null,
         });
         setNotification("Garden saved successfully!");
         maybeShowCoffeePopup();
@@ -456,20 +458,35 @@ export default function Home() {
     if (currentProject) {
       setIsSaving(true);
       try {
-        await axios.put(
+        const res = await axios.put(
           `${API_URL}/projects/${currentProject.id}`,
           {
             name: currentProject.name,
             projectData: canvasData.canvasState,
             thumbnail: canvasData.thumbnail,
+            lastKnownUpdatedAt: currentProject.updatedAt,
           },
           { withCredentials: true },
+        );
+        setCurrentProject((prev) =>
+          prev
+            ? { ...prev, updatedAt: res.data.data?.DateLastUpdated ?? null }
+            : prev,
         );
         setNotification("Garden updated!");
         maybeShowCoffeePopup();
         if (onSuccess) onSuccess();
       } catch (err) {
-        setNotification("Error: Could not update garden.");
+        // A 409 means someone else's save landed in between - saving over
+        // it now would silently discard those changes, so this needs a
+        // distinct message pointing at reloading, not the generic failure.
+        if (axios.isAxiosError(err) && err.response?.status === 409) {
+          setNotification(
+            "This garden was updated elsewhere - reload it before saving again to avoid overwriting those changes.",
+          );
+        } else {
+          setNotification("Error: Could not update garden.");
+        }
       } finally {
         setIsSaving(false);
       }
@@ -516,7 +533,11 @@ export default function Home() {
         setTimeout(() => {
           canvasRef.current?.center();
         }, 200);
-        setCurrentProject({ id: project.ProjectId, name: project.Name });
+        setCurrentProject({
+          id: project.ProjectId,
+          name: project.Name,
+          updatedAt: project.DateLastUpdated ?? null,
+        });
         setNotification(`Loaded "${project.Name}"`);
       }
     } catch (err) {

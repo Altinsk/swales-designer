@@ -116,6 +116,7 @@ export default function SharePage() {
   const [currentProject, setCurrentProject] = useState<{
     id: number;
     name: string;
+    updatedAt: string | null;
   } | null>(null);
   const [isProcessingPdf, setIsProcessingPdf] = useState(false);
   const [pdfPageImages, setPdfPageImages] = useState<string[]>([]);
@@ -411,6 +412,7 @@ export default function SharePage() {
         setCurrentProject({
           id: res.data.data.ProjectId,
           name: res.data.data.Name,
+          updatedAt: res.data.data.DateLastUpdated ?? null,
         });
         setNotification("Garden saved successfully!");
         handleCloseModal();
@@ -436,19 +438,31 @@ export default function SharePage() {
     if (currentProject) {
       setIsSaving(true);
       try {
-        await axios.put(
+        const res = await axios.put(
           `${API_URL}/projects/${currentProject.id}`,
           {
             name: currentProject.name,
             projectData: canvasData.canvasState,
             thumbnail: canvasData.thumbnail,
+            lastKnownUpdatedAt: currentProject.updatedAt,
           },
           { withCredentials: true }
+        );
+        setCurrentProject((prev) =>
+          prev
+            ? { ...prev, updatedAt: res.data.data?.DateLastUpdated ?? null }
+            : prev,
         );
         setNotification("Garden updated!");
         if (onSuccess) onSuccess();
       } catch (err) {
-        setNotification("Error: Could not update garden.");
+        if (axios.isAxiosError(err) && err.response?.status === 409) {
+          setNotification(
+            "This garden was updated elsewhere - reload it before saving again to avoid overwriting those changes.",
+          );
+        } else {
+          setNotification("Error: Could not update garden.");
+        }
       } finally {
         setIsSaving(false);
       }
@@ -487,7 +501,11 @@ export default function SharePage() {
         setTimeout(() => {
           canvasRef.current?.center();
         }, 200);
-        setCurrentProject({ id: project.ProjectId, name: project.Name });
+        setCurrentProject({
+          id: project.ProjectId,
+          name: project.Name,
+          updatedAt: project.DateLastUpdated ?? null,
+        });
         setNotification(`Loaded "${project.Name}"`);
       }
     } catch (err) {
