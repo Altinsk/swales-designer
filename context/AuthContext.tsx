@@ -79,6 +79,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
+  // Without this, a tab that's just sitting open keeps showing whichever
+  // user was signed in at mount time indefinitely - including across a
+  // logout+different-login that happened in another tab, since the cookie
+  // (and therefore who `/auth/me` resolves to) can change without this tab
+  // doing anything. Re-checking on tab-focus - not on a timer - catches
+  // that without polling the backend on every idle tab. Same fix already
+  // applied in swales-services' AuthContext.
+  useEffect(() => {
+    const revalidateOnFocus = () => {
+      if (document.visibilityState === "visible") {
+        fetchUserProfile();
+      }
+    };
+    document.addEventListener("visibilitychange", revalidateOnFocus);
+    return () =>
+      document.removeEventListener("visibilitychange", revalidateOnFocus);
+  }, []);
+
   // --- Actions ---
 
   // Called after the backend has already set the session cookie (login,
